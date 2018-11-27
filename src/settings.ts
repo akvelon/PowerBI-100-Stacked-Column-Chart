@@ -35,11 +35,17 @@ module powerbi.extensibility.visual {
       selection: []
     };
     public dataPoint: dataPointSettings = new dataPointSettings();
+    public smallMultiple: smallMultipleSettings = new smallMultipleSettings();
     public legend: legendSettings = new legendSettings();
     public categoryAxis: categoryAxisSettings = new categoryAxisSettings();
     public valueAxis: valueAxisSettings = new valueAxisSettings();
     public categoryLabels: categoryLabelsSettings = new categoryLabelsSettings();
     public constantLine: constantLineSettings = new constantLineSettings();
+  }
+
+  export enum LayoutMode {
+    Flow = <any>"flow",
+    Matrix = <any>"matrix"
   }
 
   export enum LabelPosition {
@@ -110,6 +116,8 @@ module powerbi.extensibility.visual {
   export class categoryAxisSettings {
     // Show category axis
     public show: boolean = true;
+    // Position
+    public position: string = "top";
     // Axis type
     public axisType: string = "categorical";
     // Axis Scale type
@@ -124,6 +132,8 @@ module powerbi.extensibility.visual {
     public fontSize: number = 11;
     // Axis Font Family
     public fontFamily: string = DefaultFontFamily;
+    // Display Units
+    public displayUnits: number = 0;
     // valueDecimalPlaces
     public precision: number = null;
     // Minimum category width
@@ -159,6 +169,10 @@ module powerbi.extensibility.visual {
     public fontSize: number = 11;
     // Axis Font Family
     public fontFamily: string = DefaultFontFamily;
+    // Display Units
+    public displayUnits: number = 0;
+    // valueDecimalPlaces
+    public precision: number = null;
     // Show Title
     public showTitle: boolean = false;
 
@@ -216,5 +230,18 @@ module powerbi.extensibility.visual {
     public verticalPosition: VerticalPosition = VerticalPosition.Top;
     public displayUnits: number = 0;
     public precision: number = null;
+  }
+
+  export class smallMultipleSettings {
+    public layoutMode: LayoutMode = LayoutMode.Flow;
+    public minUnitWidth: number = 150;
+    public minUnitHeight: number = 120;
+    public maxRowWidth: number = 4;
+    public showChartTitle: boolean = true;
+    public textcolor: string = "#000000";
+    public fontFamily: string = DefaultFontFamily;
+    public fontSize: number = 9;
+    public fontColor: string = "#000000";
+    public showSeparators: boolean = true;
   }
 }
