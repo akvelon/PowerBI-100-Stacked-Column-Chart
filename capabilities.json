@@ -529,6 +529,40 @@
                         ]
                     }
                 },
+                "rangeType": {
+                    "displayName": "Axis Range type",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "displayName": "Common",
+                                "value": "common"
+                            },
+                            {
+                                "displayName": "Separate",
+                                "value": "separate"
+                            },
+                            {
+                                "displayName": "Custom",
+                                "value": "custom"
+                            }
+                        ] 
+                    }
+                },
+                "rangeTypeNoScalar": {
+                    "displayName": "Axis Range type",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "displayName": "Common",
+                                "value": "common"
+                            },
+                            {
+                                "displayName": "Separate",
+                                "value": "separate"
+                            }
+                        ] 
+                    }
+                },
                 "start": {
                     "displayName": "Start",
                     "displayNameKey": "Visual_Axis_Start",
@@ -872,6 +906,25 @@
                                 "displayName": "Right"
                             }
                         ]
+                    }
+                },
+                "rangeType": {
+                    "displayName": "Axis Range type",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "displayName": "Common",
+                                "value": "common"
+                            },
+                            {
+                                "displayName": "Separate",
+                                "value": "separate"
+                            },
+                            {
+                                "displayName": "Custom",
+                                "value": "custom"
+                            }
+                        ] 
                     }
                 },
                 "start": {

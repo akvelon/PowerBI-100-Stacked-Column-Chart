@@ -42,6 +42,7 @@ module powerbi.extensibility.visual {
 
     export class DataViewConverter<T> {
         private static Highlighted: string = "Highlighted";
+        private static Blank: string = "(Blank)"; 
         private static percentFormatString: string = "#,0.00%";
         public static Convert(dataView: DataView, hostService: IVisualHost, settings: VisualSettings, legendColors: Array<string>): VisualDataPoint[] {
 
@@ -183,7 +184,7 @@ module powerbi.extensibility.visual {
 
                 if (value != null) {
                     data.push({
-                        category: legend,
+                        category: !legend ? this.Blank : legend,
                         series: legend,
                         value: value,
                         percentValueForHeight: 1,
@@ -203,7 +204,7 @@ module powerbi.extensibility.visual {
                         highlightTooltipItems.push(this.createPercentTooltipData(valueMetadata, highlightValue, 1, this.Highlighted));
 
                         data.push({
-                            category: legend,
+                            category: !legend ? this.Blank : legend,
                             series: legend,
                             value: highlightValue,
                             percentValue: 1,
@@ -273,7 +274,7 @@ module powerbi.extensibility.visual {
                         }
 
                         data.push({
-                            category: categoryValue,
+                            category: !categoryValue ? "(Blank)" : categoryValue,
                             series: legend,
                             value: value,
                             percentValue: percentageValue,
@@ -296,7 +297,7 @@ module powerbi.extensibility.visual {
                             highlightTooltipItems.push(this.createPercentTooltipData(valueMetadata, value, percentageValue, this.Highlighted));
 
                             data.push({
-                                category: categoryValue,
+                                category: !categoryValue ? "(Blank)" : categoryValue,
                                 series: legend,
                                 value: highlightValue,
                                 percentValue: highlightPercentage,
@@ -367,7 +368,7 @@ module powerbi.extensibility.visual {
                         }
 
                         data.push({
-                            category: category,
+                            category: !category ? "(Blank)" : category,
                             value: percentageValue,
                             percentValue: percentageValue,
                             percentValueForHeight: percentageValue > 0 ? percentageValue : -percentageValue,
@@ -389,7 +390,7 @@ module powerbi.extensibility.visual {
                             highlightTooltipItems.push(this.createPercentTooltipData(valueMetadata, highlightValue, highlightPercentage, this.Highlighted));
 
                             data.push({
-                                category: category,
+                                category: !category ? "(Blank)" : category,
                                 value: highlightPercentage,
                                 percentValue: highlightPercentage,
                                 percentValueForHeight: highlightPercentage >= 0 ? highlightPercentage : -highlightPercentage,
@@ -466,7 +467,7 @@ module powerbi.extensibility.visual {
                     }
 
                     data.push({
-                        category: category,
+                        category: !category ? "(Blank)" : category,
                         value: value,
                         percentValue: 1,
                         percentValueForHeight: 1,
@@ -490,7 +491,7 @@ module powerbi.extensibility.visual {
                         let percentValue: number = highlightValue / value;
 
                         data.push({
-                            category: category,
+                            category: !category ? "(Blank)" : category,
                             value: highlightValue,
                             percentValue: percentValue,
                             percentValueForHeight: percentValue,

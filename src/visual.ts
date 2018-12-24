@@ -250,7 +250,8 @@ module powerbi.extensibility.visual {
                 categoriesCount: this.categoriesCount,
                 legendData: this.legendProperties.data,
                 hasHighlight: this.hasHighlight,
-                isLegendNeeded: this.isLegendNeeded
+                isLegendNeeded: this.isLegendNeeded,
+                isSmallMultiple: this.isSmallMultiple()
             };
 
             // render for calculate width of labels text
@@ -345,17 +346,12 @@ module powerbi.extensibility.visual {
 
             const dataView = options && options.dataViews && options.dataViews[0];
 
-            
-
-            //  let isResized: boolean = this.isResized(options.type);
-
-            //   this.maxYLabelsWidth = null;
-
             this.dataView = dataView;
             this.viewport = options.viewport;
 
-            //if (!isResized) {
             this.isLegendNeeded = DataViewConverter.IsLegendNeeded(dataView);
+
+            this.updateMetaData();
 
             this.settings = Visual.parseSettings(dataView);
             this.updateSettings(this.settings, dataView);
@@ -363,8 +359,6 @@ module powerbi.extensibility.visual {
             this.legendProperties = legendUtils.setLegendProperties(dataView, this.host, this.settings.legend);
 
             this.allDataPoints = DataViewConverter.Convert(dataView, this.host, this.settings, this.legendProperties.colors);
-
-            this.updateMetaData();
 
             if ( this.isSmallMultiple() ) {
                 this.smallMultipleProcess(options.viewport);
@@ -435,7 +429,7 @@ module powerbi.extensibility.visual {
         public calculateXAxisSizeForCategorical(values: PrimitiveValue[], settings: VisualSettings, metadata: VisualMeasureMetadata, barHeight: number): number {      
             let formatter: IValueFormatter;
 
-            if (typeof (values.some(x => (<any>x).getMonth === 'function'))) {
+            if (typeof (values.some(x => x && (<any>x).getMonth === 'function'))) {
                 if (metadata.cols.category) {
                     formatter = valueFormatter.create({
                         format: valueFormatter.getFormatStringByColumn(metadata.cols.category, true) || metadata.cols.category.format,
@@ -539,8 +533,11 @@ module powerbi.extensibility.visual {
             }
         }
 
-        private createSmallMultipleAxes(dataPoints: VisualDataPoint[], visualSize: ISize, maxYAxisLabelWidth: number): IAxes {
-            let axesDomains: AxesDomains = RenderAxes.calculateAxesDomains(dataPoints, dataPoints, this.settings, this.metadata);
+        private createSmallMultipleAxesByDomains(categoryDomain: any[], valueDomain: any[], visualSize: ISize, maxYAxisLabelWidth: number): IAxes {
+            let axesDomains: AxesDomains = {
+                yAxisDomain: valueDomain,
+                xAxisDomain: categoryDomain
+            };
 
             let axes: IAxes = RenderAxes.createD3Axes(
                 axesDomains,
@@ -548,6 +545,7 @@ module powerbi.extensibility.visual {
                 this.metadata,
                 this.settings,
                 this.host,
+                true,
                 null,
                 maxYAxisLabelWidth
             );
@@ -556,7 +554,7 @@ module powerbi.extensibility.visual {
         }
 
         private renderSmallMultipleAxes(dataPoints: VisualDataPoint[], axes: IAxes, xAxisSvgGroup: d3.Selection<SVGElement>, yAxisSvgGroup: d3.Selection<SVGElement>, barHeight: number): void {
-            visualUtils.calculateBarCoordianates(dataPoints, axes, this.settings, barHeight);
+            visualUtils.calculateBarCoordianates(dataPoints, axes, this.settings, barHeight, true);
 
             RenderAxes.render(
                 this.settings,
@@ -655,8 +653,35 @@ module powerbi.extensibility.visual {
                 } else {
                     maxLabelHeight = Number.MAX_VALUE;
                 }    
-            } 
-            let axes: IAxes = this.createSmallMultipleAxes(this.allDataPoints, barsSectionSize, maxLabelHeight);
+            }
+            
+            let axes: IAxes;
+
+            const xIsSeparate: boolean = this.settings.categoryAxis.rangeType === AxisRangeType.Separate;
+            const yIsSeparate: boolean = this.settings.valueAxis.rangeType === AxisRangeType.Separate;
+
+            const yIsCustom: boolean = this.settings.valueAxis.rangeType === AxisRangeType.Custom;
+            const xIsCustom: boolean = this.settings.categoryAxis.rangeType === AxisRangeType.Custom;
+
+            const defaultYDomain: any[] = RenderAxes.calculateValueDomain(this.allDataPoints, this.settings, true);
+            const defaultXDomain: any[] = RenderAxes.calculateCategoryDomain(this.allDataPoints, this.settings, this.metadata, true);
+
+            const defaultAxes: IAxes = this.createSmallMultipleAxesByDomains(defaultXDomain, defaultYDomain, barsSectionSize, maxLabelHeight);
+
+            let xDomain: any[] = [],
+                yDomain: any[] = [];
+
+            if (!yIsSeparate && !xIsSeparate) {
+                axes = defaultAxes;
+            } else {
+                if (!yIsSeparate) {
+                    yDomain = defaultYDomain;
+                }
+
+                if (!xIsSeparate) {
+                    xDomain = defaultXDomain;
+                }
+            }
 
             this.data = {
                 axes: axes,
@@ -664,7 +689,8 @@ module powerbi.extensibility.visual {
                 hasHighlight: hasHighlight,
                 isLegendNeeded: this.isLegendNeeded,
                 legendData: this.legendProperties.data,
-                categoriesCount: null
+                categoriesCount: null,
+                isSmallMultiple: this.isSmallMultiple()
             }                       
 
             let svgHeight: number = 0,
@@ -687,7 +713,7 @@ module powerbi.extensibility.visual {
                     });
 
             for (let i = 0; i < uniqueRows.length; ++i) {
-                for (let j = 0; j < uniqueColumns.length; ++j) {                 
+                for (let j = 0; j < uniqueColumns.length; ++j) {
 
                     let leftMove: number = 0;
                     let topMove: number = 0;
@@ -728,7 +754,27 @@ module powerbi.extensibility.visual {
                         svg.translate(
                             marginLeft +
                             (yHasRightPosition ? barsSectionSize.width : yAxisSize),
-                            0));                   
+                            0));    
+                            
+                    if (yIsSeparate || xIsSeparate) {
+                        if (!dataPoints || !dataPoints.length) {
+                            axes = defaultAxes;
+                        }
+
+                        if (yIsSeparate) {
+                            yDomain = dataPoints && dataPoints.length ? RenderAxes.calculateValueDomain(dataPoints, this.settings, true) : defaultYDomain;
+                        }
+
+                        if (xIsSeparate) {
+                            xDomain = dataPoints && dataPoints.length ? RenderAxes.calculateCategoryDomain(dataPoints, this.settings, this.metadata, true) : defaultXDomain;
+                        }
+
+                        axes = !yIsSeparate && !xIsSeparate ? defaultAxes : this.createSmallMultipleAxesByDomains(xDomain, yDomain, barsSectionSize, maxLabelHeight);
+                    }
+        
+                    if (!this.data.axes) {
+                        this.data.axes = defaultAxes;
+                    }
 
                     let barHeight: number = !xIsScalar || this.settings.categoryAxis.axisType === "categorical" ? axes.x.scale.rangeBand() : visualUtils.calculateDataPointThickness(
                         dataPoints,
@@ -740,6 +786,54 @@ module powerbi.extensibility.visual {
                     );
 
                     this.renderSmallMultipleAxes(dataPoints, axes, xAxisSvgGroup, yAxisSvgGroup, barHeight);
+
+                    if (xIsCustom) {
+                        let divider: number = 1;
+                        let xText = xAxisSvgGroup.selectAll("text")[0];
+
+                        let axisWidth = (xText.parentNode  as SVGGraphicsElement).getBBox().width;
+                        let maxTextWidth = visualUtils.getLabelsMaxWidth(xText);
+
+                        for (let i = 0; i < xText.length; ++i) {
+                            let actualAllAxisTextWidth: number = maxTextWidth * xText.length / divider;
+
+                            if (actualAllAxisTextWidth > axisWidth) {
+                                divider += 1;
+                            } else {
+                                break;
+                            }
+                        }
+
+                        for (let i = 0; i < xText.length; ++i) { 
+                            if (i % divider > 0) {
+                                d3.select(xText[i]).remove();
+                            }
+                        }
+                    }
+
+                    if (yIsCustom) {
+                        let divider: number = 1;
+                        let yText = yAxisSvgGroup.selectAll("text")[0];
+
+                        let axisWidth = (yText.parentNode  as SVGGraphicsElement).getBBox().height;
+                        let maxTextWidth = visualUtils.getLabelsMaxHeight(yText);
+
+                        for (let i = 0; i < yText.length; ++i) {
+                            let actualAllAxisTextWidth: number = maxTextWidth * yText.length / divider;
+
+                            if (actualAllAxisTextWidth > axisWidth) {
+                                divider += 1;
+                            } else {
+                                break;
+                            }
+                        }
+
+                        for (let i = 0; i < yText.length; ++i) { 
+                            if (i % divider > 0) {
+                                d3.select(yText[i]).remove();
+                            }
+                        }
+                    }
 
                     const labelRotationIsNeeded: boolean = forceRotaion ? true : visualUtils.smallMultipleLabelRotationIsNeeded(
                         xAxisSvgGroup,
@@ -757,8 +851,6 @@ module powerbi.extensibility.visual {
                         .attr({
                             transform: svg.translate(marginLeft + (yHasRightPosition ? 0 : yAxisSize), 0)
                         });
-
-                   // visualUtils.calculateBarCoordianates(dataPoints, axes, this.settings, barHeight);
 
                     let interactivityService = this.interactivityService,
                         hasSelection: boolean = interactivityService.hasSelection();
@@ -957,6 +1049,10 @@ module powerbi.extensibility.visual {
             let categoryName: string = '';
             let previousCategoryName: string = '';
             for (let i: number = 0; i < this.allDataPoints.length; i++) {
+                if (this.allDataPoints[i].category == null) {
+                    continue;
+                }
+
                 previousCategoryName = categoryName;
                 categoryName = this.allDataPoints[i].category.toString();
 
@@ -988,7 +1084,8 @@ module powerbi.extensibility.visual {
                 categoriesCount: this.categoriesCount,
                 legendData: legendData,
                 hasHighlight: this.hasHighlight,
-                isLegendNeeded: this.isLegendNeeded
+                isLegendNeeded: this.isLegendNeeded,
+                isSmallMultiple: this.isSmallMultiple()
             };
 
             // render for calculate width of labels text
@@ -1025,15 +1122,16 @@ module powerbi.extensibility.visual {
             return this.settings.categoryAxis.axisType === "continuous" && !isOrdinal ? ScrollbarState.Disable : ScrollbarState.Enable;
         }
 
-        private createAxes(dataPoints): IAxes {
-            let axesDomains: AxesDomains = RenderAxes.calculateAxesDomains(this.allDataPoints, dataPoints, this.settings, this.metadata);
-
+        private createAxes(dataPoints, isSmallMultiple = false): IAxes {
+            let axesDomains: AxesDomains = RenderAxes.calculateAxesDomains(this.allDataPoints, dataPoints, this.settings, this.metadata, isSmallMultiple);
+ 
             let axes: IAxes = RenderAxes.createD3Axes(
                 axesDomains,
                 this.visualSize,
                 this.metadata,
                 this.settings,
-                this.host,
+                this.host, 
+                isSmallMultiple,
                 this.dataPointThickness,
                 this.maxXLabelsWidth
             );
@@ -1156,6 +1254,10 @@ module powerbi.extensibility.visual {
                 if (dataView.categorical.values.source) {
                     settings.legend.legendName = dataView.categorical.values.source.displayName;
                 }
+            }
+
+            if (this.isSmallMultiple() && (!visualUtils.categoryIsScalar(this.metadata) || this.settings.categoryAxis.axisType === "categorical")) {
+                settings.categoryAxis.rangeType = settings.categoryAxis.rangeTypeNoScalar;
             }
 
             // for Y-axis
@@ -1291,9 +1393,6 @@ module powerbi.extensibility.visual {
                 y: this.visualMargin.top
             };
 
-            let rightPadding = 25;
-    
-            const yAxisHasRightPosition: boolean = this.yAxisHasRightPosition();
             const yHasLeftPosition: boolean = this.settings.valueAxis.show && this.settings.valueAxis.position === "left";
 
             const translateX: number = yHasLeftPosition ? this.axesSize.yAxisWidth + this.yTickOffset : 0;
