@@ -131,7 +131,6 @@ module powerbi.extensibility.visual {
         private mainDivElement: d3.Selection<any>;
         private chartsContainer: d3.Selection<SVGElement>;
         private barGroup: d3.Selection<SVGElement>;
-        public maxYLabelsWidth: number;
         public readonly axesSize: IAxesSize = {xAxisHeight: 10, yAxisWidth: 15};
 
         constructor(options: VisualConstructorOptions) {
@@ -210,6 +209,7 @@ module powerbi.extensibility.visual {
         }
 
         normalChartProcess(options: VisualUpdateOptions): void {
+            this.maxXLabelsWidth = null;
             this.dataPointsByCategories = this.buildDataPointsByCategoriesArray();
 
             // Highlight
@@ -275,8 +275,8 @@ module powerbi.extensibility.visual {
             // calculate again after columnWidth changing
             axes = this.createAxes(visibleDataPoints);
             this.data.axes = axes;
-
-            this.renderAxes(this.maxYLabelsWidth);
+            
+            this.renderAxes();
             RenderAxes.rotateXAxisTickLabels(this.isNeedToRotate, this.xAxisSvgGroup);
             this.finalRendering();
 
@@ -1149,7 +1149,7 @@ module powerbi.extensibility.visual {
             );
         }
 
-        private renderAxes(maxYLabelsWidth = null): void {
+        private renderAxes(): void {
             visualUtils.calculateBarCoordianates(this.data.dataPoints, this.data.axes, this.settings, this.dataPointThickness);
 
             RenderAxes.render(
@@ -1295,6 +1295,7 @@ module powerbi.extensibility.visual {
         }
 
         private calculateOffsets() {
+
             let xtickText: d3.selection.Group = this.xAxisSvgGroup.selectAll("text")[0];
             let ytickText: d3.selection.Group = this.yAxisSvgGroup.selectAll("text")[0];
 
@@ -1332,16 +1333,18 @@ module powerbi.extensibility.visual {
 
             this.calculateVisualMargin();
 
-            const showYAxisTitle: boolean = this.settings.categoryAxis.show && this.settings.categoryAxis.showTitle;
-            const xAxisTitleThickness: number = showYAxisTitle ? visualUtils.GetXAxisTitleHeight(this.settings.categoryAxis) + 5 : 0;
+            const showXAxisTitle: boolean = this.settings.categoryAxis.show && this.settings.categoryAxis.showTitle;
+            const yAxisTitleThickness: number = showXAxisTitle ? visualUtils.GetXAxisTitleHeight(this.settings.categoryAxis) + 5 : 0;
 
-            this.calculateVisualSize( legendSize, xAxisTitleThickness);
+            this.calculateVisualSize( legendSize, yAxisTitleThickness);
 
-            const yAxisMaxWidth = xAxisUtils.getXAxisMaxWidth(this.visualSize.width + this.yTickOffset, this.settings);
-            if (this.yTickOffset > yAxisMaxWidth + xAxisTitleThickness) {
-                this.yTickOffset = yAxisMaxWidth + xAxisTitleThickness;
 
-                this.maxYLabelsWidth = yAxisMaxWidth;
+            const xAxisMaxWidth = xAxisUtils.getXAxisMaxWidth(this.visualSize.height + this.xTickOffset, this.settings);
+
+            if (this.xTickOffset > xAxisMaxWidth + yAxisTitleThickness) {
+                this.xTickOffset = xAxisMaxWidth + yAxisTitleThickness;
+
+                this.maxXLabelsWidth = xAxisMaxWidth;
             }
 
             this.calculateVisualPosition();
@@ -1356,7 +1359,7 @@ module powerbi.extensibility.visual {
             this.visualMargin = { top: 5, bottom: 5, left: extendedLeftMargin ? 15 : 5 , right: extendedRightMargin ? 15 : 5  };
         }
 
-        private calculateVisualSize(legendSize: LegendSize, xAxisTitleThickness: number): void { 
+        private calculateVisualSize(legendSize: LegendSize, xAxisTitleThickness: number): void {
 
             const visualSize: ISize = {
                 width: this.viewport.width
@@ -1371,12 +1374,15 @@ module powerbi.extensibility.visual {
                     - this.axesSize.xAxisHeight
                     - (legendSize === null ? 0 : legendSize.height)
                     - this.xTickOffset
-                    - (this.scrollBar.isEnabled() ? this.scrollBar.settings.trackSize  : 0),
+                    - (this.scrollBar.isEnabled() ? this.scrollBar.settings.trackSize : 0),
             };
 
-            const yAxisMaxWidth = xAxisUtils.getXAxisMaxWidth(visualSize.width + this.yTickOffset, this.settings);
-            if (this.yTickOffset > yAxisMaxWidth + xAxisTitleThickness) {
-                visualSize.width = visualSize.width + this.yTickOffset - yAxisMaxWidth - xAxisTitleThickness;              
+            const xAxisMaxWidth = xAxisUtils.getXAxisMaxWidth(visualSize.height + this.xTickOffset, this.settings);
+
+            if (this.xTickOffset > xAxisMaxWidth + xAxisTitleThickness) {
+                visualSize.height = visualSize.height + this.xTickOffset - xAxisMaxWidth - xAxisTitleThickness;
+                this.xTickOffset = xAxisMaxWidth + xAxisTitleThickness;
+                this.maxXLabelsWidth = xAxisMaxWidth;
             }
 
             this.visualSize = visualSize;

@@ -2,9 +2,9 @@
   "visual": {
     "name": "100PercentStackedColumnChartByAkvelon",
     "guid": "PercentStackedColumnChartByAkvelonF99290E0E9AE4CA6B8D5284FC0723FE1",
-    "displayName": "100% Stacked Column Chart by Akvelon 1.2.2",
+    "displayName": "100% Stacked Column Chart by Akvelon 1.2.3",
     "visualClassName": "Visual",
-    "version": "1.2.2",
+    "version": "1.2.3",
     "description": "100% Stacked Column Chart with rectangle selection support",
     "supportUrl": "http://akvelon.com/feedback",
     "gitHubUrl": ""
