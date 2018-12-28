@@ -86,6 +86,7 @@ module powerbi.extensibility.visual {
         size?: ISize;
         axes: IAxes;
         categoriesCount: number;
+        isSmallMultiple: boolean;
     }
 
     export interface IAxesSize {
