@@ -96,7 +96,7 @@ module.exports = {
                     }
                 ],
                 exclude: [/node_modules/],
-                include: /powerbi-visuals-|src|precompile\\visualPlugin.ts/,
+                include: /.tmp|powerbi-visuals-|src|precompile\\visualPlugin.ts/,
             },
             {
                 test: /(\.js)x|\.js$/,
