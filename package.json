@@ -25,6 +25,10 @@
   "devDependencies": {
     "@babel/core": "7.21.0",
     "@babel/preset-env": "7.20.2",
+    "@types/d3-array": "3.0.4",
+    "@types/d3-axis": "3.0.2",
+    "@types/d3-scale": "4.0.3",
+    "@types/d3-selection": "3.0.4",
     "@typescript-eslint/eslint-plugin": "^5.54.1",
     "babel-loader": "9.1.2",
     "babel-plugin-module-resolver": "5.0.0",
