@@ -1,21 +1,25 @@
 "use strict";
 
+import powerbiApi from "powerbi-visuals-api";
 import { axisInterfaces, legendInterfaces } from "powerbi-visuals-utils-chartutils";
-import IAxisProperties = axisInterfaces.IAxisProperties;
-import LegendData = legendInterfaces.LegendData;
-
 import { interactivitySelectionService } from "powerbi-visuals-utils-interactivityutils";
-import SelectableDataPoint = interactivitySelectionService.SelectableDataPoint;
-
-import PrimitiveValue = powerbi.PrimitiveValue;
-import DataViewValueColumn = powerbi.DataViewValueColumn;
-import DataViewValueColumns = powerbi.DataViewValueColumns;
-import DataViewMetadataColumn = powerbi.DataViewMetadataColumn;
-import DataViewObject = powerbi.DataViewObject;
-import ISelectionId = powerbi.visuals.ISelectionId;
-import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
-
 import { Selection } from 'd3-selection';
+
+import * as visualUtils from "./scrollbarUtil";
+import { VisualSettings } from "./settings";
+
+import IAxisProperties = axisInterfaces.IAxisProperties;
+import SelectableDataPoint = interactivitySelectionService.SelectableDataPoint;
+import LegendData = legendInterfaces.LegendData;
+import PrimitiveValue = powerbiApi.PrimitiveValue;
+import ISelectionId = powerbiApi.extensibility.ISelectionId;
+import DataViewValueColumn = powerbiApi.DataViewValueColumn;
+import DataViewValueColumns = powerbiApi.DataViewValueColumns;
+import DataViewMetadataColumn = powerbiApi.DataViewMetadataColumn;
+import DataViewObject = powerbiApi.DataViewObject;
+import VisualTooltipDataItem = powerbiApi.extensibility.VisualTooltipDataItem;
+import IVisual = powerbiApi.extensibility.IVisual;
+import IViewport = powerbiApi.IViewport;
 
 export type d3Selection<T> = Selection<any, T, any, any>;
 export type d3Update<T> = Selection<any, T, any, any>;
@@ -166,7 +170,7 @@ export type SelectionState = undefined | null | 'selected' | 'justSelected' | 'j
 
 export interface LegendProperties {
     legendObject: DataViewObject;
-    data: LegendData;
+    data: LegendData | undefined;
     colors: string[];
 }
 
@@ -185,4 +189,23 @@ export interface SmallMultipleOptions {
     xAxisLabelSize: number,
     index?: number,
     rowsInFlow?: number
+}
+
+export interface IBarVisual extends IVisual {
+    getDataView(): powerbiApi.DataView;
+    barClassName: string;
+    saveSelection(): unknown;
+    webBehaviorSelectionHandler: any;
+    getSettings(): VisualSettings;
+    categoriesCount: number;
+    onScrollPosChanged(): void;
+    getDataPointsByCategories(): CategoryDataPoints[];
+    legendSize: LegendSize;
+    settings: VisualSettings;
+    isLegendNeeded: boolean;
+    viewport: IViewport;
+    visualSize: any;
+    visualMargin: IMargin;
+    getAllDataPoints(): VisualDataPoint[];
+    scrollBar: visualUtils.ScrollBar
 }

@@ -27,8 +27,8 @@
 "use strict";
 
 import { dataViewObjectsParser } from "powerbi-visuals-utils-dataviewutils";
-import DataViewObjectsParser = dataViewObjectsParser.DataViewObjectsParser;
 
+import DataViewObjectsParser = dataViewObjectsParser.DataViewObjectsParser;
 
 const DefaultFontFamily: string = "\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif";
 
@@ -76,31 +76,31 @@ export class dataPointSettings {
   public showAllDataPoints: boolean = true;
 }
 
-export enum LineStyle {
-  Dashed = <any>"dashed",
-  Solid = <any>"solid",
-  Dotted = <any>"dotted"
+export const enum LineStyle {
+  Dashed = "dashed",
+  Solid = "solid",
+  Dotted = "dotted"
 }
 
-export enum Position {
-  Behind = <any>"behind",
-  InFront = <any>"front"
+export const enum Position {
+  Behind = "behind",
+  InFront = "front"
 }
 
-export enum Text {
-  Name = <any>"name",
-  Value = <any>"value",
-  NameAndValue = <any>"nameAndValue"
+export const enum Text {
+  Name = "name",
+  Value = "value",
+  NameAndValue = "nameAndValue"
 }
 
-export enum HorizontalPosition {
-  Left = <any>"left",
-  Right = <any>"right"
+export const enum HorizontalPosition {
+  Left = "left",
+  Right = "right"
 }
 
-export enum VerticalPosition {
-  Top = <any>"top",
-  Bottom = <any>"bottom"
+export const enum VerticalPosition {
+  Top = "top",
+  Bottom = "bottom"
 }
 
 // tslint:disable-next-line:class-name
@@ -120,12 +120,13 @@ export class legendSettings {
   // Legend Font Size
   public fontSize: number = 8;
 }
+
 // tslint:disable-next-line:class-name
 export class categoryAxisSettings {
   // Show category axis
   public show: boolean = true;
   // Position
-  public position: string = "top";
+  public position: string = VerticalPosition.Top;
   // Axis type
   public axisType: string = "categorical";
   // Axis Scale type
@@ -161,6 +162,7 @@ export class categoryAxisSettings {
   public titleFontSize: number = 11;
   public titleFontFamily: string = DefaultFontFamily;
 }
+
 // tslint:disable-next-line:class-name
 export class valueAxisSettings {
   // Show category axis
@@ -199,6 +201,7 @@ export class valueAxisSettings {
   public strokeWidth: number = 1;
   public lineStyle: string = "solid";
 }
+
 // tslint:disable-next-line:class-name
 export class categoryLabelsSettings {
   // Show category axis

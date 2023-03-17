@@ -1,23 +1,35 @@
-import { axisInterfaces, legendInterfaces } from "powerbi-visuals-utils-chartutils";
-import IAxisProperties = axisInterfaces.IAxisProperties;
-import LegendData = legendInterfaces.LegendData;
+"use strict";
 
-import { interactivitySelectionService } from "powerbi-visuals-utils-interactivityutils";
-import SelectableDataPoint = interactivitySelectionService.SelectableDataPoint;
+import { AxisRangeType, categoryAxisSettings, categoryLabelsSettings, LabelOrientation, valueAxisSettings, VisualSettings } from "./settings";
+import { CategoryDataPoints, d3Group, d3Selection, IAxes, ISize, VisualData, VisualDataPoint, VisualMeasureMetadata } from "./visualInterfaces";
 
-import PrimitiveValue = powerbi.PrimitiveValue;
-import DataViewValueColumn = powerbi.DataViewValueColumn;
-import DataViewValueColumns = powerbi.DataViewValueColumns;
-import DataViewMetadataColumn = powerbi.DataViewMetadataColumn;
-import DataViewObject = powerbi.DataViewObject;
-import ISelectionId = powerbi.visuals.ISelectionId;
-import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
-import { VisualData } from "./visualInterfaces";
+import powerbiApi from "powerbi-visuals-api";
+import DataViewMetadataColumn = powerbiApi.DataViewMetadataColumn;
+import DataView = powerbiApi.DataView;
+
+import { axis } from "powerbi-visuals-utils-chartutils";
+
+import { textMeasurementService as TextMeasurementService, interfaces, valueFormatter as ValueFormatter } from "powerbi-visuals-utils-formattingutils";
+import TextProperties = interfaces.TextProperties;
+import IValueFormatter = ValueFormatter.IValueFormatter;
+
+import { valueType } from "powerbi-visuals-utils-typeutils";
+
+import * as formattingUtils from "./utils/formattingUtils";
+import { DataLabelHelper } from "./utils/dataLabelHelper";
+
+
+import * as visualUtils from "./utils";
+
 const DisplayUnitValue: number = 1;
 
+import { Field } from "./dataViewConverter";
+import { IAxisProperties } from "powerbi-visuals-utils-chartutils/lib/axis/axisInterfaces";
+import { max, min } from 'd3-array';
+
 export function calculateBarCoordianatesByData(data: VisualData, settings: VisualSettings, barHeight: number, isSmallMultiple: boolean = false): void {
-    let dataPoints: VisualDataPoint[] = data.dataPoints;
-    let axes: IAxes = data.axes;
+    const dataPoints: VisualDataPoint[] = data.dataPoints;
+    const axes: IAxes = data.axes;
 
     this.calculateBarCoordianates(dataPoints, axes, settings, barHeight, isSmallMultiple);
 }
@@ -97,22 +109,22 @@ function setZeroCoordinatesForPoint(point: VisualDataPoint): void {
 }
 
 export function recalculateThicknessForContinuous(dataPoints: VisualDataPoint[], skipCategoryStartEnd: boolean, categorySettings: categoryAxisSettings, startThickness: number) {
-    let minWidth: number = 1.5,
-        minDistance: number = Number.MAX_VALUE;
+    let minWidth: number = 1.5;
+    let minDistance: number = Number.MAX_VALUE;
 
-    let start = skipCategoryStartEnd ? null : categorySettings.start,
-        end = skipCategoryStartEnd ? null : categorySettings.end;
+    const start = skipCategoryStartEnd ? null : categorySettings.start;
+    const end = skipCategoryStartEnd ? null : categorySettings.end;
 
-    let sortedDataPoints: VisualDataPoint[] = dataPoints.sort((a, b) => {
+    const sortedDataPoints: VisualDataPoint[] = dataPoints.sort((a, b) => {
         return a.barCoordinates.x - b.barCoordinates.x;
     });
 
-    let sortedBarCoordinates: number[] = sortedDataPoints.map(d => d.barCoordinates.x).filter((v, i, a) => a.indexOf(v) === i);
+    const sortedBarCoordinates: number[] = sortedDataPoints.map(d => d.barCoordinates.x).filter((v, i, a) => a.indexOf(v) === i);
 
     let firstCoodinate: number = sortedBarCoordinates[0];
 
     for (let i = 1; i < sortedBarCoordinates.length; ++i) {
-        let distance: number = sortedBarCoordinates[i] - firstCoodinate;
+        const distance: number = sortedBarCoordinates[i] - firstCoodinate;
 
         minDistance = distance < minDistance ? distance : minDistance;
         firstCoodinate = sortedBarCoordinates[i];
@@ -127,7 +139,7 @@ export function recalculateThicknessForContinuous(dataPoints: VisualDataPoint[],
     sortedDataPoints.forEach(d => {
         let width: number = 0;
         if (startThickness > minWidth) {
-            let padding: number = minWidth / 100 * 20;
+            const padding: number = minWidth / 100 * 20;
             width = minWidth - padding;
         } else {
             width = d.barCoordinates.width;
@@ -143,11 +155,16 @@ export function recalculateThicknessForContinuous(dataPoints: VisualDataPoint[],
 }
 
 export function buildDataPointsArayByCategories(dataPoints: VisualDataPoint[]): CategoryDataPoints[] {
-    let dataPointsByCategories: CategoryDataPoints[] = [];
+    const dataPointsByCategories: CategoryDataPoints[] = [];
     let categoryIndex: number = 0;
     let categoryName: string = '';
     let previousCategoryName: string = '';
+
     for (let i: number = 0; i < dataPoints.length; i++) {
+        if (dataPoints[i].category == null) {
+            continue;
+        }
+
         previousCategoryName = categoryName;
         categoryName = dataPoints[i].category.toString();
 
@@ -156,7 +173,7 @@ export function buildDataPointsArayByCategories(dataPoints: VisualDataPoint[]): 
         }
 
         if (!dataPointsByCategories[categoryIndex]) {
-            let category: CategoryDataPoints = {
+            const category: CategoryDataPoints = {
                 categoryName,
                 dataPoints: []
             };
@@ -179,8 +196,8 @@ export function calculateLabelCoordinates(data: VisualData,
 
     let dataPointsArray: VisualDataPoint[] = dataPoints || data.dataPoints;
 
-    let textPropertiesForWidth: TextProperties = formattingUtils.getTextProperties(settings);
-    let textPropertiesForHeight: TextProperties = formattingUtils.getTextPropertiesForHeightCalculation(settings);
+    const textPropertiesForWidth: TextProperties = formattingUtils.getTextProperties(settings);
+    const textPropertiesForHeight: TextProperties = formattingUtils.getTextPropertiesForHeightCalculation(settings);
 
     let precision: number = settings.precision;
 
@@ -190,32 +207,33 @@ export function calculateLabelCoordinates(data: VisualData,
         precisionZeros += "0";
     }
 
-    let dataLabelFormatter: IValueFormatter = ValueFormatter.create({
+    const dataLabelFormatter: IValueFormatter = ValueFormatter.create({
         precision: precision,
         format: `0.${precisionZeros}%;-0.${precisionZeros}%;0.${precisionZeros}%`
     });
 
+
     dataPointsArray.forEach(dataPoint => {
-        let formattedText: string = dataLabelFormatter.format(dataPoint.percentValue);
+        const formattedText: string = dataLabelFormatter.format(dataPoint.percentValue);
         textPropertiesForHeight.text = formattedText;
 
-        let isHorizontal: boolean = settings.orientation === LabelOrientation.Horizontal;
+        const isHorizontal: boolean = settings.orientation === LabelOrientation.Horizontal;
 
-        let textHeight: number = isHorizontal ?
+        const textHeight: number = isHorizontal ?
             TextMeasurementService.estimateSvgTextHeight(textPropertiesForWidth)
             : TextMeasurementService.measureSvgTextWidth(textPropertiesForWidth, formattedText);
 
-        let textWidth: number = isHorizontal ?
+        const textWidth: number = isHorizontal ?
             TextMeasurementService.measureSvgTextWidth(textPropertiesForWidth, formattedText)
             : TextMeasurementService.estimateSvgTextHeight(textPropertiesForWidth);
 
-        let barWidth: number = dataPoint.barCoordinates.width;
+        const barWidth: number = dataPoint.barCoordinates.width;
 
         if (settings.overflowText || textWidth +
             (settings.showBackground ? DataLabelHelper.labelBackgroundHeightPadding : 0) < barWidth) {
 
-            let dx: number = dataPoint.barCoordinates.x + dataPoint.barCoordinates.width / 2 + (isHorizontal ? -(textWidth) / 2 : (textWidth) / 3),
-                dy: number = DataLabelHelper.calculatePositionShift(settings, textHeight, dataPoint, chartHeight, isLegendRendered);
+            const dx: number = dataPoint.barCoordinates.x + dataPoint.barCoordinates.width / 2 + (isHorizontal ? -(textWidth) / 2 : (textWidth) / 3);
+            const dy: number = DataLabelHelper.calculatePositionShift(settings, textHeight, dataPoint, chartHeight, isLegendRendered);
 
             if (dy !== null) {
                 dataPoint.labelCoordinates = {
@@ -237,7 +255,7 @@ export function getNumberOfValues(dataView: DataView): number {
     const columns: DataViewMetadataColumn[] = dataView.metadata.columns;
     let valueFieldsCount: number = 0;
 
-    for (let columnName in columns) {
+    for (const columnName in columns) {
         const column: DataViewMetadataColumn = columns[columnName];
 
         if (column.roles && column.roles[Field.Value]) {
@@ -278,7 +296,7 @@ export function getUnitType(xAxis: IAxisProperties): string {
 }
 
 export function getTitleWithUnitType(title, axisStyle, axis: IAxisProperties): string {
-    let unitTitle = visualUtils.getUnitType(axis) || "No unit";
+    const unitTitle = visualUtils.getUnitType(axis) || "No unit";
     switch (axisStyle) {
         case "showUnitOnly": {
             return unitTitle;
@@ -322,13 +340,13 @@ export function calculateDataPointThickness(
 
     if (isCategorical || settings.categoryAxis.axisType === "categorical") {
         let innerPadding: number = categoryInnerPadding / 100;
-        thickness = d3.min([CategoryMaxWidth, d3.max([CategoryMinWidth, currentThickness])]) * (1 - innerPadding);
+        thickness = min([CategoryMaxWidth, max([CategoryMinWidth, currentThickness])]) * (1 - innerPadding);
     } else {
         let dataPoints = [...visualDataPoints];
 
         const skipStartEnd: boolean = isSmallMultiple && settings.categoryAxis.rangeType !== AxisRangeType.Custom;
 
-        let start = skipStartEnd ? null : settings.categoryAxis.start,
+        const start = skipStartEnd ? null : settings.categoryAxis.start,
             end = skipStartEnd ? null : settings.categoryAxis.end;
 
         if (start != null || end != null) {
@@ -336,13 +354,13 @@ export function calculateDataPointThickness(
                 && end != null ? x.value <= end : true)
         }
 
-        let dataPointsCount: number = dataPoints.map(x => x.category).filter((v, i, a) => a.indexOf(v) === i).length;
+        const dataPointsCount: number = dataPoints.map(x => x.category).filter((v, i, a) => a.indexOf(v) === i).length;
 
         if (dataPointsCount < 4) {
-            let devider: number = 3.75;
+            const devider: number = 3.75;
             thickness = visualSize.width / devider;
         } else {
-            let devider: number = 3.75 + 1.25 * (dataPointsCount - 3);
+            const devider: number = 3.75 + 1.25 * (dataPointsCount - 3);
             thickness = visualSize.width / devider;
         }
     }
@@ -350,39 +368,43 @@ export function calculateDataPointThickness(
     return thickness;
 }
 
-export function getLabelsMaxWidth(group: d3.selection.Group): number {
+export function getLabelsMaxWidth(group: d3Selection<any> | undefined): number {
     const widths: Array<number> = [];
 
-    group.forEach((item: any) => {
-        let dimension: ClientRect = item.getBoundingClientRect();
-        widths.push(d3.max([dimension.width, dimension.height]));
-    });
+    if (group) {
+        group.nodes().forEach((item: any) => {
+            let dimension: ClientRect = item.getBoundingClientRect();
+            widths.push(max([dimension.width, dimension.height]));
+        })
+    }
 
-    if (group.length === 0) {
+    if (!group || group.size() === 0) {
         widths.push(0);
     }
 
-    return d3.max(widths);
+    return max(widths);
 }
 
-export function getLabelsMaxHeight(group: d3.selection.Group): number {
+export function getLabelsMaxHeight(group: d3Group<any> | undefined): number {
     const heights: Array<number> = [];
 
-    group.forEach((item: any) => {
-        let dimension: ClientRect = item.getBoundingClientRect();
-        heights.push(dimension.height);
-    });
+    if (group) {
+        group.nodes().forEach((item: any) => {
+            const dimension: ClientRect = item.getBoundingClientRect();
+            heights.push(dimension.height);
+        });
+    }
 
-    if (group.length === 0) {
+    if (!group || group.size() === 0) {
         heights.push(0);
     }
 
-    return d3.max(heights);
+    return max(heights);
 }
 
 export function GetYAxisTitleHeight(valueSettings: valueAxisSettings): number {
 
-    let textPropertiesForHeight: TextProperties = {
+    const textPropertiesForHeight: TextProperties = {
         fontFamily: valueSettings.titleFontFamily,
         fontSize: valueSettings.titleFontSize.toString()
     };
@@ -392,7 +414,7 @@ export function GetYAxisTitleHeight(valueSettings: valueAxisSettings): number {
 
 export function GetXAxisTitleHeight(categorySettings: categoryAxisSettings): number {
 
-    let textPropertiesForHeight: TextProperties = {
+    const textPropertiesForHeight: TextProperties = {
         fontFamily: categorySettings.titleFontFamily,
         fontSize: categorySettings.titleFontSize.toString()
     };
@@ -404,24 +426,24 @@ export function isSelected(selected: boolean, highlight: boolean, hasSelection: 
     return !(hasPartialHighlights && !highlight || hasSelection && !selected);
 }
 
-export function smallMultipleLabelRotationIsNeeded(
-    xAxisSvgGroup: d3.Selection<any>,
-    barHeight: number,
-    categoryAxisSettings: categoryAxisSettings,
-    maxLabelHeight: number
-): boolean {
-    const rangeBand = barHeight;
+// export function smallMultipleLabelRotationIsNeeded(
+//     xAxisSvgGroup: d3Selection<any>,
+//     barHeight: number,
+//     categoryAxisSettings: categoryAxisSettings,
+//     maxLabelHeight: number
+// ): boolean {
+//     const rangeBand = barHeight;
 
-    let maxLabelWidth: number = 0;
+//     let maxLabelWidth: number = 0;
 
-    xAxisSvgGroup.selectAll('text').each(function () {
-        const labelWidth: number = this.getBoundingClientRect().width;
+//     xAxisSvgGroup.selectAll('text').each(function () {
+//         const labelWidth: number = this.getBoundingClientRect().width;
 
-        maxLabelWidth = Math.max(maxLabelWidth, labelWidth > maxLabelHeight ? maxLabelHeight : labelWidth);
-    });
+//         maxLabelWidth = Math.max(maxLabelWidth, labelWidth > maxLabelHeight ? maxLabelHeight : labelWidth);
+//     });
 
-    return maxLabelWidth > rangeBand;
-}
+//     return maxLabelWidth > rangeBand;
+// }
 
 export function compareObjects(obj1: any[], obj2: any[], property: string): boolean {
     let isEqual: boolean = false;
@@ -442,16 +464,16 @@ export function compareObjects(obj1: any[], obj2: any[], property: string): bool
     return isEqual;
 }
 
-export function isScalar(column: DataViewMetadataColumn) {
-    const categoryType: valueType = axis.getCategoryValueType(column);
-    let isOrdinal: boolean = axis.isOrdinal(categoryType);
+// export function isScalar(column: DataViewMetadataColumn) {
+//     const categoryType: valueType = axis.getCategoryValueType(column);
+//     let isOrdinal: boolean = axis.isOrdinal(categoryType);
 
-    return !isOrdinal;
-}
+//     return !isOrdinal;
+// }
 
 export function categoryIsScalar(metadata: VisualMeasureMetadata): boolean {
-    const categoryType: valueType = axis.getCategoryValueType(metadata.cols.category);
-    let isOrdinal: boolean = axis.isOrdinal(categoryType);
+    const categoryType: valueType.ValueType = axis.getCategoryValueType(metadata.cols.category);
+    const isOrdinal: boolean = axis.isOrdinal(categoryType);
 
     return !isOrdinal;
 }
