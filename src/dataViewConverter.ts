@@ -1,4 +1,3 @@
-
 "use strict";
 
 import powerbiApi from "powerbi-visuals-api";
@@ -57,9 +56,9 @@ export class DataViewConverter {
     }
 
     // public static IsAxisFilled(dataView: DataView): boolean {
-    //     if (dataView.categorical 
-    //         && dataView.categorical.values 
-    //         && dataView.categorical.values.source 
+    //     if (dataView.categorical
+    //         && dataView.categorical.values
+    //         && dataView.categorical.values.source
     //         && dataView.categorical.values.source.roles[Field.Axis]) {
     //         return true;
     //     }
