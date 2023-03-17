@@ -24,72 +24,78 @@
  *  THE SOFTWARE.
  */
 
-module powerbi.extensibility.visual {
-    // d3
-    import Selection = d3.Selection;
+"use strict";
 
-    // powerbi.visuals
-    import IInteractiveBehavior = powerbi.extensibility.utils.interactivity.IInteractiveBehavior;
-    import SelectableDataPoint = powerbi.extensibility.utils.interactivity.SelectableDataPoint;
-    import IInteractivityService = powerbi.extensibility.utils.interactivity.IInteractivityService;
-    import ISelectionHandler = powerbi.extensibility.utils.interactivity.ISelectionHandler;
+import powerbiApi from "powerbi-visuals-api";
+import {interactivityBaseService} from "powerbi-visuals-utils-interactivityutils";
 
-    export interface WebBehaviorOptions {
-        bars: Selection<any>;
-        clearCatcher: Selection<any>;
-        interactivityService: IInteractivityService;
-        selectionSaveSettings?: any;
-        host: IVisualHost;
+import {d3Selection, IBarVisual, VisualDataPoint} from "./visualInterfaces";
+import * as visualUtils from "./utils";
+import {Visual} from "./visual";
+
+import IInteractiveBehavior = interactivityBaseService.IInteractiveBehavior;
+import IInteractivityService = interactivityBaseService.IInteractivityService;
+import ISelectionHandler = interactivityBaseService.ISelectionHandler;
+import BaseDataPoint = interactivityBaseService.BaseDataPoint;
+import IBehaviorOptions = interactivityBaseService.IBehaviorOptions;
+import IVisualHost = powerbiApi.extensibility.visual.IVisualHost;
+
+export interface WebBehaviorOptions extends IBehaviorOptions<BaseDataPoint> {
+    bars: d3Selection<any>;
+    clearCatcher: d3Selection<any>;
+    interactivityService: IInteractivityService<VisualDataPoint>;
+    selectionSaveSettings?: any;
+    host: IVisualHost;
+}
+
+export class WebBehavior implements IInteractiveBehavior {
+    private visual: Visual;
+    private options: WebBehaviorOptions;
+    public selectionHandler: ISelectionHandler;
+
+    constructor(visual: Visual) {
+        this.visual = visual;
     }
 
-    export class WebBehavior implements IInteractiveBehavior {
-        private visual: Visual;
-        private options: WebBehaviorOptions;
-        public selectionHandler: ISelectionHandler;
+    public bindEvents(options: WebBehaviorOptions, selectionHandler: ISelectionHandler) {
+        this.options = options;
+        this.visual.webBehaviorSelectionHandler = selectionHandler;
+    }
 
-        constructor(visual: Visual) {
-            this.visual = visual;
-        }
+    public renderSelection(hasSelection: boolean) {
+        let hasHighlight = this.visual.getAllDataPoints().filter(x => x.highlight).length > 0;
 
-        public bindEvents(options: WebBehaviorOptions, selectionHandler: ISelectionHandler) {
-            this.options = options;
-            this.visual.webBehaviorSelectionHandler = selectionHandler;
-        }
-
-        public renderSelection(hasSelection: boolean) {
-            let hasHighlight = this.visual.getAllDataPoints().filter(x => x.highlight).length > 0;
-
-            let allDatapoints: VisualDataPoint[] = this.visual.getAllDataPoints();
-            //this.options.interactivityService.applySelectionStateToData(allDatapoints);
-            let currentSelection = allDatapoints.filter(d => d.selected);
-
-            this.options.bars.style({
-                "fill-opacity": (p: VisualDataPoint) => visualUtils.getFillOpacity(
-                        p.selected,
-                        p.highlight,
-                        !p.highlight && hasSelection,
-                        !p.selected && hasHighlight),
-                "stroke": (p: VisualDataPoint)  => {
-                    if (hasSelection && visualUtils.isSelected(p.selected,
-                        p.highlight,
-                        !p.highlight && hasSelection,
-                        !p.selected && hasHighlight)) {
-                            return Visual.DefaultStrokeSelectionColor;
-                        }                        
-
-                    return p.color;
-                },
-                "stroke-width": p => {
-                    if (hasSelection && visualUtils.isSelected(p.selected,
-                        p.highlight,
-                        !p.highlight && hasSelection,
-                        !p.selected && hasHighlight)) {
-                        return Visual.DefaultStrokeSelectionWidth;
-                    }
-
-                    return Visual.DefaultStrokeWidth;
+        this.options.bars.style(
+            'fill-opacity',
+            (p: VisualDataPoint) => visualUtils.getFillOpacity(
+                p.selected,
+                p.highlight,
+                !p.highlight && hasSelection,
+                !p.selected && hasHighlight)
+        ).style(
+            'stroke',
+            (p: VisualDataPoint) => {
+                if (hasSelection && visualUtils.isSelected(p.selected,
+                    p.highlight,
+                    !p.highlight && hasSelection,
+                    !p.selected && hasHighlight)) {
+                    return Visual.DefaultStrokeSelectionColor;
                 }
-            });
-        }
+
+                return p.color;
+            }
+        ).style(
+            'stroke-width',
+            p => {
+                if (hasSelection && visualUtils.isSelected(p.selected,
+                    p.highlight,
+                    !p.highlight && hasSelection,
+                    !p.selected && hasHighlight)) {
+                    return Visual.DefaultStrokeSelectionWidth;
+                }
+
+                return Visual.DefaultStrokeWidth;
+            }
+        );
     }
 }
