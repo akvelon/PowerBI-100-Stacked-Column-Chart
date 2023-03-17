@@ -19,10 +19,9 @@ import {
     IAxisProperties,
 } from "powerbi-visuals-utils-chartutils/lib/axis/axisInterfaces";
 import {IValueFormatter} from "powerbi-visuals-utils-formattingutils/lib/src/valueFormatter";
-
 import {valueType} from "powerbi-visuals-utils-typeutils";
 
-//import {VisualSettings} from "../../settings";
+import {HorizontalPosition, VerticalPosition} from "../../settings";
 
 import ValueType = valueType.ValueType;
 
@@ -220,4 +219,22 @@ function getScalarLabelMaxWidth(
     }
 
     return 1;
+}
+
+export function convertPositionToAxisOrientation(
+    position: HorizontalPosition | VerticalPosition | string
+): AxisOrientation {
+    switch (position) {
+        case HorizontalPosition.Left:
+            return AxisOrientation.left;
+
+        case HorizontalPosition.Right:
+            return AxisOrientation.right;
+
+        case VerticalPosition.Top:
+            return AxisOrientation.top;
+
+        case VerticalPosition.Bottom:
+            return AxisOrientation.bottom;
+    }
 }
