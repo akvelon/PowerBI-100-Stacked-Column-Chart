@@ -232,7 +232,6 @@ export function renderLegend(
         width: viewport.width
     });
 
-
     positionChartArea(svg, legend);
 }
 

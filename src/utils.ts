@@ -64,7 +64,7 @@ export function calculateBarCoordianates(dataPoints: VisualDataPoint[], axes: IA
     dataPoints.forEach(point => {
         let width = 0;
         if (!axes.xIsScalar || !categoryAxisIsContinuous) {
-            width = axes.x.scale.rangeBand();
+            width = axes.x.scale.bandwidth();
         } else {
             width = dataPoints.length > 2 ? dataPointThickness * 0.8 : dataPointThickness / 2 * 0.8;
         }

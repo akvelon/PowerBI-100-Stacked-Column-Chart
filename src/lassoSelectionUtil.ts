@@ -252,6 +252,9 @@ export class LassoSelection {
             throw new Error('"justSelected" and "justRemoved" items can\'t appear at the same time!');
         }
         const allDataPoints: VisualDataPoint[] = this.visual.getAllDataPoints();
+        console.log('applySelectionToTheVisual');
+        console.log(allDataPoints);
+
         const handledDataPoints: VisualDataPoint[] = [];
 
         const isMultiselect: boolean = e.ctrlKey;
@@ -273,6 +276,8 @@ export class LassoSelection {
         if (handledDataPoints.length > 0) {
             this.visual.webBehaviorSelectionHandler.handleSelection(handledDataPoints, isMultiselect);
         } else if (selectedDataPoints.length === 0) {
+            console.log('this.visual.webBehaviorSelectionHandler');
+            console.log(this.visual.webBehaviorSelectionHandler);
             this.visual.webBehaviorSelectionHandler.handleClearSelection();
         }
 

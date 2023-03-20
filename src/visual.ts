@@ -29,7 +29,7 @@
 import powerbiApi from "powerbi-visuals-api";
 import DataView = powerbiApi.DataView;
 import IVisualHost = powerbiApi.extensibility.visual.IVisualHost;
-import IVisual = powerbiApi.extensibility.IVisual;
+import IVisual = powerbiApi.extensibility.visual.IVisual;
 import DataViewMetadataColumn = powerbiApi.DataViewMetadataColumn;
 import DataViewValueColumnGroup = powerbiApi.DataViewValueColumnGroup;
 import DataViewCategoryColumn = powerbiApi.DataViewCategoryColumn;
@@ -208,6 +208,9 @@ export class Visual implements IVisual {
     public readonly axesSize: IAxesSize = {xAxisHeight: 10, yAxisWidth: 15};
 
     constructor(options: VisualConstructorOptions) {
+        console.log('constructor');
+        console.log(options);
+
         this.mainElement = d3.select(options.element);
 
         this.mainHtmlElement = options.element;
@@ -234,6 +237,8 @@ export class Visual implements IVisual {
 
         this.legendElementRoot = this.mainElement.selectAll("svg.legend");
         this.legendElement = this.mainElement.selectAll("svg.legend").selectAll("g");
+
+        console.log('constructor finished');
     }
 
     saveSelection(): void {
@@ -412,36 +417,47 @@ export class Visual implements IVisual {
     }
 
     public update(options: VisualUpdateOptions) {
-        if (!this.optionsAreValid(options)) {
-            return;
-        }
+        try {
+            console.log('update');
+            console.log(options);
 
-        const dataView = options && options.dataViews && options.dataViews[0];
+            if (!this.optionsAreValid(options)) {
+                return;
+            }
 
-        this.dataView = dataView;
-        this.viewport = options.viewport;
+            const dataView = options && options.dataViews && options.dataViews[0];
 
-        this.isLegendNeeded = DataViewConverter.IsLegendNeeded(dataView);
+            this.dataView = dataView;
+            this.viewport = options.viewport;
 
-        this.updateMetaData();
+            this.isLegendNeeded = DataViewConverter.IsLegendNeeded(dataView);
+            console.log(`isLegendNeeded ${this.isLegendNeeded}`);
 
-        this.settings = Visual.parseSettings(dataView);
-        this.updateSettings(this.settings, dataView);
+            this.updateMetaData();
 
-        this.legendProperties = legendUtils.setLegendProperties(dataView, this.host, this.settings.legend);
+            this.settings = Visual.parseSettings(dataView);
+            this.updateSettings(this.settings, dataView);
 
-        this.allDataPoints = DataViewConverter.Convert(dataView, this.host, this.settings, this.legendProperties.colors);
+            this.legendProperties = legendUtils.setLegendProperties(dataView, this.host, this.settings.legend);
 
-        if (this.isSmallMultiple()) {
+            this.allDataPoints = DataViewConverter.Convert(dataView, this.host, this.settings, this.legendProperties.colors);
+            console.log('allDataPoints');
+            console.log(this.allDataPoints);
+
+            // if (this.isSmallMultiple()) {
             this.smallMultipleProcess(options.viewport);
-        } else {
-            this.normalChartProcess(options);
-        }
+            // } else {
+            //     this.normalChartProcess(options);
+            // }
 
-        if (!this.isSelectionRestored) {
-            this.restoreSelection();
-
-            this.isSelectionRestored = true;
+            // if (!this.isSelectionRestored) {
+            //     this.restoreSelection();
+            //
+            //     this.isSelectionRestored = true;
+            // }
+        } catch (e) {
+            console.error(e);
+            throw e;
         }
     }
 
@@ -670,6 +686,7 @@ export class Visual implements IVisual {
                 .style("margin-bottom", 0)
                 .style("margin-left", 0)
                 .style("margin-right", 0);
+
             legendSize = {
                 height: 0,
                 width: 0
@@ -784,7 +801,6 @@ export class Visual implements IVisual {
 
         for (let i = 0; i < uniqueRows.length; ++i) {
             for (let j = 0; j < uniqueColumns.length; ++j) {
-
                 let leftMove: number = 0;
                 let topMove: number = 0;
 
@@ -849,7 +865,7 @@ export class Visual implements IVisual {
                     this.data.axes = defaultAxes;
                 }
 
-                let barHeight: number = !xIsScalar || this.settings.categoryAxis.axisType === "categorical" ? axes.x.scale.rangeBand() : visualUtils.calculateDataPointThickness(
+                let barHeight: number = !xIsScalar || this.settings.categoryAxis.axisType === "categorical" ? axes.x.scale.bandwidth() : visualUtils.calculateDataPointThickness(
                     dataPoints,
                     barsSectionSize,
                     uniqueCategories.length,
@@ -914,6 +930,8 @@ export class Visual implements IVisual {
                     this.settings.categoryAxis,
                     maxLabelHeight
                 );
+
+                console.log('labelRotationIsNeeded ' + labelRotationIsNeeded);
                 if (labelRotationIsNeeded) {
                     RenderAxes.rotateXAxisTickLabels(true, xAxisSvgGroup);
                 }
@@ -923,169 +941,170 @@ export class Visual implements IVisual {
                     .classed("bar-group", true)
                     .attr('transform', svg.translate(marginLeft + (yHasRightPosition ? 0 : yAxisSize), 0));
 
-                let interactivityService = this.interactivityService,
-                    hasSelection: boolean = interactivityService.hasSelection();
+                const interactivityService = this.interactivityService;
+                const hasSelection: boolean = interactivityService.hasSelection();
+                console.log('hasSelection ' + hasSelection);
+
                 interactivityService.applySelectionStateToData(dataPoints);
 
                 const barSelect = barGroup
                     .selectAll(Selectors.BarSelect.selectorName)
-                    .data(dataPoints);
+                    .data(dataPoints)
+                    .attr('height', d => d.barCoordinates.height)
+                    .attr('width', d => d.barCoordinates.width)
+                    .attr('x', d => d.barCoordinates.x)
+                    .attr('y', d => d.barCoordinates.y)
+                    .attr('fill', d => d.color);
 
-                barSelect.enter().append("rect")
-                    .attr("class", Selectors.BarSelect.className);
+                barSelect.enter()
+                    .append("rect")
+                    .attr("class", Selectors.BarSelect.className)
+                    .attr('height', d => d.barCoordinates.height)
+                    .attr('width', d => d.barCoordinates.width)
+                    .attr('x', d => d.barCoordinates.x)
+                    .attr('y', d => d.barCoordinates.y)
+                    .attr('fill', d => d.color);
+
 
                 barSelect.exit()
                     .remove();
 
-                barSelect
-                    .attr('height', d => {
-                        return d.barCoordinates.height;
-                    })
-                    .attr('width', d => {
-                        return d.barCoordinates.width;
-                    })
-                    .attr('x', d => {
-                        return d.barCoordinates.x;
-                    })
-                    .attr('y', d => {
-                        return d.barCoordinates.y;
-                    })
-                    .attr('fill', d => d.color);
-
-                barSelect.style(
-                    "fill-opacity",
-                    (p: VisualDataPoint) => visualUtils.getFillOpacity(
-                        p.selected,
-                        p.highlight,
-                        !p.highlight && hasSelection,
-                        !p.selected && hasHighlight))
-                    .style(
-                        "stroke",
-                        (p: VisualDataPoint) => {
-                            if (hasSelection && visualUtils.isSelected(p.selected,
-                                p.highlight,
-                                !p.highlight && hasSelection,
-                                !p.selected && hasHighlight)) {
-                                return Visual.DefaultStrokeSelectionColor;
-                            }
-
-                            return p.color;
-                        })
-                    .style(
-                        "stroke-width",
-                        p => {
-                            if (hasSelection && visualUtils.isSelected(p.selected,
-                                p.highlight,
-                                !p.highlight && hasSelection,
-                                !p.selected && hasHighlight)) {
-                                return Visual.DefaultStrokeSelectionWidth;
-                            }
-
-                            return Visual.DefaultStrokeWidth;
-                        });
-
-                RenderVisual.renderTooltip(barSelect, this.tooltipServiceWrapper);
-
-                visualUtils.calculateLabelCoordinates(
-                    this.data,
-                    this.settings.categoryLabels,
-                    chartSize.width,
-                    this.isLegendNeeded,
-                    dataPoints
-                );
-
-                let labelGraphicsContext = barGroup
-                    .append("g")
-                    .classed(Selectors.LabelGraphicsContext.className, true);
-
-                RenderVisual.renderDataLabelsForSmallMultiple(
-                    this.data,
-                    this.settings,
-                    labelGraphicsContext,
-                    this.metadata,
-                    dataPoints
-                );
-
-                let labelBackgroundContext = barGroup
-                    .append("g")
-                    .classed(Selectors.LabelBackgroundContext.className, true);
-
-                RenderVisual.renderDataLabelsBackgroundForSmallMultiple(
-                    this.data,
-                    this.settings,
-                    labelBackgroundContext,
-                    dataPoints
-                );
-
-                if (this.settings.smallMultiple.showChartTitle && layoutMode === LayoutMode.Flow) {
-                    RenderVisual.renderSmallMultipleTopTitle({
-                        chartElement: svgChart,
-                        chartSize: chartSize,
-                        columns: uniqueColumns,
-                        index: j,
-                        leftSpace: leftMove + leftSpace,
-                        topSpace: topMove,
-                        textHeight: topSpace,
-                        rows: uniqueRows,
-                        xAxisLabelSize: xAxisSize
-                    }, this.settings.smallMultiple);
-                }
-
-                if (this.settings.valueAxis.show) {
-                    let xWidth: number = (<Element>yAxisSvgGroup.selectAll("line").node()).getBoundingClientRect().width;
-                    if (axes.y.dataDomain[0] <= this.settings.constantLine.value && this.settings.constantLine.value <= axes.y.dataDomain[1]) {
-                        RenderVisual.renderConstantLine(this.settings.constantLine, barGroup, axes, xWidth);
-                    }
-                }
+                //             barSelect.style(
+                //                 "fill-opacity",
+                //                 (p: VisualDataPoint) => visualUtils.getFillOpacity(
+                //                     p.selected,
+                //                     p.highlight,
+                //                     !p.highlight && hasSelection,
+                //                     !p.selected && hasHighlight))
+                //                 .style(
+                //                     "stroke",
+                //                     (p: VisualDataPoint) => {
+                //                         if (hasSelection && visualUtils.isSelected(p.selected,
+                //                             p.highlight,
+                //                             !p.highlight && hasSelection,
+                //                             !p.selected && hasHighlight)) {
+                //                             return Visual.DefaultStrokeSelectionColor;
+                //                         }
+                //
+                //                         return p.color;
+                //                     })
+                //                 .style(
+                //                     "stroke-width",
+                //                     p => {
+                //                         if (hasSelection && visualUtils.isSelected(p.selected,
+                //                             p.highlight,
+                //                             !p.highlight && hasSelection,
+                //                             !p.selected && hasHighlight)) {
+                //                             return Visual.DefaultStrokeSelectionWidth;
+                //                         }
+                //
+                //                         return Visual.DefaultStrokeWidth;
+                //                     });
+                //
+                //             RenderVisual.renderTooltip(barSelect, this.tooltipServiceWrapper);
+                //
+                //             visualUtils.calculateLabelCoordinates(
+                //                 this.data,
+                //                 this.settings.categoryLabels,
+                //                 chartSize.width,
+                //                 this.isLegendNeeded,
+                //                 dataPoints
+                //             );
+                //
+                //             let labelGraphicsContext = barGroup
+                //                 .append("g")
+                //                 .classed(Selectors.LabelGraphicsContext.className, true);
+                //
+                //             RenderVisual.renderDataLabelsForSmallMultiple(
+                //                 this.data,
+                //                 this.settings,
+                //                 labelGraphicsContext,
+                //                 this.metadata,
+                //                 dataPoints
+                //             );
+                //
+                //             let labelBackgroundContext = barGroup
+                //                 .append("g")
+                //                 .classed(Selectors.LabelBackgroundContext.className, true);
+                //
+                //             RenderVisual.renderDataLabelsBackgroundForSmallMultiple(
+                //                 this.data,
+                //                 this.settings,
+                //                 labelBackgroundContext,
+                //                 dataPoints
+                //             );
+                //
+                //             if (this.settings.smallMultiple.showChartTitle && layoutMode === LayoutMode.Flow) {
+                //                 RenderVisual.renderSmallMultipleTopTitle({
+                //                     chartElement: svgChart,
+                //                     chartSize: chartSize,
+                //                     columns: uniqueColumns,
+                //                     index: j,
+                //                     leftSpace: leftMove + leftSpace,
+                //                     topSpace: topMove,
+                //                     textHeight: topSpace,
+                //                     rows: uniqueRows,
+                //                     xAxisLabelSize: xAxisSize
+                //                 }, this.settings.smallMultiple);
+                //             }
+                //
+                //             if (this.settings.valueAxis.show) {
+                //                 let xWidth: number = (<Element>yAxisSvgGroup.selectAll("line").node()).getBoundingClientRect().width;
+                //                 if (axes.y.dataDomain[0] <= this.settings.constantLine.value && this.settings.constantLine.value <= axes.y.dataDomain[1]) {
+                //                     RenderVisual.renderConstantLine(this.settings.constantLine, barGroup, axes, xWidth);
+                //                 }
+                //             }
             }
         }
+        //
+        //     if (this.settings.smallMultiple.showSeparators) {
+        //         RenderVisual.renderSmallMultipleLines({
+        //             chartElement: svgChart,
+        //             chartSize: chartSize,
+        //             columns: uniqueColumns,
+        //             rows: uniqueRows,
+        //             leftSpace: leftSpace,
+        //             topSpace: topSpace,
+        //             xAxisLabelSize: xAxisSize,
+        //             rowsInFlow: rowsInFlow
+        //         }, this.settings.smallMultiple);
+        //     }
+        //
+        //     if (this.settings.smallMultiple.showChartTitle) {
+        //         RenderVisual.renderSmallMultipleTitles({
+        //             chartElement: svgChart,
+        //             chartSize: chartSize,
+        //             columns: uniqueColumns,
+        //             leftSpace: leftSpace,
+        //             topSpace: topSpace,
+        //             rows: uniqueRows,
+        //             xAxisLabelSize: xAxisSize,
+        //             rowsInFlow: rowsInFlow
+        //         }, this.settings.smallMultiple);
+        //     }
+        //
+        //     const legendBucketFilled: boolean = !!(this.dataView.categorical && this.dataView.categorical.values && this.dataView.categorical.values.source);
+        //     this.lassoSelection.disable();
+        //     this.LassoSelectionForSmallMultiple.init(this.mainElement);
+        //     this.LassoSelectionForSmallMultiple.update(svgChart, svgChart.selectAll(Selectors.BarSelect.selectorName), legendBucketFilled);
+        //
+        //     if (this.interactivityService) {
+        //         this.interactivityService.applySelectionStateToData(this.allDataPoints);
+        //
+        //         let behaviorOptions: WebBehaviorOptions = {
+        //             bars: this.mainElement.selectAll(Selectors.BarSelect.selectorName),
+        //             clearCatcher: d3.select(document.createElement('div')),
+        //             interactivityService: this.interactivityService,
+        //             host: this.host,
+        //             selectionSaveSettings: this.settings.selectionSaveSettings,
+        //             behavior: this.behavior,
+        //             dataPoints: this.allDataPoints,
+        //         };
+        //
+        //         this.interactivityService.bind(behaviorOptions);
+        // }
 
-        if (this.settings.smallMultiple.showSeparators) {
-            RenderVisual.renderSmallMultipleLines({
-                chartElement: svgChart,
-                chartSize: chartSize,
-                columns: uniqueColumns,
-                rows: uniqueRows,
-                leftSpace: leftSpace,
-                topSpace: topSpace,
-                xAxisLabelSize: xAxisSize,
-                rowsInFlow: rowsInFlow
-            }, this.settings.smallMultiple);
-        }
-
-        if (this.settings.smallMultiple.showChartTitle) {
-            RenderVisual.renderSmallMultipleTitles({
-                chartElement: svgChart,
-                chartSize: chartSize,
-                columns: uniqueColumns,
-                leftSpace: leftSpace,
-                topSpace: topSpace,
-                rows: uniqueRows,
-                xAxisLabelSize: xAxisSize,
-                rowsInFlow: rowsInFlow
-            }, this.settings.smallMultiple);
-        }
-
-        const legendBucketFilled: boolean = !!(this.dataView.categorical && this.dataView.categorical.values && this.dataView.categorical.values.source);
-        this.lassoSelection.disable();
-        this.LassoSelectionForSmallMultiple.init(this.mainElement);
-        this.LassoSelectionForSmallMultiple.update(svgChart, svgChart.selectAll(Selectors.BarSelect.selectorName), legendBucketFilled);
-
-        if (this.interactivityService) {
-            this.interactivityService.applySelectionStateToData(this.allDataPoints);
-
-            let behaviorOptions: WebBehaviorOptions = {
-                bars: this.mainElement.selectAll(Selectors.BarSelect.selectorName),
-                clearCatcher: d3.select(document.createElement('div')),
-                interactivityService: this.interactivityService,
-                host: this.host,
-                selectionSaveSettings: this.settings.selectionSaveSettings,
-                behavior: this.behavior,
-                dataPoints: this.allDataPoints,
-            };
-
-            this.interactivityService.bind(behaviorOptions);
-        }
+        console.log('smallMultipleProcess end');
     }
 
     getSettings(): VisualSettings {
@@ -1237,6 +1256,8 @@ export class Visual implements IVisual {
     }
 
     private finalRendering(): void {
+        console.log('finalRendering');
+
         let labelMaxHeight: number = visualUtils.getLabelsMaxHeight(this.xAxisSvgGroup.selectAll("text")[0]);
 
         // render axes labels
@@ -1390,7 +1411,7 @@ export class Visual implements IVisual {
         let isReverted: boolean = false;
 
         if (this.data && (!this.data.axes.xIsScalar || this.settings.categoryAxis.axisType !== "continuous")) {
-            isReverted = !!this.maxXLabelsWidth || xAxisMaxLableWidth > (this.data.axes.x.scale.rangeBand ? this.data.axes.x.scale.rangeBand() : 0 + innerPadding);
+            isReverted = !!this.maxXLabelsWidth || xAxisMaxLableWidth > (this.data.axes.x.scale.bandwidth ? this.data.axes.x.scale.bandwidth() : 0 + innerPadding);
         }
 
         let titleSize: number = (showXAxisTitle
