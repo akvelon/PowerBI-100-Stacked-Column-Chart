@@ -21,7 +21,7 @@ import {
 import {IValueFormatter} from "powerbi-visuals-utils-formattingutils/lib/src/valueFormatter";
 import {valueType} from "powerbi-visuals-utils-typeutils";
 
-import {HorizontalPosition, VerticalPosition} from "../../settings";
+import {HorizontalPosition, VerticalPosition, VisualSettings} from "../../settings";
 
 import ValueType = valueType.ValueType;
 
@@ -32,7 +32,7 @@ export interface CreateAxisOptionsExtended extends CreateAxisOptions {
     orientation: AxisOrientation;
 }
 
-//export const getXAxisMaxWidth = (visualWidth: number, settings: VisualSettings): number => ((visualWidth) / 100) * settings.categoryAxis.maximumSize;
+export const getXAxisMaxWidth = (visualWidth: number, settings: VisualSettings): number => ((visualWidth) / 100) * settings.categoryAxis.maximumSize;
 
 /**
  * Copy of function from "powerbi-visuals-utils-chartutils" due to original function doesn't allow to create right axis

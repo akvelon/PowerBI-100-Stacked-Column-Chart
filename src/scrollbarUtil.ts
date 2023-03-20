@@ -1,8 +1,10 @@
-import {Visual} from "./visual";
-import {CategoryDataPoints, d3Selection, VisualDataPoint, VisualTranslation} from "./visualInterfaces";
+import powerbiApi from "powerbi-visuals-api";
 import {select as d3select} from 'd3-selection';
 
-import VisualUpdateType = powerbi.VisualUpdateType;
+import {Visual} from "./visual";
+import {CategoryDataPoints, d3Selection, VisualDataPoint, VisualTranslation} from "./visualInterfaces";
+
+import VisualUpdateType = powerbiApi.VisualUpdateType;
 
 export enum ScrollbarState {
     Disable = <any>"disable",

@@ -442,24 +442,24 @@ export function isSelected(selected: boolean, highlight: boolean, hasSelection: 
     return !(hasPartialHighlights && !highlight || hasSelection && !selected);
 }
 
-// export function smallMultipleLabelRotationIsNeeded(
-//     xAxisSvgGroup: d3Selection<any>,
-//     barHeight: number,
-//     categoryAxisSettings: categoryAxisSettings,
-//     maxLabelHeight: number
-// ): boolean {
-//     const rangeBand = barHeight;
+export function smallMultipleLabelRotationIsNeeded(
+    xAxisSvgGroup: d3Selection<any>,
+    barHeight: number,
+    categoryAxisSettings: categoryAxisSettings,
+    maxLabelHeight: number
+): boolean {
+    const rangeBand = barHeight;
 
-//     let maxLabelWidth: number = 0;
+    let maxLabelWidth: number = 0;
 
-//     xAxisSvgGroup.selectAll('text').each(function () {
-//         const labelWidth: number = this.getBoundingClientRect().width;
+    xAxisSvgGroup.selectAll('text').each(function () {
+        const labelWidth: number = (<any>this).getBoundingClientRect().width;
 
-//         maxLabelWidth = Math.max(maxLabelWidth, labelWidth > maxLabelHeight ? maxLabelHeight : labelWidth);
-//     });
+        maxLabelWidth = Math.max(maxLabelWidth, labelWidth > maxLabelHeight ? maxLabelHeight : labelWidth);
+    });
 
-//     return maxLabelWidth > rangeBand;
-// }
+    return maxLabelWidth > rangeBand;
+}
 
 export function compareObjects(obj1: any[], obj2: any[], property: string): boolean {
     let isEqual: boolean = false;
@@ -480,12 +480,12 @@ export function compareObjects(obj1: any[], obj2: any[], property: string): bool
     return isEqual;
 }
 
-// export function isScalar(column: DataViewMetadataColumn) {
-//     const categoryType: valueType = axis.getCategoryValueType(column);
-//     let isOrdinal: boolean = axis.isOrdinal(categoryType);
+export function isScalar(column: DataViewMetadataColumn) {
+    const categoryType: valueType.ValueType = axis.getCategoryValueType(column);
+    let isOrdinal: boolean = axis.isOrdinal(categoryType);
 
-//     return !isOrdinal;
-// }
+    return !isOrdinal;
+}
 
 export function categoryIsScalar(metadata: VisualMeasureMetadata): boolean {
     const categoryType: valueType.ValueType = axis.getCategoryValueType(metadata.cols.category);
