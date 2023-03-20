@@ -1,7 +1,7 @@
 "use strict";
 
-import { categoryLabelsSettings, LabelPosition } from "../settings";
-import { Coordinates, VisualDataPoint } from "../visualInterfaces";
+import {categoryLabelsSettings, LabelPosition} from "../settings";
+import {Coordinates, VisualDataPoint} from "../visualInterfaces";
 
 export class DataLabelHelper {
     public static labelBackgroundWidthPadding = 16.2;
@@ -23,9 +23,9 @@ export class DataLabelHelper {
     }
 
     private static calculateShiftForLegend(shift: number,
-        labelHeight: number,
-        barCoordinates: Coordinates,
-        settings: categoryLabelsSettings) {
+                                           labelHeight: number,
+                                           barCoordinates: Coordinates,
+                                           settings: categoryLabelsSettings) {
         const barY: number = barCoordinates.y;
         const barHeight: number = barCoordinates.height;
         const backGroundShift: number = settings.showBackground ? DataLabelHelper.labelBackgroundYShift : 0;
@@ -58,10 +58,10 @@ export class DataLabelHelper {
     }
 
     private static calculateShiftForNoLegend(shift: number,
-        labelHeight: number,
-        chartHeight: number,
-        barCoordinates: Coordinates,
-        settings: categoryLabelsSettings) {
+                                             labelHeight: number,
+                                             chartHeight: number,
+                                             barCoordinates: Coordinates,
+                                             settings: categoryLabelsSettings) {
         const barY: number = barCoordinates.y;
         const barHeight: number = barCoordinates.height;
         const backGroundShift: number = settings.showBackground ? DataLabelHelper.labelBackgroundYShift : 0;
@@ -91,10 +91,10 @@ export class DataLabelHelper {
     }
 
     public static calculatePositionShift(settings: categoryLabelsSettings,
-        labelHeight: number,
-        dataPoint: VisualDataPoint,
-        chartHeight: number,
-        isLegendRendered: boolean): number {
+                                         labelHeight: number,
+                                         dataPoint: VisualDataPoint,
+                                         chartHeight: number,
+                                         isLegendRendered: boolean): number {
         const barCoordinates: Coordinates = dataPoint.barCoordinates;
         const shift: number = dataPoint.value >= 0 ?
             this.calculateLabelPositionShift(settings, labelHeight, barCoordinates) :
@@ -108,8 +108,8 @@ export class DataLabelHelper {
     }
 
     private static calculateLabelPositionShift(settings: categoryLabelsSettings,
-        labelHeight: number,
-        barCoordinates: Coordinates): number {
+                                               labelHeight: number,
+                                               barCoordinates: Coordinates): number {
         const backgroundMargin: number = settings.showBackground ? 2 : 0;
         const barY: number = barCoordinates.y;
         const barHeight: number = barCoordinates.height;
@@ -131,8 +131,8 @@ export class DataLabelHelper {
     }
 
     private static calculateLabelPositionShiftForNegativeValues(settings: categoryLabelsSettings,
-        labelHeight: number,
-        barCoordinates: Coordinates): number {
+                                                                labelHeight: number,
+                                                                barCoordinates: Coordinates): number {
         const backgroundMargin: number = settings.showBackground ? 2 : 0;
 
         const barY: number = barCoordinates.y;

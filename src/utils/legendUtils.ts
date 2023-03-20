@@ -11,11 +11,11 @@ import DataView = powerbiApi.DataView;
 import IVisualHost = powerbiApi.extensibility.visual.IVisualHost;
 import * as d3 from 'd3-selection';
 
-import { valueFormatter } from "powerbi-visuals-utils-formattingutils";
+import {valueFormatter} from "powerbi-visuals-utils-formattingutils";
 
-import { ColorHelper } from "powerbi-visuals-utils-colorutils";
+import {ColorHelper} from "powerbi-visuals-utils-colorutils";
 
-import { legendInterfaces } from "powerbi-visuals-utils-chartutils";
+import {legendInterfaces} from "powerbi-visuals-utils-chartutils";
 import ILegend = legendInterfaces.ILegend;
 import LegendPosition = legendInterfaces.LegendPosition;
 import legendProps = legendInterfaces.legendProps;
@@ -23,14 +23,14 @@ import LegendDataPoint = legendInterfaces.LegendDataPoint;
 import LegendIcon = legendInterfaces.MarkerShape;
 import LegendData = legendInterfaces.LegendData;
 
-import { legendSettings } from "./../settings";
+import {legendSettings} from "./../settings";
 import * as visualUtils from "./../utils";
 import * as metadataUtils from "./../metadataUtils";
-import { DataViewConverter } from "../dataViewConverter";
+import {DataViewConverter} from "../dataViewConverter";
 
-import { d3Selection, LegendProperties } from "../visualInterfaces";
-import { positionChartArea } from "powerbi-visuals-utils-chartutils/lib/legend/legend";
-import { update } from "powerbi-visuals-utils-chartutils/lib/legend/legendData";
+import {d3Selection, LegendProperties} from "../visualInterfaces";
+import {positionChartArea} from "powerbi-visuals-utils-chartutils/lib/legend/legend";
+import {update} from "powerbi-visuals-utils-chartutils/lib/legend/legendData";
 
 export const MinAmountOfDataPointsInTheLegend: number = 1;
 export const LegendLabelFontSizeDefault: number = 9;
@@ -50,7 +50,7 @@ export function buildLegendData(
 
     const colorHelper: ColorHelper = new ColorHelper(
         host.colorPalette,
-        { objectName: "dataPoint", propertyName: "fill" });
+        {objectName: "dataPoint", propertyName: "fill"});
 
     const legendItems: LegendDataPoint[] = [];
     const grouped: DataViewValueColumnGroup[] = dataValues.grouped();
@@ -92,9 +92,9 @@ export function buildLegendData(
 
     if (!legendTitle) {
         legendTitle = categories
-            && categories[categoryIndex]
-            && categories[categoryIndex].source
-            && categories[categoryIndex].source.displayName
+        && categories[categoryIndex]
+        && categories[categoryIndex].source
+        && categories[categoryIndex].source.displayName
             ? categories[categoryIndex].source.displayName
             : <string>legendObjectProperties.legendName;
     }
@@ -144,7 +144,7 @@ export function buildLegendDataForMultipleValues(
 
     let colorHelper: ColorHelper | null = new ColorHelper(
         host.colorPalette,
-        { objectName: "dataPoint", propertyName: "fill" });
+        {objectName: "dataPoint", propertyName: "fill"});
 
     const legendItems: LegendDataPoint[] = [];
 
@@ -219,8 +219,7 @@ export function renderLegend(
         if (position) {
             legend.changeOrientation(LegendPosition[position]);
         }
-    }
-    else {
+    } else {
         legend.changeOrientation(LegendPosition.Top);
     }
 
@@ -261,5 +260,5 @@ export function setLegendProperties(dataView: DataView, host: IVisualHost, setti
         legendObject: legendObject,
         data: legendData,
         colors: legendColors,
-    }
+    };
 }

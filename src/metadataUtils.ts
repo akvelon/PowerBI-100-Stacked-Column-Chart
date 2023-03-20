@@ -1,13 +1,13 @@
 "use strict";
 
 import powerbiApi from "powerbi-visuals-api";
-import { VisualMeasureMetadata } from "./visualInterfaces";
+import {VisualMeasureMetadata} from "./visualInterfaces";
 
 import DataViewMetadataColumn = powerbiApi.DataViewMetadataColumn;
 import DataViewCategoryColumn = powerbiApi.DataViewCategoryColumn;
 import DataViewValueColumnGroup = powerbiApi.DataViewValueColumnGroup;
 
-import { dataRoleHelper } from "powerbi-visuals-utils-dataviewutils";
+import {dataRoleHelper} from "powerbi-visuals-utils-dataviewutils";
 import getMeasureIndexOfRole = dataRoleHelper.getMeasureIndexOfRole;
 import getCategoryIndexOfRole = dataRoleHelper.getCategoryIndexOfRole;
 

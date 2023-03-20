@@ -1,31 +1,47 @@
 "use strict";
 
-import { AxisRangeType, categoryAxisSettings, categoryLabelsSettings, LabelOrientation, valueAxisSettings, VisualSettings } from "./settings";
-import { CategoryDataPoints, d3Group, d3Selection, IAxes, ISize, VisualData, VisualDataPoint, VisualMeasureMetadata } from "./visualInterfaces";
-
 import powerbiApi from "powerbi-visuals-api";
+import {axis} from "powerbi-visuals-utils-chartutils";
+import {
+    textMeasurementService as TextMeasurementService,
+    interfaces,
+    valueFormatter as ValueFormatter
+} from "powerbi-visuals-utils-formattingutils";
+import {valueType} from "powerbi-visuals-utils-typeutils";
+import {IAxisProperties} from "powerbi-visuals-utils-chartutils/lib/axis/axisInterfaces";
+import {max, min} from 'd3-array';
+
+import * as formattingUtils from "./utils/formattingUtils";
+import {DataLabelHelper} from "./utils/dataLabelHelper";
+import * as visualUtils from "./utils";
+import {Field} from "./dataViewConverter";
+import {
+    AxisRangeType,
+    categoryAxisSettings,
+    categoryLabelsSettings,
+    LabelOrientation,
+    valueAxisSettings,
+    VisualSettings
+} from "./settings";
+import {
+    CategoryDataPoints,
+    d3Group,
+    d3Selection,
+    IAxes,
+    ISize,
+    VisualData,
+    VisualDataPoint,
+    VisualMeasureMetadata
+} from "./visualInterfaces";
+
+import TextProperties = interfaces.TextProperties;
+import IValueFormatter = ValueFormatter.IValueFormatter;
 import DataViewMetadataColumn = powerbiApi.DataViewMetadataColumn;
 import DataView = powerbiApi.DataView;
 
-import { axis } from "powerbi-visuals-utils-chartutils";
-
-import { textMeasurementService as TextMeasurementService, interfaces, valueFormatter as ValueFormatter } from "powerbi-visuals-utils-formattingutils";
-import TextProperties = interfaces.TextProperties;
-import IValueFormatter = ValueFormatter.IValueFormatter;
-
-import { valueType } from "powerbi-visuals-utils-typeutils";
-
-import * as formattingUtils from "./utils/formattingUtils";
-import { DataLabelHelper } from "./utils/dataLabelHelper";
-
-
-import * as visualUtils from "./utils";
 
 const DisplayUnitValue: number = 1;
 
-import { Field } from "./dataViewConverter";
-import { IAxisProperties } from "powerbi-visuals-utils-chartutils/lib/axis/axisInterfaces";
-import { max, min } from 'd3-array';
 
 export function calculateBarCoordianatesByData(data: VisualData, settings: VisualSettings, barHeight: number, isSmallMultiple: boolean = false): void {
     const dataPoints: VisualDataPoint[] = data.dataPoints;
@@ -105,7 +121,7 @@ export function calculateBarCoordianates(dataPoints: VisualDataPoint[], axes: IA
 }
 
 function setZeroCoordinatesForPoint(point: VisualDataPoint): void {
-    point.barCoordinates = { height: 0, width: 0, x: 0, y: 0 };
+    point.barCoordinates = {height: 0, width: 0, x: 0, y: 0};
 }
 
 export function recalculateThicknessForContinuous(dataPoints: VisualDataPoint[], skipCategoryStartEnd: boolean, categorySettings: categoryAxisSettings, startThickness: number) {
@@ -185,10 +201,10 @@ export function buildDataPointsArayByCategories(dataPoints: VisualDataPoint[]): 
 }
 
 export function calculateLabelCoordinates(data: VisualData,
-    settings: categoryLabelsSettings,
-    chartHeight: number,
-    isLegendRendered: boolean,
-    dataPoints: VisualDataPoint[] = null) {
+                                          settings: categoryLabelsSettings,
+                                          chartHeight: number,
+                                          isLegendRendered: boolean,
+                                          dataPoints: VisualDataPoint[] = null) {
 
     if (!settings.show) {
         return;
@@ -351,7 +367,7 @@ export function calculateDataPointThickness(
 
         if (start != null || end != null) {
             dataPoints = dataPoints.filter(x => start != null ? x.value >= start : true
-                && end != null ? x.value <= end : true)
+            && end != null ? x.value <= end : true);
         }
 
         const dataPointsCount: number = dataPoints.map(x => x.category).filter((v, i, a) => a.indexOf(v) === i).length;
@@ -375,7 +391,7 @@ export function getLabelsMaxWidth(group: d3Selection<any> | undefined): number {
         group.nodes().forEach((item: any) => {
             let dimension: ClientRect = item.getBoundingClientRect();
             widths.push(max([dimension.width, dimension.height]));
-        })
+        });
     }
 
     if (!group || group.size() === 0) {

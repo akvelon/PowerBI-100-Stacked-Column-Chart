@@ -14,14 +14,14 @@ import DataViewCategoryColumn = powerbiApi.DataViewCategoryColumn;
 import PrimitiveValue = powerbiApi.PrimitiveValue;
 import DataViewCategorical = powerbiApi.DataViewCategorical;
 
-import { VisualColumns, VisualDataPoint } from "./visualInterfaces";
-import { converterHelper } from "powerbi-visuals-utils-dataviewutils";
-import { valueFormatter as ValueFormatter } from "powerbi-visuals-utils-formattingutils";
-import { ColorHelper } from "powerbi-visuals-utils-colorutils";
+import {VisualColumns, VisualDataPoint} from "./visualInterfaces";
+import {converterHelper} from "powerbi-visuals-utils-dataviewutils";
+import {valueFormatter as ValueFormatter} from "powerbi-visuals-utils-formattingutils";
+import {ColorHelper} from "powerbi-visuals-utils-colorutils";
 
-import { VisualSettings } from "./settings";
+import {VisualSettings} from "./settings";
 
-import { sum as d3sum } from "d3-array";
+import {sum as d3sum} from "d3-array";
 
 export enum Field {
     Axis = <any>"Axis",
@@ -38,6 +38,7 @@ export class DataViewConverter {
     private static Highlighted: string = "Highlighted";
     private static Blank: string = "(Blank)";
     private static percentFormatString: string = "#,0.00%";
+
     public static Convert(dataView: DataView, hostService: IVisualHost, settings: VisualSettings, legendColors: Array<string>): VisualDataPoint[] {
 
         if (this.IsAxisAndLegendSameField(dataView)) {
@@ -173,10 +174,10 @@ export class DataViewConverter {
 
             const selectionBuilder = hostService.createSelectionIdBuilder();
             if (groupedValues) {
-                selectionBuilder.withSeries(columns[Field.GroupedValues], groupedValues[k])
+                selectionBuilder.withSeries(columns[Field.GroupedValues], groupedValues[k]);
             }
             if (seriesColumn[k].source.queryName) {
-                selectionBuilder.withMeasure(seriesColumn[k].source.queryName || '')
+                selectionBuilder.withMeasure(seriesColumn[k].source.queryName || '');
             }
             const identity: ISelectionId = selectionBuilder.createSelectionId();
 
@@ -251,10 +252,10 @@ export class DataViewConverter {
                 if (groupedValues) {
                     selectionBuilder
                         .withCategory(categoryColumn, i)
-                        .withSeries(seriesColumn, groupedValues[k])
+                        .withSeries(seriesColumn, groupedValues[k]);
                 }
                 if (seriesColumn[k].source.queryName) {
-                    selectionBuilder.withMeasure(seriesColumn[k].source.queryName || '')
+                    selectionBuilder.withMeasure(seriesColumn[k].source.queryName || '');
                 }
                 const identity: ISelectionId = selectionBuilder.createSelectionId();
 
@@ -350,10 +351,10 @@ export class DataViewConverter {
                 const percentageValue: number = value / categorySum;
 
                 const selectionBuilder = hostService.createSelectionIdBuilder()
-                    .withCategory(categoryColumn, i)
+                    .withCategory(categoryColumn, i);
 
                 if (columns.Value?.[k].source.queryName) {
-                    selectionBuilder.withMeasure(columns.Value[k].source.queryName)
+                    selectionBuilder.withMeasure(columns.Value[k].source.queryName);
                 }
                 const identity: ISelectionId = selectionBuilder.createSelectionId();
 

@@ -26,46 +26,112 @@
 
 "use strict";
 
-"use strict";
-
 import powerbiApi from "powerbi-visuals-api";
-import { axisInterfaces, legendInterfaces } from "powerbi-visuals-utils-chartutils";
-import { interactivitySelectionService, interactivityBaseService } from "powerbi-visuals-utils-interactivityutils";
-import { CssConstants, IMargin } from "powerbi-visuals-utils-svgutils";
-import { ITooltipServiceWrapper } from "powerbi-visuals-utils-tooltiputils";
-
-import { d3Selection, d3Update, ISize, LegendProperties, VisualData, VisualDataPoint, VisualMeasureMetadata } from './visualInterfaces';
-import { VisualSettings } from "./settings";
-import * as visualUtils from "./scrollbarUtil";
-import * as lassoSelectionUtil from "./lassoSelectionUtil";
-
-import PrimitiveValue = powerbiApi.PrimitiveValue;
-import ISelectionId = powerbiApi.extensibility.ISelectionId;
-import DataViewValueColumn = powerbiApi.DataViewValueColumn;
-import DataViewValueColumns = powerbiApi.DataViewValueColumns;
-import DataViewMetadataColumn = powerbiApi.DataViewMetadataColumn;
-import DataViewObject = powerbiApi.DataViewObject;
-import VisualTooltipDataItem = powerbiApi.extensibility.VisualTooltipDataItem;
-import IVisual = powerbiApi.extensibility.IVisual;
+import DataView = powerbiApi.DataView;
 import IVisualHost = powerbiApi.extensibility.visual.IVisualHost;
+import IVisual = powerbiApi.extensibility.IVisual;
+import DataViewMetadataColumn = powerbiApi.DataViewMetadataColumn;
+import DataViewValueColumnGroup = powerbiApi.DataViewValueColumnGroup;
+import DataViewCategoryColumn = powerbiApi.DataViewCategoryColumn;
+import PrimitiveValue = powerbiApi.PrimitiveValue;
 import IViewport = powerbiApi.IViewport;
-import IAxisProperties = axisInterfaces.IAxisProperties;
-import SelectableDataPoint = interactivitySelectionService.SelectableDataPoint;
-import IInteractiveBehavior = interactivityBaseService.IInteractiveBehavior;
+import VisualUpdateOptions = powerbiApi.extensibility.visual.VisualUpdateOptions;
+import VisualConstructorOptions = powerbiApi.extensibility.visual.VisualConstructorOptions;
+import VisualUpdateType = powerbiApi.VisualUpdateType;
+import VisualObjectInstanceEnumeration = powerbiApi.VisualObjectInstanceEnumeration;
+import VisualObjectInstanceEnumerationObject = powerbiApi.VisualObjectInstanceEnumerationObject;
+import VisualObjectInstance = powerbiApi.VisualObjectInstance;
+import EnumerateVisualObjectInstancesOptions = powerbiApi.EnumerateVisualObjectInstancesOptions;
+
+import {interactivityBaseService, interactivitySelectionService} from "powerbi-visuals-utils-interactivityutils";
 import IInteractivityService = interactivityBaseService.IInteractivityService;
-import LegendData = legendInterfaces.LegendData;
-import ILegend = legendInterfaces.ILegend;
 import ISelectionHandler = interactivityBaseService.ISelectionHandler;
+import createInteractivityService = interactivitySelectionService.createInteractivitySelectionService;
+import IInteractiveBehavior = interactivityBaseService.IInteractiveBehavior;
+
+import {RenderVisual} from "./render/renderVisual";
+import {RenderAxes} from "./render/renderAxes";
+import {axis} from "powerbi-visuals-utils-chartutils";
+import {valueType} from "powerbi-visuals-utils-typeutils";
+
+import {
+    textMeasurementService as TextMeasurementService,
+    interfaces,
+    valueFormatter as ValueFormatter
+} from "powerbi-visuals-utils-formattingutils";
+import TextProperties = interfaces.TextProperties;
+import IValueFormatter = ValueFormatter.IValueFormatter;
+
+import * as visualUtils from "./utils";
+import * as scrollbarUtil from "./scrollbarUtil";
+import * as metadataUtils from "./metadataUtils";
+import * as legendUtils from "./utils/legendUtils";
+import * as axisUtils from "./utils/axis/yAxisUtils";
+import * as lassoSelectionUtil from "./lassoSelectionUtil";
+import * as selectionSaveUtils from "./selectionSaveUtils";
+import {WebBehavior, WebBehaviorOptions} from "./behavior";
+
+import ScrollbarState = scrollbarUtil.ScrollbarState;
+
+import {CssConstants, IMargin, manipulation as svg} from "powerbi-visuals-utils-svgutils";
+
+import * as d3 from 'd3-selection';
 
 
-export const MainSvg = CssConstants.createClassAndSelector("bar-chart-svg");
-export const VisualSvg = CssConstants.createClassAndSelector("bar-chart-visual");
-export const BarSelect = CssConstants.createClassAndSelector("bar");
-export const BarGroupSelect = CssConstants.createClassAndSelector("bar-group");
-export const AxisGraphicsContext = CssConstants.createClassAndSelector("axisGraphicsContext");
-export const AxisLabelSelector = CssConstants.createClassAndSelector("axisLabel");
-export const LabelGraphicsContext = CssConstants.createClassAndSelector("labelGraphicsContext");
-export const LabelBackgroundContext = CssConstants.createClassAndSelector("labelBackgroundContext");
+import "../style/visual.less";
+
+import {
+    AxisRangeType,
+    HorizontalPosition,
+    LayoutMode,
+    legendSettings,
+    smallMultipleSettings,
+    VisualSettings
+} from "./settings";
+import {
+    AxesDomains,
+    CategoryDataPoints,
+    IAxes,
+    IAxesSize,
+    ISize,
+    LegendProperties,
+    LegendSize,
+    SmallMultipleSizeOptions,
+    VisualData,
+    VisualDataPoint,
+    VisualMeasureMetadata,
+    VisualTranslation,
+    d3Selection,
+    d3Update
+} from "./visualInterfaces";
+
+import {CustomLegendBehavior} from "./customLegendBehavior";
+
+import {legendInterfaces} from "powerbi-visuals-utils-chartutils";
+import ILegend = legendInterfaces.ILegend;
+import LegendDataPoint = legendInterfaces.LegendDataPoint;
+
+import {legend} from "powerbi-visuals-utils-chartutils";
+import createLegend = legend.createLegend;
+
+import {DataViewConverter, Field} from "./dataViewConverter";
+import {EnumerateObject} from "./enumerateObject";
+import {ITooltipServiceWrapper, createTooltipServiceWrapper} from "powerbi-visuals-utils-tooltiputils";
+
+import {pixelConverter as PixelConverter} from "powerbi-visuals-utils-typeutils";
+
+import {LassoSelectionForSmallMultiple} from "./lassoSelectionUtilForSmallMultiple";
+
+class Selectors {
+    static MainSvg = CssConstants.createClassAndSelector("bar-chart-svg");
+    static VisualSvg = CssConstants.createClassAndSelector("bar-chart-visual");
+    static BarSelect = CssConstants.createClassAndSelector("bar");
+    static BarGroupSelect = CssConstants.createClassAndSelector("bar-group");
+    static AxisGraphicsContext = CssConstants.createClassAndSelector("axisGraphicsContext");
+    static AxisLabelSelector = CssConstants.createClassAndSelector("axisLabel");
+    static LabelGraphicsContext = CssConstants.createClassAndSelector("labelGraphicsContext");
+    static LabelBackgroundContext = CssConstants.createClassAndSelector("labelBackgroundContext");
+}
 
 export class Visual implements IVisual {
     public static DefaultColor: string = "#777777";
@@ -86,11 +152,11 @@ export class Visual implements IVisual {
     private legendElement: d3Selection<SVGElement>;
     private legendElementRoot: d3Selection<SVGElement>;
 
-    public readonly barClassName: string = BarSelect.className;
+    public readonly barClassName: string = Selectors.BarSelect.className;
     private labelGraphicsContext: d3Selection<any>;
     private labelBackgroundContext: d3Selection<any>;
 
-    public scrollBar: visualUtils.ScrollBar = new visualUtils.ScrollBar(this);
+    public scrollBar: scrollbarUtil.ScrollBar = new scrollbarUtil.ScrollBar(this);
 
     private dataPointThickness: number = 0; // height for bars, width for columns
 
@@ -126,20 +192,20 @@ export class Visual implements IVisual {
 
     private metadata: VisualMeasureMetadata;
 
-    private lassoSelection: lassoSelectionUtil.LassoSelectio = new visualUtils.LassoSelection(this);
-    private LassoSelectionForSmallMultiple: visualUtils.LassoSelectionForSmallMultiple = new visualUtils.LassoSelectionForSmallMultiple(Selectors.BarSelect, this);
+    private lassoSelection: lassoSelectionUtil.LassoSelection = new lassoSelectionUtil.LassoSelection(this);
+    private LassoSelectionForSmallMultiple: LassoSelectionForSmallMultiple = new LassoSelectionForSmallMultiple(Selectors.BarSelect, this);
 
     private visualTranslation: VisualTranslation;
     public skipScrollbarUpdate: boolean = false;
 
     private dataPointsByCategories: CategoryDataPoints[];
 
-    private mainElement: d3.Selection<any>;
+    private mainElement: d3Selection<any>;
     private mainHtmlElement: HTMLElement;
-    private mainDivElement: d3.Selection<any>;
-    private chartsContainer: d3.Selection<SVGElement>;
-    private barGroup: d3.Selection<SVGElement>;
-    public readonly axesSize: IAxesSize = { xAxisHeight: 10, yAxisWidth: 15 };
+    private mainDivElement: d3Selection<any>;
+    private chartsContainer: d3Selection<SVGElement>;
+    private barGroup: d3Selection<SVGElement>;
+    public readonly axesSize: IAxesSize = {xAxisHeight: 10, yAxisWidth: 15};
 
     constructor(options: VisualConstructorOptions) {
         this.mainElement = d3.select(options.element);
@@ -452,7 +518,7 @@ export class Visual implements IVisual {
         } else {
             let yAxisFormatString: string = valueFormatter.getFormatStringByColumn(metadata.cols.category) || valueFormatter.getFormatStringByColumn(metadata.groupingColumn);
 
-            formatter = valueFormatter.create({ format: yAxisFormatString });
+            formatter = valueFormatter.create({format: yAxisFormatString});
         }
 
         let fontSize: string = PixelConverter.toString(settings.categoryAxis.fontSize);
@@ -492,12 +558,12 @@ export class Visual implements IVisual {
     }
 
     private calculateChartSize(viewport: IViewport,
-        settings: smallMultipleSettings,
-        leftSpace: number,
-        topSpace: number,
-        rows: number,
-        columns: number,
-        legendSize: LegendSize): SmallMultipleSizeOptions {
+                               settings: smallMultipleSettings,
+                               leftSpace: number,
+                               topSpace: number,
+                               rows: number,
+                               columns: number,
+                               legendSize: LegendSize): SmallMultipleSizeOptions {
 
         const scrollHeight: number = 22,
             scrollWidth: number = 20,
@@ -516,7 +582,7 @@ export class Visual implements IVisual {
             chartWidth = (clientWidth - gapBetweenCharts * columns) / columns;
         } else {
             let clientHeight: number = viewport.height - scrollHeight - legendSize.height;
-            let clientWidth: number = viewport.width - leftSpace - scrollWidth - legendSize.width;;
+            let clientWidth: number = viewport.width - leftSpace - scrollWidth - legendSize.width;
 
             chartHeight = (clientHeight - gapBetweenCharts * rows - topSpace * rows) / rows;
             chartWidth = (clientWidth - gapBetweenCharts * (columns)) / columns;
@@ -538,7 +604,7 @@ export class Visual implements IVisual {
             width: isHorizontalScrollBarNeeded ? minWidth : chartWidth,
             isHorizontalSliderNeeded: isHorizontalScrollBarNeeded,
             isVerticalSliderNeeded: isVerticalScrollBarNeeded
-        }
+        };
     }
 
     private createSmallMultipleAxesByDomains(categoryDomain: any[], valueDomain: any[], visualSize: ISize, maxYAxisLabelWidth: number, categoriesCount: number = null): IAxes {
@@ -628,7 +694,7 @@ export class Visual implements IVisual {
         let barsSectionSize: ISize = {
             height: chartSize.height - gapBetweenCharts,
             width: chartSize.width - yAxisSize - gapBetweenCharts * 2
-        }
+        };
 
         let xIsScalar: boolean = visualUtils.isScalar(this.metadata.cols.category);
         let barHeight: number = !xIsScalar || this.settings.categoryAxis.axisType === "categorical" ? visualUtils.calculateDataPointThickness(
@@ -701,7 +767,7 @@ export class Visual implements IVisual {
             legendData: this.legendProperties.data,
             categoriesCount: null,
             isSmallMultiple: this.isSmallMultiple()
-        }
+        };
 
         let svgHeight: number = 0,
             svgWidth: number = 0;
@@ -1053,7 +1119,6 @@ export class Visual implements IVisual {
     }
 
 
-
     getDataPointsByCategories(): CategoryDataPoints[] {
         return this.dataPointsByCategories;
     }
@@ -1237,14 +1302,18 @@ export class Visual implements IVisual {
     private calculateLegendSize(settings: legendSettings, legendElementRoot: d3.Selection<SVGElement>): LegendSize {
         // if 'width' or 'height' is '0' it means that we don't need that measure for our calculations
         switch (settings.position) {
-            case 'Top': case 'TopCenter':
-            case 'Bottom': case 'BottomCenter':
+            case 'Top':
+            case 'TopCenter':
+            case 'Bottom':
+            case 'BottomCenter':
                 return {
                     width: 0,
                     height: (legendElementRoot.node() as SVGGraphicsElement).getBBox().height
                 };
-            case 'Left': case 'LeftCenter':
-            case 'Right': case 'RightCenter':
+            case 'Left':
+            case 'LeftCenter':
+            case 'Right':
+            case 'RightCenter':
                 return {
                     width: (legendElementRoot.node() as SVGGraphicsElement).getBBox().width,
                     height: 0
@@ -1373,7 +1442,7 @@ export class Visual implements IVisual {
         let extendedLeftMargin: boolean = yHasRightPosition || !this.settings.categoryAxis.show;
         let extendedRightMargin: boolean = !yHasRightPosition || !this.settings.categoryAxis.show;
 
-        this.visualMargin = { top: 5, bottom: 5, left: extendedLeftMargin ? 15 : 5, right: extendedRightMargin ? 15 : 5 };
+        this.visualMargin = {top: 5, bottom: 5, left: extendedLeftMargin ? 15 : 5, right: extendedRightMargin ? 15 : 5};
     }
 
     private calculateVisualSize(legendSize: LegendSize, xAxisTitleThickness: number): void {

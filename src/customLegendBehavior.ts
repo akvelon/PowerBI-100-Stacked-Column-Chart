@@ -26,18 +26,15 @@
 
 "use strict";
 
-import {d3Selection} from "./visualInterfaces";
-import {
-    IInteractiveBehavior,
-    ISelectionHandler
-} from "powerbi-visuals-utils-interactivityutils/lib/interactivityService";
-import {LegendDataPoint} from "powerbi-visuals-utils-chartutils/lib/legend/legendInterfaces";
+import {legendInterfaces, legendBehavior} from "powerbi-visuals-utils-chartutils";
+import {interactivityBaseService} from "powerbi-visuals-utils-interactivityutils";
 
-export interface LegendBehaviorOptions {
-    legendItems: d3Selection<any>;
-    legendIcons: d3Selection<any>;
-    clearCatcher: d3Selection<any>;
-}
+import {d3Selection} from "./visualInterfaces";
+
+import LegendDataPoint = legendInterfaces.LegendDataPoint;
+import LegendBehaviorOptions = legendBehavior.LegendBehaviorOptions;
+import IInteractiveBehavior = interactivityBaseService.IInteractiveBehavior;
+import ISelectionHandler = interactivityBaseService.ISelectionHandler;
 
 export class CustomLegendBehavior implements IInteractiveBehavior {
     public static dimmedLegendColor = "#A6A6A6";

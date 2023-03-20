@@ -1,16 +1,16 @@
 "use strict";
 
 import powerbiApi from "powerbi-visuals-api";
-import { categoryLabelsSettings } from "../settings";
-import { VisualData } from "../visualInterfaces";
+import {categoryLabelsSettings} from "../settings";
+import {VisualData} from "../visualInterfaces";
 import DataViewMetadataColumn = powerbiApi.DataViewMetadataColumn;
 
-import { interfaces, valueFormatter as ValueFormatter} from "powerbi-visuals-utils-formattingutils";
+import {interfaces, valueFormatter as ValueFormatter} from "powerbi-visuals-utils-formattingutils";
 import TextProperties = interfaces.TextProperties;
 
-import { pixelConverter as PixelConverter} from "powerbi-visuals-utils-typeutils";
+import {pixelConverter as PixelConverter} from "powerbi-visuals-utils-typeutils";
 
-import { dataLabelUtils } from "powerbi-visuals-utils-chartutils";
+import {dataLabelUtils} from "powerbi-visuals-utils-chartutils";
 
 export function getFormatStringByColumn(column: DataViewMetadataColumn) {
     return !column.format && column.type.numeric ? "0.00" : ValueFormatter.getFormatStringByColumn(<any>column);
@@ -39,10 +39,10 @@ export function getTextProperties(settings: categoryLabelsSettings): TextPropert
     };
 }
 
-export function getTextPropertiesForHeightCalculation(settings: categoryLabelsSettings): TextProperties  {
+export function getTextPropertiesForHeightCalculation(settings: categoryLabelsSettings): TextProperties {
     const fontFamily: string = settings.fontFamily ? settings.fontFamily : dataLabelUtils.LabelTextProperties.fontFamily;
 
-    return  {
+    return {
         fontSize: settings.fontSize.toString(),
         fontFamily: fontFamily
     };

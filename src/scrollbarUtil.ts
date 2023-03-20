@@ -1,6 +1,6 @@
-import { Visual } from "./visual";
-import { CategoryDataPoints, d3Selection, VisualDataPoint, VisualTranslation } from "./visualInterfaces";
-import { select as d3select } from 'd3-selection';
+import {Visual} from "./visual";
+import {CategoryDataPoints, d3Selection, VisualDataPoint, VisualTranslation} from "./visualInterfaces";
+import {select as d3select} from 'd3-selection';
 
 import VisualUpdateType = powerbi.VisualUpdateType;
 
@@ -14,6 +14,7 @@ interface ScrollBarSettings {
     readonly trackMargin; // Margin between track and visual
     minCategorySpace: number; // Minimum of space needed for rendering one category
 }
+
 interface Scrolling {
     active: boolean;
     mousedownClientCoord: number;
@@ -22,6 +23,7 @@ interface Scrolling {
     positionsCount: number;
     currentPosition: number;
 }
+
 interface Track {
     el: d3Selection<HTMLElement>;
     left: number;
@@ -76,11 +78,19 @@ export class ScrollBar {
         this.track.el = this.mainElement.append('div').classed('scrollbar-track', true);
         this.handle = this.track.el.append('button').classed('scrollbar-handle', true);
 
-        this.handle.on('mousedown', (e) => { this.onMousedown(e); });
+        this.handle.on('mousedown', (e) => {
+            this.onMousedown(e);
+        });
         this.htmlElement
-            .on('mousemove', (e) => { this.onMousemove(e); })
-            .on('mouseup', () => { this.onMouseup(); });
-        this.mainElement.on('wheel', (e) => { this.onMousewheel(e); });
+            .on('mousemove', (e) => {
+                this.onMousemove(e);
+            })
+            .on('mouseup', () => {
+                this.onMouseup();
+            });
+        this.mainElement.on('wheel', (e) => {
+            this.onMousewheel(e);
+        });
     }
 
     update(): void {
@@ -251,7 +261,8 @@ export class ScrollBar {
 
         track.height = this.settings.trackSize;
         track.width = this.visual.visualSize.width;
-        track.left = visualTranslation.x + leftMargin;;
+        track.left = visualTranslation.x + leftMargin;
+        ;
         track.top = this.visual.viewport.height - this.settings.trackSize;
 
         let legendPosition = this.visual.settings.legend.position;

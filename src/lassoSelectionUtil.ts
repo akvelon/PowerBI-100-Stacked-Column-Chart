@@ -5,9 +5,9 @@ import DataView = powerbiApi.DataView;
 
 import * as d3 from 'd3-selection';
 
-import { CategoryDataPoints, d3Selection, IBarVisual, SelectionState, VisualDataPoint } from "./visualInterfaces";
-import { DataViewConverter } from "./dataViewConverter";
-import { DefaultOpacity, DimmedOpacity } from "./utils";
+import {CategoryDataPoints, d3Selection, IBarVisual, SelectionState, VisualDataPoint} from "./visualInterfaces";
+import {DataViewConverter} from "./dataViewConverter";
+import {DefaultOpacity, DimmedOpacity} from "./utils";
 
 /*
     undefined, null - no selection
@@ -59,10 +59,16 @@ export class LassoSelection {
             this.selection.rect_node = this.selection.rect?.node() as HTMLElement;
         }
 
-        d3.select('.bar-chart-svg').on('mousedown.selection', (event) => { this.onMousedown(event); });
+        d3.select('.bar-chart-svg').on('mousedown.selection', (event) => {
+            this.onMousedown(event);
+        });
         d3.select('html')
-            .on('mousemove.selection', (event) => { this.onMousemove(event); })
-            .on('mouseup.selection', (event) => { this.onMouseup(event); });
+            .on('mousemove.selection', (event) => {
+                this.onMousemove(event);
+            })
+            .on('mouseup.selection', (event) => {
+                this.onMouseup(event);
+            });
     }
 
     update(bars: d3Selection<any>): void {
@@ -197,6 +203,7 @@ export class LassoSelection {
         this.deactivateRect();
         this.applySelectionToTheVisual(e);
     }
+
     // /Events
 
     private isEntireCategorySelection(): boolean {

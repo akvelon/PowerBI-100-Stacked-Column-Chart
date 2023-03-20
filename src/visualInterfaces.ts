@@ -1,12 +1,12 @@
 "use strict";
 
 import powerbiApi from "powerbi-visuals-api";
-import { axisInterfaces, legendInterfaces } from "powerbi-visuals-utils-chartutils";
-import { interactivitySelectionService } from "powerbi-visuals-utils-interactivityutils";
-import { Selection } from 'd3-selection';
+import {axisInterfaces, legendInterfaces} from "powerbi-visuals-utils-chartutils";
+import {interactivitySelectionService} from "powerbi-visuals-utils-interactivityutils";
+import {Selection} from 'd3-selection';
 
 import * as visualUtils from "./scrollbarUtil";
-import { VisualSettings } from "./settings";
+import {VisualSettings} from "./settings";
 
 import IAxisProperties = axisInterfaces.IAxisProperties;
 import SelectableDataPoint = interactivitySelectionService.SelectableDataPoint;
@@ -175,7 +175,7 @@ export interface LegendProperties {
 }
 
 export interface ChartOptions {
-    maxYLabelWidth
+    maxYLabelWidth;
 }
 
 export interface SmallMultipleOptions {
@@ -193,19 +193,33 @@ export interface SmallMultipleOptions {
 
 export interface IBarVisual extends IVisual {
     getDataView(): powerbiApi.DataView;
+
     barClassName: string;
+
     saveSelection(): unknown;
+
     webBehaviorSelectionHandler: any;
+
     getSettings(): VisualSettings;
+
     categoriesCount: number;
+
     onScrollPosChanged(): void;
+
     getDataPointsByCategories(): CategoryDataPoints[];
+
     legendSize: LegendSize;
     settings: VisualSettings;
-    isLegendNeeded: boolean;
+
+
+    // isLegendNeeded: boolean;
+
+
     viewport: IViewport;
     visualSize: any;
     visualMargin: IMargin;
+
     getAllDataPoints(): VisualDataPoint[];
-    scrollBar: visualUtils.ScrollBar
+
+    scrollBar: visualUtils.ScrollBar;
 }
