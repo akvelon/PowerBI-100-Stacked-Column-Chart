@@ -169,14 +169,7 @@ export class RenderAxes {
         axisLabelsGroup = axisGraphicsContext.selectAll("*")
             .data(axisLabelsData);
 
-        // When a new category added, create a new SVG group for it.
-        axisLabelsGroup.enter()
-            .append("text")
-            .attr("class", Selectors.AxisLabelSelector.className);
-
-        // For removed categories, remove the SVG group.
-        axisLabelsGroup.exit()
-            .remove();
+        console.log('axisLabelsData ' + axisLabelsData);
 
         let xColor: string = settings.categoryAxis.axisTitleColor;
         let xFontSize: number = PixelConverter.fromPointToPixel(settings.categoryAxis.titleFontSize);
@@ -192,11 +185,31 @@ export class RenderAxes {
         let yAxisStyle: DataViewPropertyValue = settings.valueAxis.titleStyle;
         let yAxisFontFamily: string = settings.valueAxis.titleFontFamily;
 
-        axisLabelsGroup
+        // When a new category added, create a new SVG group for it.
+        axisLabelsGroup.enter()
+            .append("text")
+            .attr("class", Selectors.AxisLabelSelector.className)
             .style("text-anchor", "middle")
-            .text(d => d)
+            .text(d => d);
+
+        // For removed categories, remove the SVG group.
+        axisLabelsGroup.exit()
+            .remove();
+
+
+        axisLabelsGroup
             .call((text: d3Selection<any>) => {
-                const textSelectionX: d3Selection<any> = select(text[0][0]);
+                console.log('call');
+                console.log(text);
+
+                const textSelectionX: d3Selection<any> = select(text.nodes()[0]);
+                const textSelectionY: d3Selection<any> = select(text.nodes()[1]);
+
+                console.log('textSelectionX');
+                console.log(textSelectionX);
+
+                console.log('textSelectionY');
+                console.log(textSelectionY);
 
                 textSelectionX.attr(
                     'transform',
@@ -216,30 +229,33 @@ export class RenderAxes {
                     textSelectionX.text(newTitle);
                 }
 
-                textSelectionX.style("fill", xColor);
-                textSelectionX.style("font-size", xFontSizeString);
-                textSelectionX.style("font-family", xAxisFontFamily);
+                textSelectionX
+                    .style("fill", xColor)
+                    .style("font-size", xFontSizeString)
+                    .style("font-family", xAxisFontFamily);
 
-                const textSelectionY: d3Selection<any> = select(text[0][1]);
-                textSelectionY.attr('transform', showY1OnRight ? RenderAxes.YAxisLabelTransformRotate : RenderAxes.YAxisLabelTransformRotate);
-                textSelectionY.attr('y', showY1OnRight ? width - margin.right - yFontSize : 0);
-                textSelectionY.attr('x', -((visualSize.height + margin.top + margin.bottom) / RenderAxes.AxisLabelOffset));
-                textSelectionY.attr('dy', (showY1OnRight ? '-' : '') + RenderAxes.DefaultDY);
 
+                textSelectionY
+                    .attr('transform', showY1OnRight ? RenderAxes.YAxisLabelTransformRotate : RenderAxes.YAxisLabelTransformRotate)
+                    .attr('y', showY1OnRight ? width - margin.right - yFontSize : 0)
+                    .attr('x', -((visualSize.height + margin.top + margin.bottom) / RenderAxes.AxisLabelOffset))
+                    .attr('dy', (showY1OnRight ? '-' : '') + RenderAxes.DefaultDY);
 
                 if (showYAxisTitle && yTitle && yTitle.toString().length > 0) {
                     textSelectionY.text(yTitle as string);
                 }
 
                 if (showYAxisTitle) {
-                    const newTitle: string = getTitleWithUnitType(textSelectionY.text(), yAxisStyle, axes.y);
-
-                    textSelectionY.text(newTitle);
+                    console.log(textSelectionY.text());
+                    // const newTitle: string = getTitleWithUnitType(textSelectionY.text(), yAxisStyle, axes.y);
+                    //
+                    // textSelectionY.text(newTitle);
                 }
-
-                textSelectionY.style("fill", yColor);
-                textSelectionY.style("font-size", yFontSizeString);
-                textSelectionY.style("font-family", yAxisFontFamily);
+                //
+                // textSelectionY
+                //     .style("fill", yColor)
+                //     .style("font-size", yFontSizeString)
+                //     .style("font-family", yAxisFontFamily);
             });
     }
 

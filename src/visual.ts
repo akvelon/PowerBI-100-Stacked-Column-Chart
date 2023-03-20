@@ -289,6 +289,7 @@ export class Visual implements IVisual {
     }
 
     normalChartProcess(options: VisualUpdateOptions): void {
+        console.log('normalChartProcess start');
         this.maxXLabelsWidth = null;
         this.dataPointsByCategories = this.buildDataPointsByCategoriesArray();
 
@@ -359,16 +360,17 @@ export class Visual implements IVisual {
         RenderAxes.rotateXAxisTickLabels(this.isNeedToRotate, this.xAxisSvgGroup);
         this.finalRendering();
 
-        this.scrollBar.update();
-
-        let bars = this.barGroup.selectAll(Selectors.BarSelect.selectorName).data(visibleDataPoints);
-        this.LassoSelectionForSmallMultiple.disable();
-        this.lassoSelection.update(bars);
-
-        if (this.settings.constantLine.show && this.settings.constantLine.value) {
-            let xWidth: number = (<Element>this.yAxisSvgGroup.selectAll("line").node()).getBoundingClientRect().width;
-            RenderVisual.renderConstantLine(this.settings.constantLine, this.barGroup, axes, xWidth);
-        }
+        // this.scrollBar.update();
+        //
+        // let bars = this.barGroup.selectAll(Selectors.BarSelect.selectorName).data(visibleDataPoints);
+        // this.LassoSelectionForSmallMultiple.disable();
+        // this.lassoSelection.update(bars);
+        //
+        // if (this.settings.constantLine.show && this.settings.constantLine.value) {
+        //     let xWidth: number = (<Element>this.yAxisSvgGroup.selectAll("line").node()).getBoundingClientRect().width;
+        //     RenderVisual.renderConstantLine(this.settings.constantLine, this.barGroup, axes, xWidth);
+        // }
+        console.log('normalChartProcess end');
     }
 
     private createNormalChartElements(): void {
@@ -445,9 +447,9 @@ export class Visual implements IVisual {
             console.log(this.allDataPoints);
 
             // if (this.isSmallMultiple()) {
-            this.smallMultipleProcess(options.viewport);
+            // this.smallMultipleProcess(options.viewport);
             // } else {
-            //     this.normalChartProcess(options);
+            this.normalChartProcess(options);
             // }
 
             // if (!this.isSelectionRestored) {
@@ -1258,7 +1260,9 @@ export class Visual implements IVisual {
     private finalRendering(): void {
         console.log('finalRendering');
 
-        let labelMaxHeight: number = visualUtils.getLabelsMaxHeight(this.xAxisSvgGroup.selectAll("text")[0]);
+        console.log();
+
+        let labelMaxHeight: number = visualUtils.getLabelsMaxHeight(this.xAxisSvgGroup.selectAll("text"));
 
         // render axes labels
         RenderAxes.renderLabels(
@@ -1270,47 +1274,47 @@ export class Visual implements IVisual {
             this.data.axes,
             this.axisLabelsGroup,
             this.axisGraphicsContext);
-
-        visualUtils.calculateBarCoordianates(this.data.dataPoints, this.data.axes, this.settings, this.dataPointThickness);
-
-        // render main visual
-        RenderVisual.render(
-            this.data,
-            this.barGroup,
-            this.clearCatcher,
-            this.interactivityService,
-            this.behavior,
-            this.tooltipServiceWrapper,
-            this.host,
-            this.hasHighlight,
-            this.settings
-        );
-
-        let chartHeight: number = (<Element>this.barGroup.node()).getBoundingClientRect().height;
-
-        visualUtils.calculateLabelCoordinates(
-            this.data,
-            this.settings.categoryLabels,
-            chartHeight,
-            this.isLegendNeeded
-        );
-
-        let filteredDataLabels: VisualDataPoint[] = RenderVisual.filterData(this.data.dataPoints);
-
-        RenderVisual.renderDataLabelsBackground(
-            filteredDataLabels,
-            this.settings,
-            this.labelBackgroundContext
-        );
-
-        RenderVisual.renderDataLabels(
-            filteredDataLabels,
-            this.settings,
-            this.labelGraphicsContext
-        );
-
-        let xWidth: number = (<Element>this.yAxisSvgGroup.selectAll("line").node()).getBoundingClientRect().width;
-        RenderVisual.renderConstantLine(this.settings.constantLine, this.barGroup, this.data.axes, xWidth);
+        //
+        // visualUtils.calculateBarCoordianates(this.data.dataPoints, this.data.axes, this.settings, this.dataPointThickness);
+        //
+        // // render main visual
+        // RenderVisual.render(
+        //     this.data,
+        //     this.barGroup,
+        //     this.clearCatcher,
+        //     this.interactivityService,
+        //     this.behavior,
+        //     this.tooltipServiceWrapper,
+        //     this.host,
+        //     this.hasHighlight,
+        //     this.settings
+        // );
+        //
+        // let chartHeight: number = (<Element>this.barGroup.node()).getBoundingClientRect().height;
+        //
+        // visualUtils.calculateLabelCoordinates(
+        //     this.data,
+        //     this.settings.categoryLabels,
+        //     chartHeight,
+        //     this.isLegendNeeded
+        // );
+        //
+        // let filteredDataLabels: VisualDataPoint[] = RenderVisual.filterData(this.data.dataPoints);
+        //
+        // RenderVisual.renderDataLabelsBackground(
+        //     filteredDataLabels,
+        //     this.settings,
+        //     this.labelBackgroundContext
+        // );
+        //
+        // RenderVisual.renderDataLabels(
+        //     filteredDataLabels,
+        //     this.settings,
+        //     this.labelGraphicsContext
+        // );
+        //
+        // let xWidth: number = (<Element>this.yAxisSvgGroup.selectAll("line").node()).getBoundingClientRect().width;
+        // RenderVisual.renderConstantLine(this.settings.constantLine, this.barGroup, this.data.axes, xWidth);
     }
 
     private calculateLegendSize(settings: legendSettings, legendElementRoot: d3Selection<SVGElement>): LegendSize {
