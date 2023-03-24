@@ -87,7 +87,7 @@ export class Visual implements IBarVisual {
     private xAxisSvgGroup: d3Selection<SVGElement>;
     private yAxisSvgGroup: d3Selection<SVGElement>;
     private axisGraphicsContext: d3Selection<SVGElement>;
-//         private axisLabelsGroup: d3.selection.Update<string>;
+    private axisLabelsGroup: d3Selection<string>;
     private legendElement: d3Selection<SVGElement>;
     private legendElementRoot: d3Selection<SVGElement>;
 
@@ -293,7 +293,7 @@ export class Visual implements IBarVisual {
 
         this.renderAxes();
         RenderAxes.rotateXAxisTickLabels(this.isNeedToRotate, this.xAxisSvgGroup);
-        // this.finalRendering();
+        this.finalRendering();
 
 //             this.scrollBar.update();
 //
@@ -1194,21 +1194,21 @@ export class Visual implements IBarVisual {
         );
     }
 
-//         private finalRendering(): void {
-//             let labelMaxHeight: number = visualUtils.getLabelsMaxHeight(this.xAxisSvgGroup.selectAll("text")[0]);
-//
-//             // render axes labels
-//             RenderAxes.renderLabels(
-//                 this.viewport,
-//                 this.visualMargin,
-//                 this.visualSize,
-//                 [this.data.axes.x.axisLabel, this.data.axes.y.axisLabel],
-//                 this.settings,
-//                 this.data.axes,
-//                 this.axisLabelsGroup,
-//                 this.axisGraphicsContext,
-//                 labelMaxHeight);
-//
+    private finalRendering(): void {
+        let labelMaxHeight: number = visualUtils.getLabelsMaxHeight(this.xAxisSvgGroup.selectAll("text"));
+
+        // render axes labels
+        RenderAxes.renderLabels(
+            this.viewport,
+            this.visualMargin,
+            this.visualSize,
+            [this.data.axes.x.axisLabel, this.data.axes.y.axisLabel],
+            this.settings,
+            this.data.axes,
+            this.axisLabelsGroup,
+            this.axisGraphicsContext,
+            labelMaxHeight);
+
 //             visualUtils.calculateBarCoordianates(this.data.dataPoints, this.data.axes, this.settings, this.dataPointThickness);
 //
 //             // render main visual
@@ -1249,7 +1249,7 @@ export class Visual implements IBarVisual {
 //
 //             let xWidth: number = (<Element>this.yAxisSvgGroup.selectAll("line").node()).getBoundingClientRect().width;
 //             RenderVisual.renderConstantLine(this.settings.constantLine, this.barGroup, this.data.axes, xWidth);
-//         }
+    }
 
     private calculateLegendSize(settings: LegendSettings, legendElementRoot: d3Selection<SVGElement>): LegendSize {
         // if 'width' or 'height' is '0' it means that we don't need that measure for our calculations

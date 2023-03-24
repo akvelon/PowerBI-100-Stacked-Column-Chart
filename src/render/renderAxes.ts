@@ -2,7 +2,6 @@
 
 import powerbi from "powerbi-visuals-api";
 import {axis} from "powerbi-visuals-utils-chartutils";
-import {min as d3min, max as d3max} from "d3-array";
 import {pixelConverter as PixelConverter} from "powerbi-visuals-utils-typeutils";
 import {IAxisProperties} from "powerbi-visuals-utils-chartutils/lib/axis/axisInterfaces";
 import {createAxis} from "powerbi-visuals-utils-chartutils/lib/axis/axis";
@@ -10,17 +9,22 @@ import {getFormatStringByColumn} from "powerbi-visuals-utils-formattingutils/lib
 import {textMeasurementService, valueFormatter} from "powerbi-visuals-utils-formattingutils";
 import {ISize} from "powerbi-visuals-utils-svgutils/lib/shapes/shapesInterfaces";
 import {TextProperties} from "powerbi-visuals-utils-formattingutils/lib/src/interfaces";
+import {CssConstants} from "powerbi-visuals-utils-svgutils";
+import {translate as svgTranslate} from "powerbi-visuals-utils-svgutils/lib/manipulation";
+import {min as d3min, max as d3max} from "d3-array";
+import {select as d3select} from "d3-selection";
 
-import {AxesDomains, d3Selection, IAxes, VisualDataPoint, VisualMeasureMetadata} from "../visualInterfaces";
+import {AxesDomains, d3Selection, IAxes, IMargin, VisualDataPoint, VisualMeasureMetadata} from "../visualInterfaces";
 import {AxisRangeType, VisualSettings} from "../settings";
 import * as visualUtils from '../utils';
 
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
 import DataViewPropertyValue = powerbi.DataViewPropertyValue;
+import IViewport = powerbi.IViewport;
 
-//     module Selectors {
-//         export const AxisLabelSelector = CssConstants.createClassAndSelector("axisLabel");
-//     }
+class Selectors {
+    static AxisLabelSelector = CssConstants.createClassAndSelector("axisLabel");
+}
 
 export class RenderAxes {
     private static DefaultAxisXTickPadding: number = 10;
@@ -262,117 +266,110 @@ export class RenderAxes {
 
     }
 
-//         public static renderLabels(
-//             viewport: IViewport,
-//             visualMargin: IMargin,
-//             visualSize: ISize,
-//             axisLabelsData: Array<string>,
-//             settings: VisualSettings,
-//             axes: IAxes,
-//             axisLabelsGroup: d3.selection.Update<string>,
-//             axisGraphicsContext: d3.Selection<SVGElement>,
-//             tickLabelHeight: number) {
-//
-//             const margin: IMargin = visualMargin,
-//                 width: number = viewport.width,
-//                 height: number = viewport.height,
-//                 yAxisOrientation: string = "right",
-//                 showY1OnRight: boolean = yAxisOrientation === settings.valueAxis.position;
-//
-//             let showXAxisTitle: boolean = settings.categoryAxis.show && settings.categoryAxis.showTitle;
-//             let showYAxisTitle: boolean = settings.valueAxis.show && settings.valueAxis.showTitle;
-//
-//             if (!showXAxisTitle) {
-//                 axisLabelsData[0] = null;
-//             }
-//
-//             if (!showYAxisTitle) {
-//                 axisLabelsData[1] = null;
-//             }
-//
-//             axisLabelsGroup = axisGraphicsContext.selectAll("*")
-//                 .data(axisLabelsData);
-//
-//             // When a new category added, create a new SVG group for it.
-//             axisLabelsGroup.enter()
-//                 .append("text")
-//                 .attr("class", Selectors.AxisLabelSelector.className);
-//
-//             // For removed categories, remove the SVG group.
-//             axisLabelsGroup.exit()
-//                 .remove();
-//
-//             let xColor: string = settings.categoryAxis.axisTitleColor;
-//             let xFontSize: number = PixelConverter.fromPointToPixel(settings.categoryAxis.titleFontSize);
-//             let xFontSizeString: string = PixelConverter.toString(settings.categoryAxis.titleFontSize);
-//             let xTitle: DataViewPropertyValue = settings.categoryAxis.axisTitle;
-//             let xAxisStyle: DataViewPropertyValue = settings.categoryAxis.titleStyle;
-//             let xAxisFontFamily: string = settings.categoryAxis.titleFontFamily;
-//
-//             let yColor: string = settings.valueAxis.axisTitleColor;
-//             let yFontSize: number = parseInt(settings.valueAxis.titleFontSize.toString());
-//             let yFontSizeString: string = PixelConverter.toString(yFontSize);
-//             let yTitle: DataViewPropertyValue = settings.valueAxis.axisTitle;
-//             let yAxisStyle: DataViewPropertyValue = settings.valueAxis.titleStyle;
-//             let yAxisFontFamily: string = settings.valueAxis.titleFontFamily;
-//
-//             axisLabelsGroup
-//                 .style({ "text-anchor": "middle" })
-//                 .text(d => d)
-//                 .call((text: d3.Selection<any>) => {
-//                     const textSelectionX: d3.Selection<any> = d3.select(text[0][0]);
-//
-//                     textSelectionX.attr({
-//                         "transform": svg.translate(
-//                             (width) / RenderAxes.AxisLabelOffset,
-//                             (height + visualSize.height + xFontSize + margin.top) / 2),
-//                         "dy": '.8em'
-//                     });
-//
-//                     if (showXAxisTitle && xTitle && xTitle.toString().length > 0) {
-//                         textSelectionX.text(xTitle as string);
-//                     }
-//
-//                     if (showXAxisTitle && xAxisStyle) {
-//                         let newTitle: string = visualUtils.getTitleWithUnitType(textSelectionX.text(), xAxisStyle, axes.x);
-//
-//                         textSelectionX.text(newTitle);
-//                     }
-//
-//                     textSelectionX.style({
-//                         "fill": xColor,
-//                         "font-size": xFontSizeString,
-//                         "font-family": xAxisFontFamily
-//                     });
-//
-//                     const textSelectionY: d3.Selection<any> = d3.select(text[0][1]);
-//
-//                     textSelectionY.attr({
-//                         "transform": showY1OnRight ? RenderAxes.YAxisLabelTransformRotate : RenderAxes.YAxisLabelTransformRotate,
-//                         "y": showY1OnRight
-//                             ? width - margin.right - yFontSize
-//                             : 0,
-//                         "x": -((visualSize.height + margin.top + margin.bottom) / RenderAxes.AxisLabelOffset),
-//                         "dy": (showY1OnRight ? '-' : '') + RenderAxes.DefaultDY
-//                     });
-//
-//                     if (showYAxisTitle && yTitle && yTitle.toString().length > 0) {
-//                         textSelectionY.text(yTitle as string);
-//                     }
-//
-//                     if (showYAxisTitle) {
-//                         let newTitle: string = visualUtils.getTitleWithUnitType(textSelectionY.text(), yAxisStyle, axes.y);
-//
-//                         textSelectionY.text(newTitle);
-//                     }
-//
-//                     textSelectionY.style({
-//                         "fill": yColor,
-//                         "font-size": yFontSizeString,
-//                         "font-family": yAxisFontFamily
-//                     });
-//                 });
-//         }
+    public static renderLabels(
+        viewport: IViewport,
+        visualMargin: IMargin,
+        visualSize: ISize,
+        axisLabelsData: Array<string>,
+        settings: VisualSettings,
+        axes: IAxes,
+        axisLabelsGroup: d3Selection<string>,
+        axisGraphicsContext: d3Selection<SVGElement>,
+        tickLabelHeight: number) {
+        const margin: IMargin = visualMargin,
+            width: number = viewport.width,
+            height: number = viewport.height,
+            yAxisOrientation: string = "right",
+            showY1OnRight: boolean = yAxisOrientation === settings.valueAxis.position;
+
+        let showXAxisTitle: boolean = settings.categoryAxis.show && settings.categoryAxis.showTitle;
+        let showYAxisTitle: boolean = settings.valueAxis.show && settings.valueAxis.showTitle;
+
+        if (!showXAxisTitle) {
+            axisLabelsData[0] = null;
+        }
+
+        if (!showYAxisTitle) {
+            axisLabelsData[1] = null;
+        }
+
+        let xColor: string = settings.categoryAxis.axisTitleColor;
+        let xFontSize: number = PixelConverter.fromPointToPixel(settings.categoryAxis.titleFontSize);
+        let xFontSizeString: string = PixelConverter.toString(settings.categoryAxis.titleFontSize);
+        let xTitle: DataViewPropertyValue = settings.categoryAxis.axisTitle;
+        let xAxisStyle: DataViewPropertyValue = settings.categoryAxis.titleStyle;
+        let xAxisFontFamily: string = settings.categoryAxis.titleFontFamily;
+
+        let yColor: string = settings.valueAxis.axisTitleColor;
+        let yFontSize: number = parseInt(settings.valueAxis.titleFontSize.toString());
+        let yFontSizeString: string = PixelConverter.toString(yFontSize);
+        let yTitle: DataViewPropertyValue = settings.valueAxis.axisTitle;
+        let yAxisStyle: DataViewPropertyValue = settings.valueAxis.titleStyle;
+        let yAxisFontFamily: string = settings.valueAxis.titleFontFamily;
+
+        axisLabelsGroup = axisGraphicsContext.selectAll("*")
+            .data(axisLabelsData);
+
+        // When a new category added, create a new SVG group for it.
+        axisLabelsGroup.enter()
+            .append("text")
+            .attr("class", Selectors.AxisLabelSelector.className)
+            .style("text-anchor", "middle")
+            .text(d => d)
+            .call((text: d3Selection<any>) => {
+                const textSelectionX: d3Selection<any> = d3select(text.nodes()[0]);
+
+                textSelectionX.attr(
+                    "transform", svgTranslate(
+                        (width) / RenderAxes.AxisLabelOffset,
+                        (height + visualSize.height + xFontSize + margin.top) / 2))
+                    .attr("dy", '.8em');
+
+                if (showXAxisTitle && xTitle && xTitle.toString().length > 0) {
+                    textSelectionX.text(xTitle as string);
+                }
+
+                if (showXAxisTitle && xAxisStyle) {
+                    let newTitle: string = visualUtils.getTitleWithUnitType(textSelectionX.text(), xAxisStyle, axes.x);
+
+                    textSelectionX.text(newTitle);
+                }
+
+                textSelectionX.style("fill", xColor)
+                    .style("font-size", xFontSizeString)
+                    .style("font-family", xAxisFontFamily);
+
+                const textSelectionY: d3Selection<any> = d3select(text.nodes()[1]);
+
+                textSelectionY.attr("transform", showY1OnRight
+                    ? RenderAxes.YAxisLabelTransformRotate
+                    : RenderAxes.YAxisLabelTransformRotate)
+                    .attr("y", showY1OnRight
+                        ? width - margin.right - yFontSize
+                        : 0)
+                    .attr("x", -((visualSize.height + margin.top + margin.bottom) / RenderAxes.AxisLabelOffset))
+                    .attr("dy", (showY1OnRight ? '-' : '') + RenderAxes.DefaultDY);
+
+                if (showYAxisTitle && yTitle && yTitle.toString().length > 0) {
+                    textSelectionY.text(yTitle as string);
+                }
+
+                if (showYAxisTitle) {
+                    let newTitle: string = visualUtils.getTitleWithUnitType(textSelectionY.text(), yAxisStyle, axes.y);
+
+                    textSelectionY.text(newTitle);
+                }
+
+                textSelectionY.style("fill", yColor)
+                    .style("font-size", yFontSizeString)
+                    .style("font-family", yAxisFontFamily);
+            });
+        ;
+
+        // For removed categories, remove the SVG group.
+        axisLabelsGroup.exit()
+            .remove();
+    }
 
     public static calculateAxesDomains(allDatapoint: VisualDataPoint[],
                                        visibleDatapoints: VisualDataPoint[],
