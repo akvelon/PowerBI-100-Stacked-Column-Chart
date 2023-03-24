@@ -3,21 +3,20 @@
 import powerbi from "powerbi-visuals-api";
 import {axis} from "powerbi-visuals-utils-chartutils";
 import {pixelConverter as PixelConverter} from "powerbi-visuals-utils-typeutils";
-import {IAxisProperties} from "powerbi-visuals-utils-chartutils/lib/axis/axisInterfaces";
-import {createAxis} from "powerbi-visuals-utils-chartutils/lib/axis/axis";
+import {AxisOrientation, IAxisProperties} from "powerbi-visuals-utils-chartutils/lib/axis/axisInterfaces";
 import {getFormatStringByColumn} from "powerbi-visuals-utils-formattingutils/lib/src/valueFormatter";
 import {textMeasurementService, valueFormatter} from "powerbi-visuals-utils-formattingutils";
 import {ISize} from "powerbi-visuals-utils-svgutils/lib/shapes/shapesInterfaces";
 import {TextProperties} from "powerbi-visuals-utils-formattingutils/lib/src/interfaces";
 import {CssConstants} from "powerbi-visuals-utils-svgutils";
 import {translate as svgTranslate} from "powerbi-visuals-utils-svgutils/lib/manipulation";
-import {min as d3min, max as d3max} from "d3-array";
+import {max as d3max, min as d3min} from "d3-array";
 import {select as d3select} from "d3-selection";
 
 import {AxesDomains, d3Selection, IAxes, IMargin, VisualDataPoint, VisualMeasureMetadata} from "../visualInterfaces";
-import {AxisRangeType, VisualSettings} from "../settings";
+import {AxisRangeType, HorizontalPosition, VerticalPosition, VisualSettings} from "../settings";
 import * as visualUtils from '../utils';
-
+import {createAxis} from "../utils/axis/createAxis";
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
 import DataViewPropertyValue = powerbi.DataViewPropertyValue;
 import IViewport = powerbi.IViewport;
@@ -63,20 +62,17 @@ export class RenderAxes {
             outerPadding: 0,
             innerPadding: 0,
             isScalar: true,
-            isVertical: true,
             isCategoryAxis: false,
             scaleType: valueAxisScale,
             disableNice: startValue != null || endValue != null,
-            useTickIntervalForDisplayUnits: true
+            useTickIntervalForDisplayUnits: true,
+            orientation: convertPositionToAxisOrientation(settings.valueAxis.position),
         });
 
         yAxisProperties.axis
             .tickSizeInner(-size.width)
             .tickPadding(RenderAxes.DefaultAxisXTickPadding)
             .tickSizeOuter(1);
-        // TODO
-        // .orient(settings.valueAxis.position)
-
 
         yAxisProperties.axisLabel = settings.valueAxis.showTitle ? metadata.labels.x : "";
 
@@ -124,7 +120,6 @@ export class RenderAxes {
             innerPadding: innerPadding,
             scaleType: xIsScalar ? categoryAxisScale : undefined,
             isScalar: xIsScalar && axisType === "continuous",
-            isVertical: false,
             isCategoryAxis: true,
             useTickIntervalForDisplayUnits: true,
             disableNice: axisType === "continuous" && (startCategory != null || endCategory != null),
@@ -170,7 +165,8 @@ export class RenderAxes {
                     return textMeasurementService.getTailoredTextOrDefault(textProperties, maxXLabelsWidth);
                 }
                 return index;
-            }
+            },
+            orientation: AxisOrientation.bottom,
         });
 
         // For Y axis, make ticks appear full-width.
@@ -178,8 +174,6 @@ export class RenderAxes {
             .tickPadding(RenderAxes.DefaultAxisYTickPadding)
             .tickSizeInner(0)
             .tickSizeOuter(0);
-        // TODO
-        // .orient("bottom")
 
         xAxisProperties.axisLabel = settings.categoryAxis.showTitle ? metadata.labels.y : "";
 
@@ -444,5 +438,23 @@ export class RenderAxes {
         }
 
         return dataDomainX;
+    }
+}
+
+export function convertPositionToAxisOrientation(
+    position: HorizontalPosition | VerticalPosition | string
+): AxisOrientation {
+    switch (position) {
+        case HorizontalPosition.Left:
+            return AxisOrientation.left;
+
+        case HorizontalPosition.Right:
+            return AxisOrientation.right;
+
+        case VerticalPosition.Top:
+            return AxisOrientation.top;
+
+        case VerticalPosition.Bottom:
+            return AxisOrientation.bottom;
     }
 }
