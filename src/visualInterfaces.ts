@@ -1,6 +1,14 @@
 "use strict";
 
 import {Selection} from "d3-selection";
+import {SelectableDataPoint} from "powerbi-visuals-utils-interactivityutils/lib/interactivitySelectionService";
+import powerbi from "powerbi-visuals-api";
+
+import PrimitiveValue = powerbi.PrimitiveValue;
+import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
+import ISelectionId = powerbi.extensibility.ISelectionId;
+import IVisual = powerbi.extensibility.visual.IVisual;
+import {ISelectionHandler} from "powerbi-visuals-utils-interactivityutils/lib/interactivityBaseService";
 
 export type d3Selection<T> = Selection<any, T, any, any>;
 
@@ -54,36 +62,36 @@ export type d3Selection<T> = Selection<any, T, any, any>;
 //         public RowBy: DataViewValueColumn = null;
 //         public GroupedValues: DataViewValueColumns = null;
 //     }
-//
-//     export interface VisualDataPoint extends SelectableDataPoint {
-//         value: number;
-//         percentValueForHeight: number;
-//         percentValue: number;
-//         category: PrimitiveValue | number;
-//         shiftValue?: number;
-//         sum?: number;
-//         colorSaturation?: number;
-//         tooltips?: VisualTooltipDataItem[];
-//         series?: PrimitiveValue;
-//         color?: string;
-//         selectionId?: ISelectionId;
-//         highlight?: boolean;
-//         fill?: string;
-//         barCoordinates?: Coordinates;
-//         labelCoordinates?: Coordinates;
-//         columnBy?: PrimitiveValue;
-//         rowBy?: PrimitiveValue;
-//         preSelected?: boolean;
-//         preRemoved?: boolean;
-//     }
-//
-//     export interface Coordinates {
-//         x: number;
-//         y: number;
-//         width: number;
-//         height: number;
-//     }
-//
+
+export interface VisualDataPoint extends SelectableDataPoint {
+    value: number;
+    percentValueForHeight: number;
+    percentValue: number;
+    category: PrimitiveValue | number;
+    shiftValue?: number;
+    sum?: number;
+    colorSaturation?: number;
+    tooltips?: VisualTooltipDataItem[];
+    series?: PrimitiveValue;
+    color?: string;
+    selectionId?: ISelectionId;
+    highlight?: boolean;
+    fill?: string;
+    barCoordinates?: Coordinates;
+    labelCoordinates?: Coordinates;
+    columnBy?: PrimitiveValue;
+    rowBy?: PrimitiveValue;
+    preSelected?: boolean;
+    preRemoved?: boolean;
+}
+
+export interface Coordinates {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+
 //     export interface VisualData {
 //         dataPoints: VisualDataPoint[];
 //         legendData: LegendData;
@@ -176,5 +184,22 @@ export type d3Selection<T> = Selection<any, T, any, any>;
 //         rowsInFlow?: number
 //     }
 // }
-//
-//
+
+export interface IBarVisual extends IVisual {
+    // getDataView(): powerbiApi.DataView;
+    // barClassName: string;
+    // saveSelection(): unknown;
+    webBehaviorSelectionHandler: ISelectionHandler;
+    // getSettings(): VisualSettings;
+    // categoriesCount: number;
+    // onScrollPosChanged(): void;
+    // getDataPointsByCategories(): CategoryDataPoints[];
+    // legendSize: LegendSize;
+    // settings: VisualSettings;
+    // isLegendNeeded: boolean;
+    // viewport: IViewport;
+    // visualSize: any;
+    // visualMargin: IMargin;
+    getAllDataPoints(): VisualDataPoint[];
+    // scrollBar: visualUtils.ScrollBar
+}

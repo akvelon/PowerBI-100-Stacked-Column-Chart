@@ -1,47 +1,26 @@
-/*
- *  Power BI Visual CLI
- *
- *  Copyright (c) Microsoft Corporation
- *  All rights reserved.
- *  MIT License
- *
- *  Permission is hereby granted, free of charge, to any person obtaining a copy
- *  of this software and associated documentation files (the ""Software""), to deal
- *  in the Software without restriction, including without limitation the rights
- *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- *  copies of the Software, and to permit persons to whom the Software is
- *  furnished to do so, subject to the following conditions:
- *
- *  The above copyright notice and this permission notice shall be included in
- *  all copies or substantial portions of the Software.
- *
- *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- *  THE SOFTWARE.
- */
-
 "use strict";
 
 import {select as d3select} from "d3-selection";
 import powerbi from "powerbi-visuals-api";
 import {createTooltipServiceWrapper, ITooltipServiceWrapper} from "powerbi-visuals-utils-tooltiputils";
-import {
-    createInteractivityService,
-    IInteractivityService
-} from "powerbi-visuals-utils-interactivityutils/lib/interactivityService";
+import {ILegend, LegendDataPoint} from "powerbi-visuals-utils-chartutils/lib/legend/legendInterfaces";
+import {createLegend} from "powerbi-visuals-utils-chartutils/lib/legend/legend";
 
-import {d3Selection} from "./visualInterfaces";
+import {d3Selection, IBarVisual, VisualDataPoint} from "./visualInterfaces";
+import {CustomLegendBehavior} from "./customLegendBehavior";
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
 import IVisual = powerbi.extensibility.visual.IVisual;
 import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
-import {CustomLegendBehavior} from "./customLegendBehavior";
-import {ILegend} from "powerbi-visuals-utils-chartutils/lib/legend/legendInterfaces";
+import {
+    IInteractiveBehavior,
+    IInteractivityService, ISelectionHandler
+} from "powerbi-visuals-utils-interactivityutils/lib/interactivityBaseService";
+import {
+    createInteractivitySelectionService
+} from "powerbi-visuals-utils-interactivityutils/lib/interactivitySelectionService";
+import {WebBehavior} from "./behavior";
 
 // module powerbi.extensibility.visual {
 //     import svg = powerbi.extensibility.utils.svg;
@@ -77,25 +56,25 @@ import {ILegend} from "powerbi-visuals-utils-chartutils/lib/legend/legendInterfa
 //         export const LabelBackgroundContext = CssConstants.createClassAndSelector("labelBackgroundContext");
 //     }
 
-export class Visual implements IVisual {
+export class Visual implements IBarVisual {
 //         public static DefaultColor: string = "#777777";
-//
-//         private allDataPoints: VisualDataPoint[];
+
+    private allDataPoints: VisualDataPoint[];
 //         public categoriesCount: number;
 //
 //         public viewport: IViewport;
-//
-//         public webBehaviorSelectionHandler: ISelectionHandler;
-//
+
+    public webBehaviorSelectionHandler: ISelectionHandler;
+
 //         private mainSvgElement: d3.Selection<SVGElement>;
 //         private mainGElement: d3.Selection<SVGElement>;
 //         private xAxisSvgGroup: d3.Selection<SVGElement>;
 //         private yAxisSvgGroup: d3.Selection<SVGElement>;
 //         private axisGraphicsContext: d3.Selection<SVGElement>;
 //         private axisLabelsGroup: d3.selection.Update<string>;
-//         private legendElement: d3.Selection<SVGElement>;
-//         private legendElementRoot: d3.Selection<SVGElement>;
-//
+    private legendElement: d3Selection<SVGElement>;
+    private legendElementRoot: d3Selection<SVGElement>;
+
 //         public readonly barClassName: string = Selectors.BarSelect.className;
 //         private labelGraphicsContext: d3.Selection<any>;
 //         private labelBackgroundContext: d3.Selection<any>;
@@ -110,20 +89,20 @@ export class Visual implements IVisual {
 //         private data: VisualData;
 //         public visualSize: ISize;
 //         public visualMargin: IMargin;
-        private legend: ILegend;
+    private legend: ILegend;
 //         public legendSize;
 //         public maxXLabelsWidth: number;
-//
-//         public static DefaultStrokeSelectionColor: string = "#000";
-//         public static DefaultStrokeWidth: number = 1;
-//         public static DefaultStrokeSelectionWidth: number = 1;
-//
+
+    public static DefaultStrokeSelectionColor: string = "#000";
+    public static DefaultStrokeWidth: number = 1;
+    public static DefaultStrokeSelectionWidth: number = 1;
+
 //         public yTickOffset: number;
 //         public xTickOffset: number;
 //         public isNeedToRotate: boolean;
 //
-//         private behavior: IInteractiveBehavior;
-    private interactivityService: IInteractivityService;
+    private behavior: IInteractiveBehavior;
+    private interactivityService: IInteractivityService<LegendDataPoint>;
 //
 //         private clearCatcher: d3.Selection<any>;
     private tooltipServiceWrapper: ITooltipServiceWrapper;
@@ -152,37 +131,32 @@ export class Visual implements IVisual {
 //         public readonly axesSize: IAxesSize = {xAxisHeight: 10, yAxisWidth: 15};
 //
     constructor(options: VisualConstructorOptions) {
-        try {
-            this.mainElement = d3select(options.element);
+        this.mainElement = d3select(options.element);
 
-            this.mainHtmlElement = options.element;
+        this.mainHtmlElement = options.element;
 
-            this.host = options.host;
+        this.host = options.host;
 
-            this.tooltipServiceWrapper = createTooltipServiceWrapper(
-                options.host.tooltipService,
-                options.element);
+        this.tooltipServiceWrapper = createTooltipServiceWrapper(
+            options.host.tooltipService,
+            options.element);
 
-            this.interactivityService = createInteractivityService(this.host);
+        this.interactivityService = createInteractivitySelectionService(this.host);
 
-            const customLegendBehavior = new CustomLegendBehavior(this.saveSelection.bind(this));
-            this.legend = createLegend(
-                this.mainHtmlElement,
-                false,
-                this.interactivityService,
-                true,
-                null,
-                customLegendBehavior
-            );
+        const customLegendBehavior = new CustomLegendBehavior(this.saveSelection.bind(this));
+        this.legend = createLegend(
+            this.mainHtmlElement,
+            false,
+            this.interactivityService,
+            true,
+            null,
+            customLegendBehavior
+        );
 
-//             this.behavior = new WebBehavior(this);
-//
-//             this.legendElementRoot = this.mainElement.selectAll("svg.legend");
-//             this.legendElement = this.mainElement.selectAll("svg.legend").selectAll("g");
-        } catch (e) {
-            console.error(e);
-            throw e;
-        }
+        this.behavior = new WebBehavior(this);
+
+        this.legendElementRoot = this.mainElement.selectAll("svg.legend");
+        this.legendElement = this.mainElement.selectAll("svg.legend").selectAll("g");
     }
 
     saveSelection(): void {
@@ -1064,13 +1038,11 @@ export class Visual implements IVisual {
 //         public getVisualTranslation(): VisualTranslation {
 //             return this.visualTranslation;
 //         }
-//
-//         public getAllDataPoints(): VisualDataPoint[] {
-//             return this.allDataPoints;
-//         }
-//
-//
-//
+
+    public getAllDataPoints(): VisualDataPoint[] {
+        return this.allDataPoints;
+    }
+
 //         getDataPointsByCategories(): CategoryDataPoints[] {
 //             return this.dataPointsByCategories;
 //         }

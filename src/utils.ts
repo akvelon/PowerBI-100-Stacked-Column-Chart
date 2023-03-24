@@ -286,18 +286,18 @@
 //             }
 //         }
 //     }
-//
-//     export const DimmedOpacity: number = 0.4;
-//     export const DefaultOpacity: number = 1.0;
-//
-//     export function getFillOpacity(selected: boolean, highlight: boolean, hasSelection: boolean, hasPartialHighlights: boolean): number {
-//         if ((hasPartialHighlights && !highlight) || (hasSelection && !selected)) {
-//             return DimmedOpacity;
-//         }
-//
-//         return DefaultOpacity;
-//     }
-//
+
+export const DimmedOpacity: number = 0.4;
+export const DefaultOpacity: number = 1.0;
+
+export function getFillOpacity(selected: boolean, highlight: boolean, hasSelection: boolean, hasPartialHighlights: boolean): number {
+    if ((hasPartialHighlights && !highlight) || (hasSelection && !selected)) {
+        return DimmedOpacity;
+    }
+
+    return DefaultOpacity;
+}
+
 //     const CategoryMinWidth: number = 1;
 //     const CategoryMaxWidth: number = 450;
 //
@@ -394,11 +394,11 @@
 //
 //         return TextMeasurementService.estimateSvgTextHeight(textPropertiesForHeight);
 //     }
-//
-//     export function isSelected(selected: boolean, highlight: boolean, hasSelection: boolean, hasPartialHighlights: boolean): boolean {
-//         return !(hasPartialHighlights && !highlight || hasSelection && !selected);
-//     }
-//
+
+export function isSelected(selected: boolean, highlight: boolean, hasSelection: boolean, hasPartialHighlights: boolean): boolean {
+    return !(hasPartialHighlights && !highlight || hasSelection && !selected);
+}
+
 //     export function smallMultipleLabelRotationIsNeeded(
 //         xAxisSvgGroup: d3.Selection<any>,
 //         barHeight: number,
