@@ -21,6 +21,7 @@ import IAxisProperties = axisInterfaces.IAxisProperties;
 import SelectableDataPoint = interactivitySelectionService.SelectableDataPoint;
 import LegendData = legendInterfaces.LegendData;
 import {ISelectionHandler} from "powerbi-visuals-utils-interactivityutils/lib/interactivityBaseService";
+import {ISize} from "powerbi-visuals-utils-svgutils/lib/shapes/shapesInterfaces";
 
 
 export type d3Selection<T> = Selection<any, T, any, any>;
@@ -30,14 +31,14 @@ export type d3Selection<T> = Selection<any, T, any, any>;
 //     import SelectableDataPoint = powerbi.extensibility.utils.interactivity.SelectableDataPoint;
 //     import LegendData = powerbi.extensibility.utils.chart.legend.LegendData;
 //     import legend = powerbi.extensibility.utils.chart.legend;
-//
-//     export interface IMargin {
-//         top: number;
-//         bottom: number;
-//         left: number;
-//         right: number;
-//     }
-//
+
+export interface IMargin {
+    top: number;
+    bottom: number;
+    left: number;
+    right: number;
+}
+
 //     export interface ISize {
 //         width: number;
 //         height: number;
@@ -115,11 +116,11 @@ export interface Coordinates {
 //         categoriesCount: number;
 //         isSmallMultiple: boolean;
 //     }
-//
-//     export interface IAxesSize {
-//         xAxisHeight: number;
-//         yAxisWidth: number;
-//     }
+
+export interface IAxesSize {
+    xAxisHeight: number;
+    yAxisWidth: number;
+}
 
 export interface VisualMeasureMetadata {
     idx: VisualMeasureMetadataIndexes;
@@ -147,21 +148,21 @@ export interface VisualAxesLabels {
     y: string;
 }
 
-//     export interface LegendSize {
-//         width: number;
-//         height: number;
-//     }
-//
-//     export interface VisualTranslation {
-//         x: number;
-//         y: number;
-//     }
-//
-//     export interface CategoryDataPoints {
-//         categoryName: string;
-//         dataPoints: VisualDataPoint[];
-//     }
-//
+export interface LegendSize {
+    width: number;
+    height: number;
+}
+
+export interface VisualTranslation {
+    x: number;
+    y: number;
+}
+
+export interface CategoryDataPoints {
+    categoryName: string;
+    dataPoints: VisualDataPoint[];
+}
+
 //     export interface AxesDomains {
 //         yAxisDomain: number[];
 //         xAxisDomain: number[];
@@ -199,21 +200,23 @@ export interface LegendProperties {
 // }
 
 export interface IBarVisual extends IVisual {
-    // getDataView(): powerbiApi.DataView;
-    // barClassName: string;
-    // saveSelection(): unknown;
+    axesSize: IAxesSize;
+    yTickOffset: number;
     webBehaviorSelectionHandler: ISelectionHandler;
-    // getSettings(): VisualSettings;
-    // categoriesCount: number;
-    // onScrollPosChanged(): void;
-    // getDataPointsByCategories(): CategoryDataPoints[];
-    // legendSize: LegendSize;
-    // settings: VisualSettings;
-    // isLegendNeeded: boolean;
-    // viewport: IViewport;
-    // visualSize: any;
-    // visualMargin: IMargin;
+    settings: VisualSettings;
+    visualSize: ISize;
+    viewport: IViewport;
+    legendSize: LegendSize;
+    visualMargin: IMargin;
+    categoriesCount: number;
+
+    onScrollPosChanged(): void;
+
+    getDataPointsByCategories(): CategoryDataPoints[];
+
     getAllDataPoints(): VisualDataPoint[];
 
-    // scrollBar: visualUtils.ScrollBar
+    getVisualTranslation(): VisualTranslation;
+
+    getSettings(): VisualSettings;
 }

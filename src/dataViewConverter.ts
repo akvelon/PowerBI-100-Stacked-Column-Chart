@@ -149,9 +149,6 @@ export class DataViewConverter<T> {
         let seriesColumn: DataViewValueColumns = columns[Field.GroupedValues];
         let groupedValues: DataViewValueColumnGroup[] = seriesColumn.grouped ? seriesColumn.grouped() : null;
 
-        console.log('GetDataPointsForSameAxisAndLegend');
-        console.log(columns);
-
         (<any>columns[Field.Legend]).forEach((legend, k) => {
             let value: number = columns[Field.Value][k].values[0];
             let color = legendColors[k];
@@ -235,9 +232,6 @@ export class DataViewConverter<T> {
 
             let columnBy: PrimitiveValue = columns[Field.ColumnBy] && columns[Field.ColumnBy][0].values[i],
                 rowBy: PrimitiveValue = columns[Field.RowBy] && columns[Field.RowBy][0].values[i];
-
-            console.log('GetDataPointsForLegend');
-            console.log(columns);
 
             let categorySum: number = d3sum((<any>columns[Field.Value]).map(x => x.values[i] >= 0 ? x.values[i] : -x.values[i]));
 

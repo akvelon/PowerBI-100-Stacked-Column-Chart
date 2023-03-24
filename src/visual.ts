@@ -14,7 +14,14 @@ import {
 } from "powerbi-visuals-utils-interactivityutils/lib/interactivitySelectionService";
 import {CssConstants} from "powerbi-visuals-utils-svgutils";
 
-import {d3Selection, IBarVisual, LegendProperties, VisualDataPoint, VisualMeasureMetadata} from "./visualInterfaces";
+import {
+    CategoryDataPoints,
+    d3Selection, IAxesSize,
+    IBarVisual, IMargin,
+    LegendProperties, LegendSize,
+    VisualDataPoint,
+    VisualMeasureMetadata, VisualTranslation
+} from "./visualInterfaces";
 import {CustomLegendBehavior} from "./customLegendBehavior";
 import {WebBehavior} from "./behavior";
 import {DataViewConverter, Field} from "./dataViewConverter";
@@ -33,6 +40,8 @@ import IViewport = powerbi.IViewport;
 import DataViewValueColumnGroup = powerbi.DataViewValueColumnGroup;
 import DataViewMetadataColumn = powerbi.DataViewMetadataColumn;
 import DataViewCategoryColumn = powerbi.DataViewCategoryColumn;
+import {ISize} from "powerbi-visuals-utils-svgutils/lib/shapes/shapesInterfaces";
+import {ScrollBar} from "./scrollbarUtil";
 
 
 // module powerbi.extensibility.visual {
@@ -59,31 +68,31 @@ import DataViewCategoryColumn = powerbi.DataViewCategoryColumn;
 //     import createLegend = powerbi.extensibility.utils.chart.legend.createLegend;
 //
 class Selectors {
-//         export const MainSvg = CssConstants.createClassAndSelector("bar-chart-svg");
-//         export const VisualSvg = CssConstants.createClassAndSelector("bar-chart-visual");
+    static MainSvg = CssConstants.createClassAndSelector("bar-chart-svg");
+    static VisualSvg = CssConstants.createClassAndSelector("bar-chart-visual");
     static BarSelect = CssConstants.createClassAndSelector("bar");
     static BarGroupSelect = CssConstants.createClassAndSelector("bar-group");
-//         export const AxisGraphicsContext = CssConstants.createClassAndSelector("axisGraphicsContext");
-//         export const AxisLabelSelector = CssConstants.createClassAndSelector("axisLabel");
-//         export const LabelGraphicsContext = CssConstants.createClassAndSelector("labelGraphicsContext");
-//         export const LabelBackgroundContext = CssConstants.createClassAndSelector("labelBackgroundContext");
+    static AxisGraphicsContext = CssConstants.createClassAndSelector("axisGraphicsContext");
+    static AxisLabelSelector = CssConstants.createClassAndSelector("axisLabel");
+    static LabelGraphicsContext = CssConstants.createClassAndSelector("labelGraphicsContext");
+    static LabelBackgroundContext = CssConstants.createClassAndSelector("labelBackgroundContext");
 }
 
 export class Visual implements IBarVisual {
 //         public static DefaultColor: string = "#777777";
 
     private allDataPoints: VisualDataPoint[];
-//         public categoriesCount: number;
+    public categoriesCount: number;
 
     public viewport: IViewport;
 
     public webBehaviorSelectionHandler: ISelectionHandler;
 
-//         private mainSvgElement: d3.Selection<SVGElement>;
+    private mainSvgElement: d3Selection<SVGElement>;
 //         private mainGElement: d3.Selection<SVGElement>;
     private xAxisSvgGroup: d3Selection<SVGElement>;
     private yAxisSvgGroup: d3Selection<SVGElement>;
-//         private axisGraphicsContext: d3.Selection<SVGElement>;
+    private axisGraphicsContext: d3Selection<SVGElement>;
 //         private axisLabelsGroup: d3.selection.Update<string>;
     private legendElement: d3Selection<SVGElement>;
     private legendElementRoot: d3Selection<SVGElement>;
@@ -92,25 +101,25 @@ export class Visual implements IBarVisual {
     private labelGraphicsContext: d3Selection<any>;
     private labelBackgroundContext: d3Selection<any>;
 
-//         public scrollBar: visualUtils.ScrollBar = new visualUtils.ScrollBar(this);
-//
+    public scrollBar = new ScrollBar(this);
+
 //         private dataPointThickness: number = 0; // height for bars, width for columns
 
     public settings: VisualSettings;
     public host: IVisualHost;
     private dataView: DataView;
 //         private data: VisualData;
-//         public visualSize: ISize;
-//         public visualMargin: IMargin;
+    public visualSize: ISize;
+    public visualMargin: IMargin;
     private legend: ILegend;
-//         public legendSize;
-//         public maxXLabelsWidth: number;
+    public legendSize: LegendSize;
+    public maxXLabelsWidth: number;
 
     public static DefaultStrokeSelectionColor: string = "#000";
     public static DefaultStrokeWidth: number = 1;
     public static DefaultStrokeSelectionWidth: number = 1;
 
-//         public yTickOffset: number;
+    public yTickOffset: number;
 //         public xTickOffset: number;
 //         public isNeedToRotate: boolean;
 //
@@ -122,7 +131,7 @@ export class Visual implements IBarVisual {
 
     private legendProperties: LegendProperties;
 
-//         private hasHighlight: boolean;
+    private hasHighlight: boolean;
     private isLegendNeeded: boolean;
 //         private isSelectionRestored: boolean = false;
 
@@ -130,18 +139,19 @@ export class Visual implements IBarVisual {
 
 //         private lassoSelection: visualUtils.LassoSelection = new visualUtils.LassoSelection(this);
 //         private LassoSelectionForSmallMultiple: visualUtils.LassoSelectionForSmallMultiple = new visualUtils.LassoSelectionForSmallMultiple(Selectors.BarSelect, this);
-//
-//         private visualTranslation: VisualTranslation;
+
+    private visualTranslation: VisualTranslation;
 //         public skipScrollbarUpdate: boolean = false;
-//
-//         private dataPointsByCategories: CategoryDataPoints[];
-//
+
+    private dataPointsByCategories: CategoryDataPoints[];
+
     private mainElement: d3Selection<any>;
     private mainHtmlElement: HTMLElement;
     private mainDivElement: d3Selection<any>;
-//         private chartsContainer: d3.Selection<SVGElement>;
+    private chartsContainer: d3Selection<SVGElement>;
     private barGroup: d3Selection<SVGElement>;
-//         public readonly axesSize: IAxesSize = {xAxisHeight: 10, yAxisWidth: 15};
+    public readonly axesSize: IAxesSize = {xAxisHeight: 10, yAxisWidth: 15};
+
 //
     constructor(options: VisualConstructorOptions) {
         this.mainElement = d3select(options.element);
@@ -218,19 +228,19 @@ export class Visual implements IBarVisual {
         return !!this.metadata && (this.metadata.idx.columnBy > -1 || this.metadata.idx.rowBy > -1);
     }
 
-//         normalChartProcess(options: VisualUpdateOptions): void {
-//             this.maxXLabelsWidth = null;
-//             this.dataPointsByCategories = this.buildDataPointsByCategoriesArray();
-//
-//             // Highlight
-//             this.hasHighlight = this.allDataPoints.filter(x => x.highlight).length > 0;
-//
-//             this.categoriesCount = this.dataPointsByCategories.length;
-//
-//             this.createNormalChartElements();
-//
-//             this.lassoSelection.init(this.mainElement);
-//
+    normalChartProcess(options: VisualUpdateOptions): void {
+        this.maxXLabelsWidth = null;
+        this.dataPointsByCategories = this.buildDataPointsByCategoriesArray();
+
+        // Highlight
+        this.hasHighlight = this.allDataPoints.filter(x => x.highlight).length > 0;
+
+        this.categoriesCount = this.dataPointsByCategories.length;
+
+        this.createNormalChartElements();
+
+        // this.lassoSelection.init(this.mainElement);
+
 //             if (this.isLegendNeeded) {
 //                 legendUtils.renderLegend(this.legend, this.mainSvgElement, options.viewport, this.legendProperties, this.legendElement);
 //             } else {
@@ -300,55 +310,54 @@ export class Visual implements IBarVisual {
 //                 let xWidth: number = (<Element>this.yAxisSvgGroup.selectAll("line").node()).getBoundingClientRect().width;
 //                 RenderVisual.renderConstantLine(this.settings.constantLine, this.barGroup, axes, xWidth);
 //             }
-//         }
-//
-//         private createNormalChartElements(): void {
-//             this.prepareMainSvgElementForNormalChart();
-//
-//             this.chartsContainer = this.mainSvgElement.append("g").attr('id', 'chartsContainer');
-//
-//             // Append SVG groups for X and Y axes.
-//             this.xAxisSvgGroup = this.chartsContainer.append("g").attr('id', 'xAxisSvgGroup');
-//             this.yAxisSvgGroup = this.chartsContainer.append("g").attr('id', 'yAxisSvgGroup');
-//             // Append an svg group that will contain our visual
-//             this.barGroup = this.chartsContainer.append("g").attr('id', 'barGroup');
-//
-//             this.axisGraphicsContext = this.chartsContainer
-//                 .append("g")
-//                 .attr("class", Selectors.AxisGraphicsContext.className);
-//
-//             this.labelBackgroundContext = this.chartsContainer
-//                 .append("g")
-//                 .classed(Selectors.LabelBackgroundContext.className, true);
-//
-//             this.labelGraphicsContext = this.chartsContainer
-//                 .append("g")
-//                 .classed(Selectors.LabelGraphicsContext.className, true);
-//
-//             this.mainElement.select('.scrollbar-track').remove();
-//
-//             this.scrollBar.init(this.mainElement);
-//         }
-//
-//         private prepareMainSvgElementForNormalChart(): void{
-//             if ( this.mainDivElement ){
-//                 this.mainDivElement.remove();
-//                 this.mainDivElement = null;
-//             }
-//
-//             // This SVG will contain our visual
-//             if ( this.mainSvgElement ){
-//                 this.mainSvgElement.selectAll("*").remove();
-//             } else {
-//                 this.mainSvgElement = this.mainElement.append('svg')
-//                 .classed(Selectors.MainSvg.className, true)
-//                 .attr({
-//                     width: "100%",
-//                     height: "100%"
-//                 });
-//             }
-//         }
-//
+    }
+
+    private createNormalChartElements(): void {
+        this.prepareMainSvgElementForNormalChart();
+
+        this.chartsContainer = this.mainSvgElement.append("g").attr('id', 'chartsContainer');
+
+        // Append SVG groups for X and Y axes.
+        this.xAxisSvgGroup = this.chartsContainer.append("g").attr('id', 'xAxisSvgGroup');
+        this.yAxisSvgGroup = this.chartsContainer.append("g").attr('id', 'yAxisSvgGroup');
+
+        // Append an svg group that will contain our visual
+        this.barGroup = this.chartsContainer.append("g").attr('id', 'barGroup');
+
+        this.axisGraphicsContext = this.chartsContainer
+            .append("g")
+            .attr("class", Selectors.AxisGraphicsContext.className);
+
+        this.labelBackgroundContext = this.chartsContainer
+            .append("g")
+            .classed(Selectors.LabelBackgroundContext.className, true);
+
+        this.labelGraphicsContext = this.chartsContainer
+            .append("g")
+            .classed(Selectors.LabelGraphicsContext.className, true);
+
+        this.mainElement.select('.scrollbar-track').remove();
+
+        this.scrollBar.init(this.mainElement);
+    }
+
+    private prepareMainSvgElementForNormalChart(): void {
+        if (this.mainDivElement) {
+            this.mainDivElement.remove();
+            this.mainDivElement = null;
+        }
+
+        // This SVG will contain our visual
+        if (this.mainSvgElement) {
+            this.mainSvgElement.selectAll("*").remove();
+        } else {
+            this.mainSvgElement = this.mainElement.append('svg')
+                .classed(Selectors.MainSvg.className, true)
+                .attr('width', "100%")
+                .attr('height', "100%");
+        }
+    }
+
     public update(options: VisualUpdateOptions) {
         try {
             console.log('=== RENDER ===');
@@ -376,7 +385,7 @@ export class Visual implements IBarVisual {
 //             if ( this.isSmallMultiple() ) {
 //                 this.smallMultipleProcess(options.viewport);
 //             } else {
-//                 this.normalChartProcess(options);
+            this.normalChartProcess(options);
 //             }
 //
 //             if (!this.isSelectionRestored) {
@@ -1040,11 +1049,11 @@ export class Visual implements IBarVisual {
 //                 this.interactivityService.bind(this.allDataPoints, this.behavior, behaviorOptions);
 //             }
 //         }
-//
-//         getSettings(): VisualSettings {
-//             return this.settings;
-//         }
-//
+
+    getSettings(): VisualSettings {
+        return this.settings;
+    }
+
 //         public getVisualSize(): ISize {
 //             return this.visualSize;
 //         }
@@ -1056,83 +1065,85 @@ export class Visual implements IBarVisual {
 //         public getChartBoundaries(): ClientRect {
 //             return (<Element>this.clearCatcher.node()).getBoundingClientRect();
 //         }
-//
-//         public getVisualTranslation(): VisualTranslation {
-//             return this.visualTranslation;
-//         }
+
+    public getVisualTranslation(): VisualTranslation {
+        return this.visualTranslation;
+    }
 
     public getAllDataPoints(): VisualDataPoint[] {
         return this.allDataPoints;
     }
 
-//         getDataPointsByCategories(): CategoryDataPoints[] {
-//             return this.dataPointsByCategories;
-//         }
-//
-//         private buildDataPointsByCategoriesArray(): CategoryDataPoints[] {
-//             let dataPointsByCategories: CategoryDataPoints[] = [];
-//             let categoryIndex: number = 0;
-//             let categoryName: string = '';
-//             let previousCategoryName: string = '';
-//             for (let i: number = 0; i < this.allDataPoints.length; i++) {
-//                 if (this.allDataPoints[i].category == null) {
-//                     continue;
-//                 }
-//
-//                 previousCategoryName = categoryName;
-//                 categoryName = this.allDataPoints[i].category.toString();
-//
-//                 if ( i > 0 && categoryName !== previousCategoryName ) {
-//                     categoryIndex++;
-//                 }
-//
-//                 if ( !dataPointsByCategories[categoryIndex] ) {
-//                     let category: CategoryDataPoints = {
-//                         categoryName,
-//                         dataPoints: []
-//                     };
-//                     dataPointsByCategories[categoryIndex] = category;
-//                 }
-//                 dataPointsByCategories[categoryIndex].dataPoints.push(this.allDataPoints[i]);
-//             }
-//             return dataPointsByCategories;
-//         }
-//
-//         public onScrollPosChanged() {
-//             const visibleDataPoints: VisualDataPoint[] = this.scrollBar.getVisibleDataPoints();
-//
-//             let axes: IAxes = this.createAxes(visibleDataPoints);
-//             let legendData = legendUtils.getSuitableLegendData(this.dataView, this.host, this.settings.legend);
-//             this.data = {
-//                 dataPoints: visibleDataPoints,
-//                 size: this.visualSize,
-//                 axes: axes,
-//                 categoriesCount: this.categoriesCount,
-//                 legendData: legendData,
-//                 hasHighlight: this.hasHighlight,
-//                 isLegendNeeded: this.isLegendNeeded,
-//                 isSmallMultiple: this.isSmallMultiple()
-//             };
-//
-//             // render for calculate width of labels text
-//             this.renderAxes();
-//             // Rerender for dynamic y-axis titles
-//             this.legendSize = this.isLegendNeeded ? this.calculateLegendSize(this.settings.legend, this.legendElementRoot) : null;
-//             this.calculateOffsets();
-//             this.calculateVisualSizeAndPosition(this.legendSize);
-//
-//             this.calculateDataPointThickness();
-//
-//             axes = this.createAxes(visibleDataPoints);
-//             this.data.size = this.visualSize;
-//             this.data.axes = axes;
-//             this.interactivityService.applySelectionStateToData(this.data.dataPoints);
-//
-//             this.renderAxes();
-//
-//             RenderAxes.rotateXAxisTickLabels(this.isNeedToRotate, this.xAxisSvgGroup);
-//             this.finalRendering();
-//         }
+    getDataPointsByCategories(): CategoryDataPoints[] {
+        return this.dataPointsByCategories;
+    }
+
+    private buildDataPointsByCategoriesArray(): CategoryDataPoints[] {
+        let dataPointsByCategories: CategoryDataPoints[] = [];
+        let categoryIndex: number = 0;
+        let categoryName: string = '';
+        let previousCategoryName: string = '';
+
+        for (let i: number = 0; i < this.allDataPoints.length; i++) {
+            if (this.allDataPoints[i].category == null) {
+                continue;
+            }
+
+            previousCategoryName = categoryName;
+            categoryName = this.allDataPoints[i].category.toString();
+
+            if (i > 0 && categoryName !== previousCategoryName) {
+                categoryIndex++;
+            }
+
+            if (!dataPointsByCategories[categoryIndex]) {
+                let category: CategoryDataPoints = {
+                    categoryName,
+                    dataPoints: []
+                };
+                dataPointsByCategories[categoryIndex] = category;
+            }
+            dataPointsByCategories[categoryIndex].dataPoints.push(this.allDataPoints[i]);
+        }
+
+        return dataPointsByCategories;
+    }
+
+    public onScrollPosChanged() {
+        // const visibleDataPoints: VisualDataPoint[] = this.scrollBar.getVisibleDataPoints();
+        //
+        // let axes: IAxes = this.createAxes(visibleDataPoints);
+        // let legendData = legendUtils.getSuitableLegendData(this.dataView, this.host, this.settings.legend);
+        // this.data = {
+        //     dataPoints: visibleDataPoints,
+        //     size: this.visualSize,
+        //     axes: axes,
+        //     categoriesCount: this.categoriesCount,
+        //     legendData: legendData,
+        //     hasHighlight: this.hasHighlight,
+        //     isLegendNeeded: this.isLegendNeeded,
+        //     isSmallMultiple: this.isSmallMultiple()
+        // };
+        //
+        // // render for calculate width of labels text
+        // this.renderAxes();
+        // // Rerender for dynamic y-axis titles
+        // this.legendSize = this.isLegendNeeded ? this.calculateLegendSize(this.settings.legend, this.legendElementRoot) : null;
+        // this.calculateOffsets();
+        // this.calculateVisualSizeAndPosition(this.legendSize);
+        //
+        // this.calculateDataPointThickness();
+        //
+        // axes = this.createAxes(visibleDataPoints);
+        // this.data.size = this.visualSize;
+        // this.data.axes = axes;
+        // this.interactivityService.applySelectionStateToData(this.data.dataPoints);
+        //
+        // this.renderAxes();
+        //
+        // RenderAxes.rotateXAxisTickLabels(this.isNeedToRotate, this.xAxisSvgGroup);
+        // this.finalRendering();
+    }
 
     private updateMetaData(): void {
         const grouped: DataViewValueColumnGroup[] = this.dataView.categorical.values.grouped();
