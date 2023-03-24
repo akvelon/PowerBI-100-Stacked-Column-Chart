@@ -7,29 +7,39 @@ import {ILegend, LegendDataPoint} from "powerbi-visuals-utils-chartutils/lib/leg
 import {createLegend} from "powerbi-visuals-utils-chartutils/lib/legend/legend";
 import {
     IInteractiveBehavior,
-    IInteractivityService, ISelectionHandler
+    IInteractivityService,
+    ISelectionHandler,
 } from "powerbi-visuals-utils-interactivityutils/lib/interactivityBaseService";
 import {
     createInteractivitySelectionService
 } from "powerbi-visuals-utils-interactivityutils/lib/interactivitySelectionService";
 import {CssConstants} from "powerbi-visuals-utils-svgutils";
+import {pixelConverter as PixelConverter} from "powerbi-visuals-utils-typeutils";
+import {ISize} from "powerbi-visuals-utils-svgutils/lib/shapes/shapesInterfaces";
 
 import {
     CategoryDataPoints,
-    d3Selection, IAxesSize,
-    IBarVisual, IMargin,
-    LegendProperties, LegendSize,
+    d3Selection,
+    IAxes,
+    IAxesSize,
+    IBarVisual,
+    IMargin,
+    LegendProperties,
+    LegendSize, VisualData,
     VisualDataPoint,
-    VisualMeasureMetadata, VisualTranslation
+    VisualMeasureMetadata,
+    VisualTranslation,
 } from "./visualInterfaces";
 import {CustomLegendBehavior} from "./customLegendBehavior";
 import {WebBehavior} from "./behavior";
 import {DataViewConverter, Field} from "./dataViewConverter";
-import {VisualSettings} from "./settings";
+import {LegendSettings, VisualSettings} from "./settings";
 import * as metadataUtils from './metadataUtils';
 import * as visualUtils from './utils';
 import * as selectionSaveUtils from './selectionSaveUtils';
 import * as legendUtils from './utils/legendUtils';
+import {ScrollBar, ScrollbarState} from "./scrollbarUtil";
+import {RenderAxes} from "./render/renderAxes";
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
 import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
@@ -40,33 +50,10 @@ import IViewport = powerbi.IViewport;
 import DataViewValueColumnGroup = powerbi.DataViewValueColumnGroup;
 import DataViewMetadataColumn = powerbi.DataViewMetadataColumn;
 import DataViewCategoryColumn = powerbi.DataViewCategoryColumn;
-import {ISize} from "powerbi-visuals-utils-svgutils/lib/shapes/shapesInterfaces";
-import {ScrollBar} from "./scrollbarUtil";
+import {getXAxisMaxWidth} from "./utils/axis/yAxisUtils";
+import {translate as svgTranslate} from "powerbi-visuals-utils-svgutils/lib/manipulation";
+import {axis} from "powerbi-visuals-utils-chartutils";
 
-
-// module powerbi.extensibility.visual {
-//     import svg = powerbi.extensibility.utils.svg;
-//     import CssConstants = svg.CssConstants;
-//     import IInteractiveBehavior = powerbi.extensibility.utils.interactivity.IInteractiveBehavior;
-//     import IInteractivityService = powerbi.extensibility.utils.interactivity.IInteractivityService;
-//     import createInteractivityService = powerbi.extensibility.utils.interactivity.createInteractivityService;
-//     import appendClearCatcher = powerbi.extensibility.utils.interactivity.appendClearCatcher;
-//     import ITooltipServiceWrapper = powerbi.extensibility.utils.tooltip.ITooltipServiceWrapper;
-//     import createTooltipServiceWrapper = powerbi.extensibility.utils.tooltip.createTooltipServiceWrapper;
-//     import ISelectionHandler = powerbi.extensibility.utils.interactivity.ISelectionHandler;
-//     import axis = powerbi.extensibility.utils.chart.axis;
-//     import valueType = powerbi.extensibility.utils.type.ValueType;
-//     import ScrollbarState = visualUtils.ScrollbarState;
-//     import IValueFormatter = powerbi.extensibility.utils.formatting.IValueFormatter;
-//     import PixelConverter = powerbi.extensibility.utils.type.PixelConverter;
-//     import valueFormatter = powerbi.extensibility.utils.formatting.valueFormatter;
-//     import TextProperties = powerbi.extensibility.utils.formatting.TextProperties;
-//     import textMeasurementService = powerbi.extensibility.utils.formatting.textMeasurementService;
-//
-//     // powerbi.extensibility.utils.type
-//     import ILegend = powerbi.extensibility.utils.chart.legend.ILegend;
-//     import createLegend = powerbi.extensibility.utils.chart.legend.createLegend;
-//
 class Selectors {
     static MainSvg = CssConstants.createClassAndSelector("bar-chart-svg");
     static VisualSvg = CssConstants.createClassAndSelector("bar-chart-visual");
@@ -103,12 +90,12 @@ export class Visual implements IBarVisual {
 
     public scrollBar = new ScrollBar(this);
 
-//         private dataPointThickness: number = 0; // height for bars, width for columns
+    private dataPointThickness: number = 0; // height for bars, width for columns
 
     public settings: VisualSettings;
     public host: IVisualHost;
     private dataView: DataView;
-//         private data: VisualData;
+    private data: VisualData;
     public visualSize: ISize;
     public visualMargin: IMargin;
     private legend: ILegend;
@@ -120,12 +107,12 @@ export class Visual implements IBarVisual {
     public static DefaultStrokeSelectionWidth: number = 1;
 
     public yTickOffset: number;
-//         public xTickOffset: number;
-//         public isNeedToRotate: boolean;
-//
+    public xTickOffset: number;
+    public isNeedToRotate: boolean;
+
     private behavior: IInteractiveBehavior;
-    private interactivityService: IInteractivityService<LegendDataPoint>;
-//
+    private interactivityService: IInteractivityService<any>;
+
 //         private clearCatcher: d3.Selection<any>;
     private tooltipServiceWrapper: ITooltipServiceWrapper;
 
@@ -152,7 +139,6 @@ export class Visual implements IBarVisual {
     private barGroup: d3Selection<SVGElement>;
     public readonly axesSize: IAxesSize = {xAxisHeight: 10, yAxisWidth: 15};
 
-//
     constructor(options: VisualConstructorOptions) {
         this.mainElement = d3select(options.element);
 
@@ -239,67 +225,69 @@ export class Visual implements IBarVisual {
 
         this.createNormalChartElements();
 
+        // TODO
         // this.lassoSelection.init(this.mainElement);
 
-//             if (this.isLegendNeeded) {
-//                 legendUtils.renderLegend(this.legend, this.mainSvgElement, options.viewport, this.legendProperties, this.legendElement);
-//             } else {
-//                 this.legendElement && this.legendElement.selectAll("*").remove();
-//                 this.mainSvgElement && this.mainSvgElement.style({
-//                     "margin-top": 0,
-//                     "margin-bottom": 0,
-//                     "margin-left": 0,
-//                     "margin-right": 0
-//                 });
-//             }
-//
-//             this.calculateOffsets();
-//             // calculate and set visual size and position
-//             this.calculateVisualSizeAndPosition();
-//
-//             this.scrollBar.updateData(this.getScrollbarState(), options.type);
-//
-//             let visibleDataPoints: VisualDataPoint[] = this.scrollBar.getVisibleDataPoints();
-//
-//             let axes: IAxes = this.createAxes(visibleDataPoints);
-//
-//             this.data = {
-//                 dataPoints: visibleDataPoints,
-//                 size: this.visualSize,
-//                 axes: axes,
-//                 categoriesCount: this.categoriesCount,
-//                 legendData: this.legendProperties.data,
-//                 hasHighlight: this.hasHighlight,
-//                 isLegendNeeded: this.isLegendNeeded,
-//                 isSmallMultiple: this.isSmallMultiple()
-//             };
-//
-//             // render for calculate width of labels text
-//             this.renderAxes();
-//
-//             this.legendSize = this.isLegendNeeded ? this.calculateLegendSize(this.settings.legend, this.legendElementRoot) : null;
-//
-//             this.calculateOffsets();
-//             this.calculateVisualSizeAndPosition(this.legendSize);
-//
-//             this.calculateDataPointThickness();
-//
-//             axes = this.createAxes(visibleDataPoints);
-//             this.data.size = this.visualSize;
-//             this.data.axes = axes;
-//             this.interactivityService.applySelectionStateToData(this.data.dataPoints);
-//
-//             // calculate again after yScale changing
-//             this.calculateDataPointThickness();
-//
-//             // calculate again after columnWidth changing
-//             axes = this.createAxes(visibleDataPoints);
-//             this.data.axes = axes;
-//
-//             this.renderAxes();
-//             RenderAxes.rotateXAxisTickLabels(this.isNeedToRotate, this.xAxisSvgGroup);
-//             this.finalRendering();
-//
+        // TODO
+        if (this.isLegendNeeded) {
+            legendUtils.renderLegend(this.legend, this.mainSvgElement, options.viewport, this.legendProperties, this.legendElement);
+        } else {
+            this.legendElement && this.legendElement.selectAll("*").remove();
+            this.mainSvgElement && this.mainSvgElement.style(
+                "margin-top", 0)
+                .style("margin-bottom", 0)
+                .style("margin-left", 0)
+                .style("margin-right", 0);
+        }
+
+        this.calculateOffsets();
+
+        // calculate and set visual size and position
+        this.calculateVisualSizeAndPosition();
+
+        this.scrollBar.updateData(this.getScrollbarState(), options.type);
+
+        let visibleDataPoints: VisualDataPoint[] = this.scrollBar.getVisibleDataPoints();
+
+        let axes: IAxes = this.createAxes(visibleDataPoints);
+
+        this.data = {
+            dataPoints: visibleDataPoints,
+            size: this.visualSize,
+            axes: axes,
+            categoriesCount: this.categoriesCount,
+            legendData: this.legendProperties.data,
+            hasHighlight: this.hasHighlight,
+            isLegendNeeded: this.isLegendNeeded,
+            isSmallMultiple: this.isSmallMultiple()
+        };
+
+        // render for calculate width of labels text
+        this.renderAxes();
+
+        this.legendSize = this.isLegendNeeded ? this.calculateLegendSize(this.settings.legend, this.legendElementRoot) : null;
+
+        this.calculateOffsets();
+        this.calculateVisualSizeAndPosition(this.legendSize);
+
+        this.calculateDataPointThickness();
+
+        axes = this.createAxes(visibleDataPoints);
+        this.data.size = this.visualSize;
+        this.data.axes = axes;
+        this.interactivityService.applySelectionStateToData(this.data.dataPoints);
+
+        // calculate again after yScale changing
+        this.calculateDataPointThickness();
+
+        // calculate again after columnWidth changing
+        axes = this.createAxes(visibleDataPoints);
+        this.data.axes = axes;
+
+        this.renderAxes();
+        RenderAxes.rotateXAxisTickLabels(this.isNeedToRotate, this.xAxisSvgGroup);
+        // this.finalRendering();
+
 //             this.scrollBar.update();
 //
 //             let bars = this.barGroup.selectAll(Selectors.BarSelect.selectorName).data(visibleDataPoints);
@@ -1110,9 +1098,9 @@ export class Visual implements IBarVisual {
     }
 
     public onScrollPosChanged() {
-        // const visibleDataPoints: VisualDataPoint[] = this.scrollBar.getVisibleDataPoints();
-        //
-        // let axes: IAxes = this.createAxes(visibleDataPoints);
+        const visibleDataPoints: VisualDataPoint[] = this.scrollBar.getVisibleDataPoints();
+
+        let axes: IAxes = this.createAxes(visibleDataPoints);
         // let legendData = legendUtils.getSuitableLegendData(this.dataView, this.host, this.settings.legend);
         // this.data = {
         //     dataPoints: visibleDataPoints,
@@ -1152,53 +1140,53 @@ export class Visual implements IBarVisual {
         this.metadata = metadataUtils.getMetadata(categories, grouped, source);
     }
 
-//         private getScrollbarState(): ScrollbarState {
-//             const categoryType: valueType = axis.getCategoryValueType(this.metadata.cols.category),
-//                 isOrdinal: boolean = axis.isOrdinal(categoryType);
-//
-//             return this.settings.categoryAxis.axisType === "continuous" && !isOrdinal ? ScrollbarState.Disable : ScrollbarState.Enable;
-//         }
-//
-//         private createAxes(dataPoints, isSmallMultiple = false): IAxes {
-//             let axesDomains: AxesDomains = RenderAxes.calculateAxesDomains(this.allDataPoints, dataPoints, this.settings, this.metadata, isSmallMultiple);
-//
-//             let axes: IAxes = RenderAxes.createD3Axes(
-//                 axesDomains,
-//                 this.visualSize,
-//                 this.metadata,
-//                 this.settings,
-//                 this.host,
-//                 isSmallMultiple,
-//                 this.dataPointThickness,
-//                 this.maxXLabelsWidth
-//             );
-//
-//             return axes;
-//         }
-//
-//         private calculateDataPointThickness(): void {
-//             this.dataPointThickness = visualUtils.calculateDataPointThickness(
-//                 this.data.dataPoints,
-//                 this.visualSize,
-//                 this.data.categoriesCount,
-//                 this.settings.categoryAxis.innerPadding,
-//                 this.settings
-//             );
-//         }
-//
-//         private renderAxes(): void {
-//             visualUtils.calculateBarCoordianates(this.data.dataPoints, this.data.axes, this.settings, this.dataPointThickness);
-//
-//             this.calculateDataPointThickness();
-//
-//             RenderAxes.render(
-//                 this.settings,
-//                 this.xAxisSvgGroup,
-//                 this.yAxisSvgGroup,
-//                 this.data.axes
-//             );
-//         }
-//
+    private getScrollbarState(): ScrollbarState {
+        const categoryType = axis.getCategoryValueType(this.metadata.cols.category),
+            isOrdinal: boolean = axis.isOrdinal(categoryType);
+
+        return this.settings.categoryAxis.axisType === "continuous" && !isOrdinal ? ScrollbarState.Disable : ScrollbarState.Enable;
+    }
+
+    private createAxes(dataPoints, isSmallMultiple = false): IAxes {
+        let axesDomains = RenderAxes.calculateAxesDomains(this.allDataPoints, dataPoints, this.settings, this.metadata, isSmallMultiple);
+
+        let axes: IAxes = RenderAxes.createD3Axes(
+            axesDomains,
+            this.visualSize,
+            this.metadata,
+            this.settings,
+            this.host,
+            isSmallMultiple,
+            this.dataPointThickness,
+            this.maxXLabelsWidth
+        );
+
+        return axes;
+    }
+
+    private calculateDataPointThickness(): void {
+        this.dataPointThickness = visualUtils.calculateDataPointThickness(
+            this.data.dataPoints,
+            this.visualSize,
+            this.data.categoriesCount,
+            this.settings.categoryAxis.innerPadding,
+            this.settings
+        );
+    }
+
+    private renderAxes(): void {
+        visualUtils.calculateBarCoordianates(this.data.dataPoints, this.data.axes, this.settings, this.dataPointThickness);
+
+        this.calculateDataPointThickness();
+
+        RenderAxes.render(
+            this.settings,
+            this.xAxisSvgGroup,
+            this.yAxisSvgGroup,
+            this.data.axes
+        );
+    }
+
 //         private finalRendering(): void {
 //             let labelMaxHeight: number = visualUtils.getLabelsMaxHeight(this.xAxisSvgGroup.selectAll("text")[0]);
 //
@@ -1255,30 +1243,34 @@ export class Visual implements IBarVisual {
 //             let xWidth: number = (<Element>this.yAxisSvgGroup.selectAll("line").node()).getBoundingClientRect().width;
 //             RenderVisual.renderConstantLine(this.settings.constantLine, this.barGroup, this.data.axes, xWidth);
 //         }
-//
-//         private calculateLegendSize(settings: legendSettings, legendElementRoot: d3.Selection<SVGElement>): LegendSize {
-//             // if 'width' or 'height' is '0' it means that we don't need that measure for our calculations
-//             switch (settings.position) {
-//                 case 'Top': case 'TopCenter':
-//                 case 'Bottom': case 'BottomCenter':
-//                     return {
-//                         width: 0,
-//                         height: (legendElementRoot.node() as SVGGraphicsElement).getBBox().height
-//                     };
-//                 case 'Left': case 'LeftCenter':
-//                 case 'Right': case 'RightCenter':
-//                     return {
-//                         width: (legendElementRoot.node() as SVGGraphicsElement).getBBox().width,
-//                         height: 0
-//                     };
-//                 default:
-//                     return {
-//                         width: 0,
-//                         height: 0
-//                     };
-//             }
-//         }
-//
+
+    private calculateLegendSize(settings: LegendSettings, legendElementRoot: d3Selection<SVGElement>): LegendSize {
+        // if 'width' or 'height' is '0' it means that we don't need that measure for our calculations
+        switch (settings.position) {
+            case 'Top':
+            case 'TopCenter':
+            case 'Bottom':
+            case 'BottomCenter':
+                return {
+                    width: 0,
+                    height: (legendElementRoot.node() as SVGGraphicsElement).getBBox().height
+                };
+            case 'Left':
+            case 'LeftCenter':
+            case 'Right':
+            case 'RightCenter':
+                return {
+                    width: (legendElementRoot.node() as SVGGraphicsElement).getBBox().width,
+                    height: 0
+                };
+            default:
+                return {
+                    width: 0,
+                    height: 0
+                };
+        }
+    }
+
     private updateSettings(settings: VisualSettings, dataView: DataView) {
         const MAX_INNER_PADDING = 50;
 
@@ -1333,149 +1325,148 @@ export class Visual implements IBarVisual {
         }
     }
 
-    //         private calculateOffsets() {
-//
-//             let xtickText: d3.selection.Group = this.xAxisSvgGroup.selectAll("text")[0];
-//             let ytickText: d3.selection.Group = this.yAxisSvgGroup.selectAll("text")[0];
-//
-//             let showXAxisTitle: boolean = this.settings.categoryAxis.show && this.settings.categoryAxis.showTitle;
-//             let showYAxisTitle: boolean = this.settings.valueAxis.show && this.settings.valueAxis.showTitle;
-//
-//             this.yTickOffset = visualUtils.getLabelsMaxWidth(ytickText) + (showYAxisTitle
-//                                             ? parseInt(this.settings.valueAxis.titleFontSize.toString())
-//                                             : 0);
-//
-//             let xAxisMaxLableWidth: number = visualUtils.getLabelsMaxWidth(xtickText);
-//             let innerPadding: number = this.data && this.data.axes ? this.data.axes.x.axis.tickPadding() : 0;
-//
-//             let isReverted: boolean = false;
-//
-//             if (this.data && (!this.data.axes.xIsScalar || this.settings.categoryAxis.axisType !== "continuous")) {
-//                 isReverted = !!this.maxXLabelsWidth || xAxisMaxLableWidth > (this.data.axes.x.scale.rangeBand ? this.data.axes.x.scale.rangeBand() : 0 + innerPadding);
-//             }
-//
-//             let titleSize: number = (showXAxisTitle
-//                 ? PixelConverter.fromPointToPixel(this.settings.categoryAxis.titleFontSize) + 5
-//                 : 0);
-//
-//             this.xTickOffset = (isReverted ? xAxisMaxLableWidth : visualUtils.getLabelsMaxHeight(xtickText)) + titleSize;
-//             this.isNeedToRotate = isReverted;
-//         }
-//
-//         private calculateVisualSizeAndPosition(legendSize: LegendSize = null) {
-//             // Update the size of our SVG element
-//             if (this.mainSvgElement) {
-//                 this.mainSvgElement
-//                     .attr("width", this.viewport.width)
-//                     .attr("height", this.viewport.height);
-//             }
-//
-//             this.calculateVisualMargin();
-//
-//             const showXAxisTitle: boolean = this.settings.categoryAxis.show && this.settings.categoryAxis.showTitle;
-//             const yAxisTitleThickness: number = showXAxisTitle ? visualUtils.GetXAxisTitleHeight(this.settings.categoryAxis) + 5 : 0;
-//
-//             this.calculateVisualSize( legendSize, yAxisTitleThickness);
-//
-//
-//             const xAxisMaxWidth = xAxisUtils.getXAxisMaxWidth(this.visualSize.height + this.xTickOffset, this.settings);
-//
-//             if (this.xTickOffset > xAxisMaxWidth + yAxisTitleThickness) {
-//                 this.xTickOffset = xAxisMaxWidth + yAxisTitleThickness;
-//
-//                 this.maxXLabelsWidth = xAxisMaxWidth;
-//             }
-//
-//             this.calculateVisualPosition();
-//         }
-//
-//         private calculateVisualMargin(): void {
-//             let yHasRightPosition: boolean = this.settings.valueAxis.show && this.settings.valueAxis.position === "right";
-//
-//             let extendedLeftMargin: boolean = yHasRightPosition || !this.settings.categoryAxis.show;
-//             let extendedRightMargin: boolean = !yHasRightPosition || !this.settings.categoryAxis.show;
-//
-//             this.visualMargin = { top: 5, bottom: 5, left: extendedLeftMargin ? 15 : 5 , right: extendedRightMargin ? 15 : 5  };
-//         }
-//
-//         private calculateVisualSize(legendSize: LegendSize, xAxisTitleThickness: number): void {
-//
-//             const visualSize: ISize = {
-//                 width: this.viewport.width
-//                     - this.visualMargin.left
-//                     - this.visualMargin.right
-//                     - this.axesSize.yAxisWidth
-//                     - (legendSize === null ? 0 : legendSize.width)
-//                     - this.yTickOffset,
-//                 height: this.viewport.height
-//                     - this.visualMargin.top
-//                     - this.visualMargin.bottom
-//                     - this.axesSize.xAxisHeight
-//                     - (legendSize === null ? 0 : legendSize.height)
-//                     - this.xTickOffset
-//                     - (this.scrollBar.isEnabled() ? this.scrollBar.settings.trackSize : 0),
-//             };
-//
-//             const xAxisMaxWidth = xAxisUtils.getXAxisMaxWidth(visualSize.height + this.xTickOffset, this.settings);
-//
-//             if (this.xTickOffset > xAxisMaxWidth + xAxisTitleThickness) {
-//                 visualSize.height = visualSize.height + this.xTickOffset - xAxisMaxWidth - xAxisTitleThickness;
-//                 this.xTickOffset = xAxisMaxWidth + xAxisTitleThickness;
-//                 this.maxXLabelsWidth = xAxisMaxWidth;
-//             }
-//
-//             this.visualSize = visualSize;
-//         }
-//
-//         private calculateVisualPosition(): void {
-//
-//             this.chartsContainer.attr(
-//                 "transform",
-//                 `translate(${this.visualMargin.left}, ${this.visualMargin.top})`);
-//
-//             this.visualTranslation = {
-//                 x: this.visualMargin.left,// + (yHasRightPosition ? 0 : axesSize.yAxisWidth + this.yTickOffset),
-//                 y: this.visualMargin.top
-//             };
-//
-//             const yHasLeftPosition: boolean = this.settings.valueAxis.show && this.settings.valueAxis.position === "left";
-//
-//             const translateX: number = yHasLeftPosition ? this.axesSize.yAxisWidth + this.yTickOffset : 0;
-//
-//             this.xAxisSvgGroup.attr(
-//                 "transform",
-//                 svg.translate(
-//                     translateX,
-//                     this.visualMargin.top + this.visualSize.height));
-//
-//             this.yAxisSvgGroup.attr(
-//                 "transform",
-//                 svg.translate(
-//                     (yHasLeftPosition ? this.axesSize.yAxisWidth + this.yTickOffset : this.visualSize.width),
-//                     this.visualMargin.top));
-//
-//             this.barGroup.attr(
-//                 "transform",
-//                 svg.translate(
-//                     translateX,
-//                     this.visualMargin.top));
-//
-//             this.labelGraphicsContext.attr(
-//                 "transform",
-//                 svg.translate(
-//                     translateX,
-//                     this.visualMargin.top));
-//
-//             this.labelBackgroundContext.attr(
-//                 "transform",
-//                 svg.translate(
-//                     translateX,
-//                     this.visualMargin.top));
-//         }
-//
-//         private yAxisHasRightPosition(): boolean {
-//             return this.settings.valueAxis.show && this.settings.valueAxis.position === "right";
-//         }
+    private calculateOffsets() {
+        let xtickText = this.xAxisSvgGroup.selectAll("text");
+        let ytickText = this.yAxisSvgGroup.selectAll("text");
+
+        let showXAxisTitle: boolean = this.settings.categoryAxis.show && this.settings.categoryAxis.showTitle;
+        let showYAxisTitle: boolean = this.settings.valueAxis.show && this.settings.valueAxis.showTitle;
+
+        this.yTickOffset = visualUtils.getLabelsMaxWidth(ytickText) + (showYAxisTitle
+            ? parseInt(this.settings.valueAxis.titleFontSize.toString())
+            : 0);
+
+        let xAxisMaxLableWidth: number = visualUtils.getLabelsMaxWidth(xtickText);
+        let innerPadding: number = this.data && this.data.axes ? this.data.axes.x.axis.tickPadding() : 0;
+
+        let isReverted: boolean = false;
+
+        if (this.data && (!this.data.axes.xIsScalar || this.settings.categoryAxis.axisType !== "continuous")) {
+            isReverted = !!this.maxXLabelsWidth || xAxisMaxLableWidth > (this.data.axes.x.scale.rangeBand ? this.data.axes.x.scale.rangeBand() : 0 + innerPadding);
+        }
+
+        let titleSize: number = (showXAxisTitle
+            ? PixelConverter.fromPointToPixel(this.settings.categoryAxis.titleFontSize) + 5
+            : 0);
+
+        this.xTickOffset = (isReverted ? xAxisMaxLableWidth : visualUtils.getLabelsMaxHeight(xtickText)) + titleSize;
+        this.isNeedToRotate = isReverted;
+    }
+
+    private calculateVisualSizeAndPosition(legendSize: LegendSize = null) {
+        // Update the size of our SVG element
+        if (this.mainSvgElement) {
+            this.mainSvgElement
+                .attr("width", this.viewport.width)
+                .attr("height", this.viewport.height);
+        }
+
+        this.calculateVisualMargin();
+
+        const showXAxisTitle: boolean = this.settings.categoryAxis.show && this.settings.categoryAxis.showTitle;
+        const yAxisTitleThickness: number = showXAxisTitle
+            ? visualUtils.GetXAxisTitleHeight(this.settings.categoryAxis) + 5
+            : 0;
+
+        this.calculateVisualSize(legendSize, yAxisTitleThickness);
+
+        const xAxisMaxWidth = getXAxisMaxWidth(this.visualSize.height + this.xTickOffset, this.settings);
+
+        if (this.xTickOffset > xAxisMaxWidth + yAxisTitleThickness) {
+            this.xTickOffset = xAxisMaxWidth + yAxisTitleThickness;
+
+            this.maxXLabelsWidth = xAxisMaxWidth;
+        }
+
+        this.calculateVisualPosition();
+    }
+
+    private calculateVisualMargin(): void {
+        let yHasRightPosition: boolean = this.settings.valueAxis.show && this.settings.valueAxis.position === "right";
+
+        let extendedLeftMargin: boolean = yHasRightPosition || !this.settings.categoryAxis.show;
+        let extendedRightMargin: boolean = !yHasRightPosition || !this.settings.categoryAxis.show;
+
+        this.visualMargin = {top: 5, bottom: 5, left: extendedLeftMargin ? 15 : 5, right: extendedRightMargin ? 15 : 5};
+    }
+
+    private calculateVisualSize(legendSize: LegendSize, xAxisTitleThickness: number): void {
+        const visualSize: ISize = {
+            width: this.viewport.width
+                - this.visualMargin.left
+                - this.visualMargin.right
+                - this.axesSize.yAxisWidth
+                - (legendSize === null ? 0 : legendSize.width)
+                - this.yTickOffset,
+            height: this.viewport.height
+                - this.visualMargin.top
+                - this.visualMargin.bottom
+                - this.axesSize.xAxisHeight
+                - (legendSize === null ? 0 : legendSize.height)
+                - this.xTickOffset
+                - (this.scrollBar.isEnabled() ? this.scrollBar.settings.trackSize : 0),
+        };
+
+        const xAxisMaxWidth = getXAxisMaxWidth(visualSize.height + this.xTickOffset, this.settings);
+
+        if (this.xTickOffset > xAxisMaxWidth + xAxisTitleThickness) {
+            visualSize.height = visualSize.height + this.xTickOffset - xAxisMaxWidth - xAxisTitleThickness;
+            this.xTickOffset = xAxisMaxWidth + xAxisTitleThickness;
+            this.maxXLabelsWidth = xAxisMaxWidth;
+        }
+
+        this.visualSize = visualSize;
+    }
+
+    private calculateVisualPosition(): void {
+
+        this.chartsContainer.attr(
+            "transform",
+            `translate(${this.visualMargin.left}, ${this.visualMargin.top})`);
+
+        this.visualTranslation = {
+            x: this.visualMargin.left,// + (yHasRightPosition ? 0 : axesSize.yAxisWidth + this.yTickOffset),
+            y: this.visualMargin.top
+        };
+
+        const yHasLeftPosition: boolean = this.settings.valueAxis.show && this.settings.valueAxis.position === "left";
+
+        const translateX: number = yHasLeftPosition ? this.axesSize.yAxisWidth + this.yTickOffset : 0;
+
+        this.xAxisSvgGroup.attr(
+            "transform",
+            svgTranslate(
+                translateX,
+                this.visualMargin.top + this.visualSize.height));
+
+        this.yAxisSvgGroup.attr(
+            "transform",
+            svgTranslate(
+                (yHasLeftPosition ? this.axesSize.yAxisWidth + this.yTickOffset : this.visualSize.width),
+                this.visualMargin.top));
+
+        this.barGroup.attr(
+            "transform",
+            svgTranslate(
+                translateX,
+                this.visualMargin.top));
+
+        this.labelGraphicsContext.attr(
+            "transform",
+            svgTranslate(
+                translateX,
+                this.visualMargin.top));
+
+        this.labelBackgroundContext.attr(
+            "transform",
+            svgTranslate(
+                translateX,
+                this.visualMargin.top));
+    }
+
+    private yAxisHasRightPosition(): boolean {
+        return this.settings.valueAxis.show && this.settings.valueAxis.position === "right";
+    }
 
     private static parseSettings(dataView: DataView): VisualSettings {
         return VisualSettings.parse(dataView) as VisualSettings;

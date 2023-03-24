@@ -1,30 +1,40 @@
 "use strict";
 
-import {LegendData, LegendDataPoint, MarkerShape} from "powerbi-visuals-utils-chartutils/lib/legend/legendInterfaces";
+import {
+    ILegend,
+    LegendData,
+    LegendDataPoint, LegendPosition, legendProps,
+    MarkerShape
+} from "powerbi-visuals-utils-chartutils/lib/legend/legendInterfaces";
+import {update as legendDataUpdate} from "powerbi-visuals-utils-chartutils/lib/legend/legendData";
+import powerbi from "powerbi-visuals-api";
+import {positionChartArea} from "powerbi-visuals-utils-chartutils/lib/legend/legend";
+import {select as d3select} from "d3-selection";
+import {valueFormatter} from "powerbi-visuals-utils-formattingutils";
+import {ColorHelper} from "powerbi-visuals-utils-colorutils";
 
 import * as visualUtils from '../utils';
 import * as metadataUtils from '../metadataUtils';
+import {LegendSettings} from "../settings";
+import {d3Selection, LegendProperties} from "../visualInterfaces";
+import {DataViewConverter} from "../dataViewConverter";
 
+import IVisualHost = powerbi.extensibility.visual.IVisualHost;
+import DataViewObject = powerbi.DataViewObject;
+import DataViewValueColumns = powerbi.DataViewValueColumns;
+import DataViewMetadataColumn = powerbi.DataViewMetadataColumn;
+import DataViewCategoryColumn = powerbi.DataViewCategoryColumn;
+import DataViewValueColumnGroup = powerbi.DataViewValueColumnGroup;
+import ISelectionId = powerbi.extensibility.ISelectionId;
+import IViewport = powerbi.IViewport;
 import DataView = powerbi.DataView;
 
-// module powerbi.extensibility.visual.legendUtils {
-//     import legend = powerbi.extensibility.utils.chart.legend;
-//     import ColorHelper = powerbi.extensibility.utils.color.ColorHelper;
-//     import ILegend = powerbi.extensibility.utils.chart.legend.ILegend;
-//     import LegendData = powerbi.extensibility.utils.chart.legend.LegendData;
-//     import legendDataModule = powerbi.extensibility.utils.chart.legend.data;
-//     import legendModule = powerbi.extensibility.utils.chart.legend;
-//     import legendProps = powerbi.extensibility.utils.chart.legend.legendProps;
-//     import LegendPosition = powerbi.extensibility.utils.chart.legend.LegendPosition;
-//     import DataViewValueColumns = powerbi.DataViewValueColumns;
-//     import valueFormatter = powerbi.extensibility.utils.formatting.valueFormatter;
-//     import LegendDataPoint = powerbi.extensibility.utils.chart.legend.LegendDataPoint;
-//
-//     export const MinAmountOfDataPointsInTheLegend: number = 1;
-//     export const LegendLabelFontSizeDefault: number = 9;
-//     export const DefaultFontFamily: string = "\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif";
-//     export const DefaultLegendTitleText: string = "Type";
-//     export const DefaultLegendPosition: string = "Top";
+export const MinAmountOfDataPointsInTheLegend: number = 1;
+export const LegendLabelFontSizeDefault: number = 9;
+export const DefaultFontFamily: string = "\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif";
+export const DefaultLegendTitleText: string = "Type";
+export const DefaultLegendPosition: string = "Top";
+
 const DefaultSelectionStateOfTheDataPoint: boolean = false;
 
 export function buildLegendData(
@@ -161,62 +171,61 @@ export function buildLegendDataForMultipleValues(
     };
 }
 
-//     export function renderLegend(
-//         visualLegend: ILegend,
-//         svg: d3.Selection<SVGElement>,
-//         viewport: IViewport,
-//         legendProperties: LegendProperties,
-//         legendElement): void {
-//         const legendDataForRender: LegendData = {
-//             title: "",
-//             dataPoints: []
-//         };
-//
-//         let legendObject: DataViewObject = legendProperties.legendObject;
-//         let legendData: LegendData = legendProperties.data;
-//
-//         legendDataForRender.labelColor = legendObject.legendNameColor as string;
-//         legendDataForRender.title = legendObject.titleText as string;
-//
-//         const legend: ILegend = visualLegend;
-//
-//         const fontFamily: string = legendObject.fontFamily.toString() || DefaultFontFamily;
-//
-//         if (legendData) {
-//             legendDataForRender.dataPoints = legendData.dataPoints ? legendData.dataPoints : [];
-//
-//             legendDataForRender.fontSize = legendObject.fontSize ? legendObject.fontSize as number : LegendLabelFontSizeDefault;
-//
-//             // Important: This code is redefining props of chart legend util
-//             (legend as any).__proto__.constructor.DefaultTitleFontFamily = (legend as any).__proto__.constructor.DefaultFontFamily = fontFamily;
-//
-//             legendDataForRender.grouped = !!legendData.grouped;
-//         }
-//
-//         if (legendProperties) {
-//             legendDataModule.update(legendDataForRender, legendObject);
-//
-//             const position: string = legendProperties.legendObject[legendProps.position] as string;
-//
-//             if (position) {
-//                 legend.changeOrientation(LegendPosition[position]);
-//             }
-//         }
-//         else {
-//             legend.changeOrientation(LegendPosition.Top);
-//         }
-//
-//         // Important: This code is overriding styles of chart legend util
-//         const legendGroup = d3.select('#legendGroup').node() as HTMLElement;
-//         legendGroup.style.fontFamily = fontFamily;
-//
-//         legend.drawLegend(legendDataForRender, {
-//             height: viewport.height,
-//             width: viewport.width
-//         });
-//
-//         legendModule.positionChartArea(svg, legend);
-//     }
+export function renderLegend(
+    visualLegend: ILegend,
+    svg: d3Selection<SVGElement>,
+    viewport: IViewport,
+    legendProperties: LegendProperties,
+    legendElement): void {
+    const legendDataForRender: LegendData = {
+        title: "",
+        dataPoints: []
+    };
+
+    let legendObject: DataViewObject = legendProperties.legendObject;
+    let legendData: LegendData = legendProperties.data;
+
+    legendDataForRender.labelColor = legendObject.legendNameColor as string;
+    legendDataForRender.title = legendObject.titleText as string;
+
+    const legend: ILegend = visualLegend;
+
+    const fontFamily: string = legendObject.fontFamily.toString() || DefaultFontFamily;
+
+    if (legendData) {
+        legendDataForRender.dataPoints = legendData.dataPoints ? legendData.dataPoints : [];
+
+        legendDataForRender.fontSize = legendObject.fontSize ? legendObject.fontSize as number : LegendLabelFontSizeDefault;
+
+        // Important: This code is redefining props of chart legend util
+        (legend as any).__proto__.constructor.DefaultTitleFontFamily = (legend as any).__proto__.constructor.DefaultFontFamily = fontFamily;
+
+        legendDataForRender.grouped = !!legendData.grouped;
+    }
+
+    if (legendProperties) {
+        legendDataUpdate(legendDataForRender, legendObject);
+
+        const position: string = legendProperties.legendObject[legendProps.position] as string;
+
+        if (position) {
+            legend.changeOrientation(LegendPosition[position]);
+        }
+    } else {
+        legend.changeOrientation(LegendPosition.Top);
+    }
+
+    // Important: This code is overriding styles of chart legend util
+    const legendGroup = d3select('#legendGroup').node() as HTMLElement;
+    legendGroup.style.fontFamily = fontFamily;
+
+    legend.drawLegend(legendDataForRender, {
+        height: viewport.height,
+        width: viewport.width
+    });
+
+    positionChartArea(svg, legend);
+}
 
 export function getLegendProperties(
     legendSettings: LegendSettings): DataViewObject {
@@ -236,19 +245,6 @@ export function getLegendProperties(
     return dataViewObject;
 }
 
-import powerbi from "powerbi-visuals-api";
-import IVisualHost = powerbi.extensibility.visual.IVisualHost;
-import {LegendSettings} from "../settings";
-import {LegendProperties} from "../visualInterfaces";
-import DataViewObject = powerbi.DataViewObject;
-import {DataViewConverter} from "../dataViewConverter";
-import DataViewValueColumns = powerbi.DataViewValueColumns;
-import DataViewMetadataColumn = powerbi.DataViewMetadataColumn;
-import DataViewCategoryColumn = powerbi.DataViewCategoryColumn;
-import {ColorHelper} from "powerbi-visuals-utils-colorutils";
-import DataViewValueColumnGroup = powerbi.DataViewValueColumnGroup;
-import {valueFormatter} from "powerbi-visuals-utils-formattingutils";
-import ISelectionId = powerbi.extensibility.ISelectionId;
 
 export function setLegendProperties(dataView: DataView, host: IVisualHost, settings: LegendSettings): LegendProperties {
     let legendObject: DataViewObject = getLegendProperties(settings);

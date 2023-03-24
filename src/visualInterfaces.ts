@@ -5,7 +5,6 @@ import {axisInterfaces, legendInterfaces} from "powerbi-visuals-utils-chartutils
 import {interactivitySelectionService} from "powerbi-visuals-utils-interactivityutils";
 import {Selection} from "d3-selection";
 
-// import * as visualUtils from "./scrollbarUtil";
 import {VisualSettings} from "./settings";
 
 import PrimitiveValue = powerbiApi.PrimitiveValue;
@@ -23,14 +22,7 @@ import LegendData = legendInterfaces.LegendData;
 import {ISelectionHandler} from "powerbi-visuals-utils-interactivityutils/lib/interactivityBaseService";
 import {ISize} from "powerbi-visuals-utils-svgutils/lib/shapes/shapesInterfaces";
 
-
 export type d3Selection<T> = Selection<any, T, any, any>;
-
-// module powerbi.extensibility.visual {
-//     import IAxisProperties = powerbi.extensibility.utils.chart.axis.IAxisProperties;
-//     import SelectableDataPoint = powerbi.extensibility.utils.interactivity.SelectableDataPoint;
-//     import LegendData = powerbi.extensibility.utils.chart.legend.LegendData;
-//     import legend = powerbi.extensibility.utils.chart.legend;
 
 export interface IMargin {
     top: number;
@@ -48,13 +40,13 @@ export interface IMargin {
 //         isVerticalSliderNeeded: boolean;
 //         isHorizontalSliderNeeded: boolean;
 //     }
-//
-//     export interface IAxes {
-//         x: IAxisProperties;
-//         y: IAxisProperties;
-//         xIsScalar?: boolean;
-//     }
-//
+
+export interface IAxes {
+    x: IAxisProperties;
+    y: IAxisProperties;
+    xIsScalar?: boolean;
+}
+
 //     export interface VisualDataRow {
 //         rects: VisualDataRect[];
 //         category: PrimitiveValue;
@@ -106,16 +98,16 @@ export interface Coordinates {
     height: number;
 }
 
-//     export interface VisualData {
-//         dataPoints: VisualDataPoint[];
-//         legendData: LegendData;
-//         hasHighlight: boolean;
-//         isLegendNeeded: boolean;
-//         size?: ISize;
-//         axes: IAxes;
-//         categoriesCount: number;
-//         isSmallMultiple: boolean;
-//     }
+export interface VisualData {
+    dataPoints: VisualDataPoint[];
+    legendData: LegendData;
+    hasHighlight: boolean;
+    isLegendNeeded: boolean;
+    size?: ISize;
+    axes: IAxes;
+    categoriesCount: number;
+    isSmallMultiple: boolean;
+}
 
 export interface IAxesSize {
     xAxisHeight: number;
@@ -163,11 +155,11 @@ export interface CategoryDataPoints {
     dataPoints: VisualDataPoint[];
 }
 
-//     export interface AxesDomains {
-//         yAxisDomain: number[];
-//         xAxisDomain: number[];
-//     }
-//
+export interface AxesDomains {
+    yAxisDomain: number[];
+    xAxisDomain: number[];
+}
+
 //     export enum ScrollableAxisName {
 //         X = <any>'x',
 //         Y = <any>'y'
