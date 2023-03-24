@@ -5,13 +5,14 @@ import powerbi from "powerbi-visuals-api";
 import {max as d3max, min as d3min} from "d3-array";
 import {TextProperties} from "powerbi-visuals-utils-formattingutils/lib/src/interfaces";
 import {textMeasurementService, valueFormatter} from "powerbi-visuals-utils-formattingutils";
-import {ISize} from "powerbi-visuals-utils-svgutils/lib/shapes/shapesInterfaces";
 import {IAxisProperties} from "powerbi-visuals-utils-chartutils/lib/axis/axisInterfaces";
+import {IValueFormatter} from "powerbi-visuals-utils-formattingutils/lib/src/valueFormatter";
 
 import {
     CategoryDataPoints,
     d3Selection,
     IAxes,
+    ISize,
     VisualData,
     VisualDataPoint,
     VisualMeasureMetadata
@@ -20,16 +21,16 @@ import {Field} from "./dataViewConverter";
 import {
     AxisRangeType,
     CategoryAxisSettings,
-    CategoryLabelsSettings, LabelOrientation,
+    CategoryLabelsSettings,
+    LabelOrientation,
     ValueAxisSettings,
     VisualSettings
 } from "./settings";
 import * as formattingUtils from './utils/formattingUtils';
+import {DataLabelHelper} from "./utils/dataLabelHelper";
 
 import DataViewMetadataColumn = powerbi.DataViewMetadataColumn;
 import DataView = powerbi.DataView;
-import {IValueFormatter} from "powerbi-visuals-utils-formattingutils/lib/src/valueFormatter";
-import {DataLabelHelper} from "./utils/dataLabelHelper";
 
 const DisplayUnitValue: number = 1;
 

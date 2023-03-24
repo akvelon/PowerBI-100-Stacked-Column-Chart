@@ -6,14 +6,21 @@ import {pixelConverter as PixelConverter} from "powerbi-visuals-utils-typeutils"
 import {AxisOrientation, IAxisProperties} from "powerbi-visuals-utils-chartutils/lib/axis/axisInterfaces";
 import {getFormatStringByColumn} from "powerbi-visuals-utils-formattingutils/lib/src/valueFormatter";
 import {textMeasurementService, valueFormatter} from "powerbi-visuals-utils-formattingutils";
-import {ISize} from "powerbi-visuals-utils-svgutils/lib/shapes/shapesInterfaces";
 import {TextProperties} from "powerbi-visuals-utils-formattingutils/lib/src/interfaces";
 import {CssConstants} from "powerbi-visuals-utils-svgutils";
 import {translate as svgTranslate} from "powerbi-visuals-utils-svgutils/lib/manipulation";
 import {max as d3max, min as d3min} from "d3-array";
 import {select as d3select} from "d3-selection";
 
-import {AxesDomains, d3Selection, IAxes, IMargin, VisualDataPoint, VisualMeasureMetadata} from "../visualInterfaces";
+import {
+    AxesDomains,
+    d3Selection,
+    IAxes,
+    IMargin,
+    ISize,
+    VisualDataPoint,
+    VisualMeasureMetadata
+} from "../visualInterfaces";
 import {AxisRangeType, HorizontalPosition, VerticalPosition, VisualSettings} from "../settings";
 import * as visualUtils from '../utils';
 import {createAxis} from "../utils/axis/createAxis";

@@ -20,7 +20,6 @@ import IAxisProperties = axisInterfaces.IAxisProperties;
 import SelectableDataPoint = interactivitySelectionService.SelectableDataPoint;
 import LegendData = legendInterfaces.LegendData;
 import {ISelectionHandler} from "powerbi-visuals-utils-interactivityutils/lib/interactivityBaseService";
-import {ISize} from "powerbi-visuals-utils-svgutils/lib/shapes/shapesInterfaces";
 
 export type d3Selection<T> = Selection<any, T, any, any>;
 
@@ -31,15 +30,15 @@ export interface IMargin {
     right: number;
 }
 
-//     export interface ISize {
-//         width: number;
-//         height: number;
-//     }
-//
-//     export interface SmallMultipleSizeOptions extends ISize {
-//         isVerticalSliderNeeded: boolean;
-//         isHorizontalSliderNeeded: boolean;
-//     }
+export interface ISize {
+    width: number;
+    height: number;
+}
+
+export interface SmallMultipleSizeOptions extends ISize {
+    isVerticalSliderNeeded: boolean;
+    isHorizontalSliderNeeded: boolean;
+}
 
 export interface IAxes {
     x: IAxisProperties;
@@ -176,20 +175,19 @@ export interface LegendProperties {
 //     export interface ChartOptions {
 //         maxYLabelWidth
 //     }
-//
-//     export interface SmallMultipleOptions {
-//         rows: PrimitiveValue[],
-//         columns: PrimitiveValue[],
-//         chartSize: ISize,
-//         leftSpace: number,
-//         topSpace: number,
-//         textHeight?: number,
-//         chartElement: d3.Selection<any>,
-//         xAxisLabelSize: number,
-//         index?: number,
-//         rowsInFlow?: number
-//     }
-// }
+
+export interface SmallMultipleOptions {
+    rows: PrimitiveValue[],
+    columns: PrimitiveValue[],
+    chartSize: ISize,
+    leftSpace: number,
+    topSpace: number,
+    textHeight?: number,
+    chartElement: d3Selection<any>,
+    xAxisLabelSize: number,
+    index?: number,
+    rowsInFlow?: number
+}
 
 export interface IBarVisual extends IVisual {
     axesSize: IAxesSize;

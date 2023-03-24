@@ -15,7 +15,6 @@ import {
 } from "powerbi-visuals-utils-interactivityutils/lib/interactivitySelectionService";
 import {CssConstants} from "powerbi-visuals-utils-svgutils";
 import {pixelConverter as PixelConverter} from "powerbi-visuals-utils-typeutils";
-import {ISize} from "powerbi-visuals-utils-svgutils/lib/shapes/shapesInterfaces";
 
 import "../style/visual.less";
 
@@ -26,6 +25,7 @@ import {
     IAxesSize,
     IBarVisual,
     IMargin,
+    ISize,
     LegendProperties,
     LegendSize, VisualData,
     VisualDataPoint,
