@@ -1,15 +1,27 @@
 "use strict";
 
-import powerbi from "powerbi-visuals-api";
+import powerbiApi from "powerbi-visuals-api";
+import {axisInterfaces, legendInterfaces} from "powerbi-visuals-utils-chartutils";
+import {interactivitySelectionService} from "powerbi-visuals-utils-interactivityutils";
 import {Selection} from "d3-selection";
-import {SelectableDataPoint} from "powerbi-visuals-utils-interactivityutils/lib/interactivitySelectionService";
+
+// import * as visualUtils from "./scrollbarUtil";
+import {VisualSettings} from "./settings";
+
+import PrimitiveValue = powerbiApi.PrimitiveValue;
+import ISelectionId = powerbiApi.extensibility.ISelectionId;
+import DataViewValueColumn = powerbiApi.DataViewValueColumn;
+import DataViewValueColumns = powerbiApi.DataViewValueColumns;
+import DataViewMetadataColumn = powerbiApi.DataViewMetadataColumn;
+import DataViewObject = powerbiApi.DataViewObject;
+import VisualTooltipDataItem = powerbiApi.extensibility.VisualTooltipDataItem;
+import IVisual = powerbiApi.extensibility.IVisual;
+import IViewport = powerbiApi.IViewport;
+import IAxisProperties = axisInterfaces.IAxisProperties;
+import SelectableDataPoint = interactivitySelectionService.SelectableDataPoint;
+import LegendData = legendInterfaces.LegendData;
 import {ISelectionHandler} from "powerbi-visuals-utils-interactivityutils/lib/interactivityBaseService";
 
-import PrimitiveValue = powerbi.PrimitiveValue;
-import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
-import ISelectionId = powerbi.extensibility.ISelectionId;
-import IVisual = powerbi.extensibility.visual.IVisual;
-import DataViewMetadataColumn = powerbi.DataViewMetadataColumn;
 
 export type d3Selection<T> = Selection<any, T, any, any>;
 
@@ -52,17 +64,17 @@ export type d3Selection<T> = Selection<any, T, any, any>;
 //         color?: string;
 //         selectionId?: ISelectionId;
 //     }
-//
-//     export class VisualColumns {
-//         public Axis: DataViewValueColumn = null;
-//         public Legend: DataViewValueColumn = null;
-//         public Value: DataViewValueColumn[] | DataViewValueColumn = null;
-//         public ColorSaturation: DataViewValueColumn = null;
-//         public Tooltips: DataViewValueColumn[] | DataViewValueColumn = null;
-//         public ColumnBy: DataViewValueColumn = null;
-//         public RowBy: DataViewValueColumn = null;
-//         public GroupedValues: DataViewValueColumns = null;
-//     }
+
+export class VisualColumns {
+    public Axis: DataViewValueColumn | null = null;
+    public Legend: DataViewValueColumn | null = null;
+    public Value: DataViewValueColumn[] | DataViewValueColumn | null = null;
+    public ColorSaturation: DataViewValueColumn | null = null;
+    public Tooltips: DataViewValueColumn[] | DataViewValueColumn | null = null;
+    public ColumnBy: DataViewValueColumn | null = null;
+    public RowBy: DataViewValueColumn | null = null;
+    public GroupedValues: DataViewValueColumns | null = null;
+}
 
 export interface VisualDataPoint extends SelectableDataPoint {
     value: number;
@@ -161,13 +173,13 @@ export interface VisualAxesLabels {
 //     }
 //
 //     export type SelectionState = undefined | null | 'selected' | 'justSelected' | 'justRemoved';
-//
-//     export interface LegendProperties {
-//         legendObject: DataViewObject;
-//         data: LegendData;
-//         colors: string[];
-//     }
-//
+
+export interface LegendProperties {
+    legendObject: DataViewObject;
+    data: LegendData;
+    colors: string[];
+}
+
 //     export interface ChartOptions {
 //         maxYLabelWidth
 //     }

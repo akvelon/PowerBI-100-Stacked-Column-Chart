@@ -14,13 +14,15 @@ import {
 } from "powerbi-visuals-utils-interactivityutils/lib/interactivitySelectionService";
 import {CssConstants} from "powerbi-visuals-utils-svgutils";
 
-import {d3Selection, IBarVisual, VisualDataPoint, VisualMeasureMetadata} from "./visualInterfaces";
+import {d3Selection, IBarVisual, LegendProperties, VisualDataPoint, VisualMeasureMetadata} from "./visualInterfaces";
 import {CustomLegendBehavior} from "./customLegendBehavior";
 import {WebBehavior} from "./behavior";
 import {DataViewConverter, Field} from "./dataViewConverter";
-import * as metadataUtils from './metadataUtils';
 import {VisualSettings} from "./settings";
+import * as metadataUtils from './metadataUtils';
 import * as visualUtils from './utils';
+import * as selectionSaveUtils from './selectionSaveUtils';
+import * as legendUtils from './utils/legendUtils';
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
 import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
@@ -59,7 +61,7 @@ import DataViewCategoryColumn = powerbi.DataViewCategoryColumn;
 class Selectors {
 //         export const MainSvg = CssConstants.createClassAndSelector("bar-chart-svg");
 //         export const VisualSvg = CssConstants.createClassAndSelector("bar-chart-visual");
-//         export const BarSelect = CssConstants.createClassAndSelector("bar");
+    static BarSelect = CssConstants.createClassAndSelector("bar");
     static BarGroupSelect = CssConstants.createClassAndSelector("bar-group");
 //         export const AxisGraphicsContext = CssConstants.createClassAndSelector("axisGraphicsContext");
 //         export const AxisLabelSelector = CssConstants.createClassAndSelector("axisLabel");
@@ -117,9 +119,9 @@ export class Visual implements IBarVisual {
 //
 //         private clearCatcher: d3.Selection<any>;
     private tooltipServiceWrapper: ITooltipServiceWrapper;
-//
-//         private legendProperties: LegendProperties;
-//
+
+    private legendProperties: LegendProperties;
+
 //         private hasHighlight: boolean;
     private isLegendNeeded: boolean;
 //         private isSelectionRestored: boolean = false;
@@ -171,16 +173,16 @@ export class Visual implements IBarVisual {
     }
 
     saveSelection(): void {
-//             const selected = this.mainElement.selectAll(`.legendItem, ${Selectors.BarSelect.selectorName}`)
-//                 .filter(d => d.selected)
-//                 .each(d => {
-//                     // saving prototype value if no own value (needed for legend)
-//                     d.identity = d.identity;
-//                 });
-//
-//             const data: any[] = selected.data();
-//
-//             selectionSaveUtils.saveSelection(data, this.host);
+        const selected = this.mainElement.selectAll<any, LegendDataPoint>(`.legendItem, ${Selectors.BarSelect.selectorName}`)
+            .filter(d => d.selected)
+            .each(d => {
+                // saving prototype value if no own value (needed for legend)
+                d.identity = d.identity;
+            });
+
+        const data: any[] = selected.data();
+
+        selectionSaveUtils.saveSelection(data, this.host);
     }
 
     public clearAll() {
@@ -366,11 +368,11 @@ export class Visual implements IBarVisual {
 
             this.settings = Visual.parseSettings(dataView);
             this.updateSettings(this.settings, dataView);
-//
-//             this.legendProperties = legendUtils.setLegendProperties(dataView, this.host, this.settings.legend);
-//
-//             this.allDataPoints = DataViewConverter.Convert(dataView, this.host, this.settings, this.legendProperties.colors);
-//
+
+            this.legendProperties = legendUtils.setLegendProperties(dataView, this.host, this.settings.legend);
+
+            this.allDataPoints = DataViewConverter.Convert(dataView, this.host, this.settings, this.legendProperties.colors);
+
 //             if ( this.isSmallMultiple() ) {
 //                 this.smallMultipleProcess(options.viewport);
 //             } else {

@@ -1,7 +1,13 @@
 "use strict";
 
-import {VisualMeasureMetadata} from "./visualInterfaces";
 import {axis} from "powerbi-visuals-utils-chartutils";
+import powerbi from "powerbi-visuals-api";
+
+import {VisualMeasureMetadata} from "./visualInterfaces";
+
+import DataViewMetadataColumn = powerbi.DataViewMetadataColumn;
+import DataView = powerbi.DataView;
+import {Field} from "./dataViewConverter";
 
 // module powerbi.extensibility.visual.visualUtils {
 //     import IAxisProperties = powerbi.extensibility.utils.chart.axis.IAxisProperties;
@@ -232,22 +238,22 @@ import {axis} from "powerbi-visuals-utils-chartutils";
 //             }
 //         });
 //     }
-//
-//     export function getNumberOfValues(dataView: DataView): number {
-//         const columns: DataViewMetadataColumn[] = dataView.metadata.columns;
-//         let valueFieldsCount: number = 0;
-//
-//         for (let columnName in columns) {
-//             const column: DataViewMetadataColumn = columns[columnName];
-//
-//             if (column.roles && column.roles[Field.Value]) {
-//                 ++valueFieldsCount;
-//             }
-//         }
-//
-//         return valueFieldsCount;
-//     }
-//
+
+export function getNumberOfValues(dataView: DataView): number {
+    const columns: DataViewMetadataColumn[] = dataView.metadata.columns;
+    let valueFieldsCount: number = 0;
+
+    for (let columnName in columns) {
+        const column: DataViewMetadataColumn = columns[columnName];
+
+        if (column.roles && column.roles[Field.Value]) {
+            ++valueFieldsCount;
+        }
+    }
+
+    return valueFieldsCount;
+}
+
 //     export function getLineStyleParam(lineStyle) {
 //         let strokeDasharray;
 //
