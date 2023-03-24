@@ -1,3 +1,8 @@
+"use strict";
+
+import {VisualMeasureMetadata} from "./visualInterfaces";
+import {axis} from "powerbi-visuals-utils-chartutils";
+
 // module powerbi.extensibility.visual.visualUtils {
 //     import IAxisProperties = powerbi.extensibility.utils.chart.axis.IAxisProperties;
 //     import TextMeasurementService = powerbi.extensibility.utils.formatting.textMeasurementService;
@@ -443,11 +448,10 @@ export function isSelected(selected: boolean, highlight: boolean, hasSelection: 
 //
 //         return !isOrdinal;
 //     }
-//
-//     export function categoryIsScalar(metadata: VisualMeasureMetadata): boolean {
-//         const categoryType: valueType = axis.getCategoryValueType(metadata.cols.category);
-//         let isOrdinal: boolean = axis.isOrdinal(categoryType);
-//
-//         return !isOrdinal;
-//     }
-// }
+
+export function categoryIsScalar(metadata: VisualMeasureMetadata): boolean {
+    const categoryType = axis.getCategoryValueType(metadata.cols.category);
+    let isOrdinal: boolean = axis.isOrdinal(categoryType);
+
+    return !isOrdinal;
+}

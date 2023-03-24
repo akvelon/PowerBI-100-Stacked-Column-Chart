@@ -1,54 +1,30 @@
-// /*
-//  *  Power BI Visualizations
-//  *
-//  *  Copyright (c) Microsoft Corporation
-//  *  All rights reserved.
-//  *  MIT License
-//  *
-//  *  Permission is hereby granted, free of charge, to any person obtaining a copy
-//  *  of this software and associated documentation files (the ""Software""), to deal
-//  *  in the Software without restriction, including without limitation the rights
-//  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-//  *  copies of the Software, and to permit persons to whom the Software is
-//  *  furnished to do so, subject to the following conditions:
-//  *
-//  *  The above copyright notice and this permission notice shall be included in
-//  *  all copies or substantial portions of the Software.
-//  *
-//  *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-//  *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-//  *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-//  *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-//  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-//  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-//  *  THE SOFTWARE.
-//  */
-//
-// module powerbi.extensibility.visual {
-//   "use strict";
+"use strict";
+
+import {DataViewObjectsParser} from "powerbi-visuals-utils-dataviewutils/lib/dataViewObjectsParser";
+
 //   import DataViewObjectsParser = powerbi.extensibility.utils.dataview.DataViewObjectsParser;
-//
-//   const DefaultFontFamily: string = "\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif";
-//
-//   export class VisualSettings extends DataViewObjectsParser {
-//     public selectionSaveSettings = {
-//       selection: []
-//     };
+
+const DefaultFontFamily: string = "\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif";
+
+export class VisualSettings extends DataViewObjectsParser {
+    public selectionSaveSettings = {
+        selection: []
+    };
 //     public dataPoint: dataPointSettings = new dataPointSettings();
 //     public smallMultiple: smallMultipleSettings = new smallMultipleSettings();
-//     public legend: legendSettings = new legendSettings();
-//     public categoryAxis: categoryAxisSettings = new categoryAxisSettings();
+    public legend = new LegendSettings();
+    public categoryAxis = new CategoryAxisSettings();
 //     public valueAxis: valueAxisSettings = new valueAxisSettings();
 //     public categoryLabels: categoryLabelsSettings = new categoryLabelsSettings();
 //     public constantLine: constantLineSettings = new constantLineSettings();
-//   }
-//
-//   export enum AxisRangeType {
-//     Common = <any>"common",
-//     Separate = <any>"separate",
-//     Custom = <any>"custom"
-//   }
-//
+}
+
+export const enum AxisRangeType {
+    Common = "common",
+    Separate = "separate",
+    Custom = "custom",
+}
+
 //   export enum LayoutMode {
 //     Flow = <any>"flow",
 //     Matrix = <any>"matrix"
@@ -100,65 +76,65 @@
 //     Top = <any>"top",
 //     Bottom = <any>"bottom"
 //   }
-//
-//   // tslint:disable-next-line:class-name
-//   export class legendSettings {
-//     // Show legend
-//     public show: boolean = true;
-//     // Position
-//     public position: string = "Top";
-//     // Show title
-//     public showTitle: boolean = true;
-//     // Legend Name
-//     public legendName: string = "";
-//     // Legend Name Fill
-//     public legendNameColor: string = "";
-//     // Legend Font Family
-//     public fontFamily: string = DefaultFontFamily;
-//     // Legend Font Size
-//     public fontSize: number = 8;
-//   }
-//   // tslint:disable-next-line:class-name
-//   export class categoryAxisSettings {
-//     // Show category axis
-//     public show: boolean = true;
-//     // Position
-//     public position: string = "top";
-//     // Axis type
-//     public axisType: string = "categorical";
-//     // Axis Scale type
-//     public axisScale: string = "linear";
-//     public rangeType: AxisRangeType = AxisRangeType.Common;
-//     public rangeTypeNoScalar: AxisRangeType = AxisRangeType.Common;
-//     // Axis start
-//     public start: number = null;
-//     // Axis end
-//     public end: number = null;
-//     // Axis color
-//     public axisColor: string = "";
-//     // Axis Font Size
-//     public fontSize: number = 11;
-//     // Axis Font Family
-//     public fontFamily: string = DefaultFontFamily;
-//     // Display Units
-//     public displayUnits: number = 0;
-//     // valueDecimalPlaces
-//     public precision: number = null;
-//     // Minimum category width
-//     public minCategoryWidth: number = 20;
-//     // Minimum category width
-//     public maximumSize: number = 25;
-//     // Minimum category width
-//     public innerPadding: number = 20;
-//     // Show title
-//     public showTitle: boolean = false;
-//
-//     public titleStyle: string = "showTitleOnly";
-//     public axisTitleColor: string = "";
-//     public axisTitle: string = "";
-//     public titleFontSize: number = 11;
-//     public titleFontFamily: string = DefaultFontFamily;
-//   }
+
+export class LegendSettings {
+    // Show legend
+    public show: boolean = true;
+    // Position
+    public position: string = "Top";
+    // Show title
+    public showTitle: boolean = true;
+    // Legend Name
+    public legendName: string = "";
+    // Legend Name Fill
+    public legendNameColor: string = "";
+    // Legend Font Family
+    public fontFamily: string = DefaultFontFamily;
+    // Legend Font Size
+    public fontSize: number = 8;
+}
+
+export class CategoryAxisSettings {
+    // Show category axis
+    public show: boolean = true;
+    // Position
+    public position: string = "top";
+    // Axis type
+    public axisType: string = "categorical";
+    // Axis Scale type
+    public axisScale: string = "linear";
+    public rangeType: AxisRangeType = AxisRangeType.Common;
+    public rangeTypeNoScalar: AxisRangeType = AxisRangeType.Common;
+    // Axis start
+    public start: number = null;
+    // Axis end
+    public end: number = null;
+    // Axis color
+    public axisColor: string = "";
+    // Axis Font Size
+    public fontSize: number = 11;
+    // Axis Font Family
+    public fontFamily: string = DefaultFontFamily;
+    // Display Units
+    public displayUnits: number = 0;
+    // valueDecimalPlaces
+    public precision: number = null;
+    // Minimum category width
+    public minCategoryWidth: number = 20;
+    // Minimum category width
+    public maximumSize: number = 25;
+    // Minimum category width
+    public innerPadding: number = 20;
+    // Show title
+    public showTitle: boolean = false;
+
+    public titleStyle: string = "showTitleOnly";
+    public axisTitleColor: string = "";
+    public axisTitle: string = "";
+    public titleFontSize: number = 11;
+    public titleFontFamily: string = DefaultFontFamily;
+}
+
 //   // tslint:disable-next-line:class-name
 //   export class valueAxisSettings {
 //     // Show category axis

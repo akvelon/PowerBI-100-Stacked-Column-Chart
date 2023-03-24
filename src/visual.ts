@@ -5,14 +5,6 @@ import powerbi from "powerbi-visuals-api";
 import {createTooltipServiceWrapper, ITooltipServiceWrapper} from "powerbi-visuals-utils-tooltiputils";
 import {ILegend, LegendDataPoint} from "powerbi-visuals-utils-chartutils/lib/legend/legendInterfaces";
 import {createLegend} from "powerbi-visuals-utils-chartutils/lib/legend/legend";
-
-import {d3Selection, IBarVisual, VisualDataPoint} from "./visualInterfaces";
-import {CustomLegendBehavior} from "./customLegendBehavior";
-
-import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
-import IVisual = powerbi.extensibility.visual.IVisual;
-import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
-import IVisualHost = powerbi.extensibility.visual.IVisualHost;
 import {
     IInteractiveBehavior,
     IInteractivityService, ISelectionHandler
@@ -20,7 +12,26 @@ import {
 import {
     createInteractivitySelectionService
 } from "powerbi-visuals-utils-interactivityutils/lib/interactivitySelectionService";
+import {CssConstants} from "powerbi-visuals-utils-svgutils";
+
+import {d3Selection, IBarVisual, VisualDataPoint, VisualMeasureMetadata} from "./visualInterfaces";
+import {CustomLegendBehavior} from "./customLegendBehavior";
 import {WebBehavior} from "./behavior";
+import {DataViewConverter, Field} from "./dataViewConverter";
+import * as metadataUtils from './metadataUtils';
+import {VisualSettings} from "./settings";
+import * as visualUtils from './utils';
+
+import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
+import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
+import IVisualHost = powerbi.extensibility.visual.IVisualHost;
+import VisualUpdateType = powerbi.VisualUpdateType;
+import DataView = powerbi.DataView;
+import IViewport = powerbi.IViewport;
+import DataViewValueColumnGroup = powerbi.DataViewValueColumnGroup;
+import DataViewMetadataColumn = powerbi.DataViewMetadataColumn;
+import DataViewCategoryColumn = powerbi.DataViewCategoryColumn;
+
 
 // module powerbi.extensibility.visual {
 //     import svg = powerbi.extensibility.utils.svg;
@@ -45,47 +56,47 @@ import {WebBehavior} from "./behavior";
 //     import ILegend = powerbi.extensibility.utils.chart.legend.ILegend;
 //     import createLegend = powerbi.extensibility.utils.chart.legend.createLegend;
 //
-//     module Selectors {
+class Selectors {
 //         export const MainSvg = CssConstants.createClassAndSelector("bar-chart-svg");
 //         export const VisualSvg = CssConstants.createClassAndSelector("bar-chart-visual");
 //         export const BarSelect = CssConstants.createClassAndSelector("bar");
-//         export const BarGroupSelect = CssConstants.createClassAndSelector("bar-group");
+    static BarGroupSelect = CssConstants.createClassAndSelector("bar-group");
 //         export const AxisGraphicsContext = CssConstants.createClassAndSelector("axisGraphicsContext");
 //         export const AxisLabelSelector = CssConstants.createClassAndSelector("axisLabel");
 //         export const LabelGraphicsContext = CssConstants.createClassAndSelector("labelGraphicsContext");
 //         export const LabelBackgroundContext = CssConstants.createClassAndSelector("labelBackgroundContext");
-//     }
+}
 
 export class Visual implements IBarVisual {
 //         public static DefaultColor: string = "#777777";
 
     private allDataPoints: VisualDataPoint[];
 //         public categoriesCount: number;
-//
-//         public viewport: IViewport;
+
+    public viewport: IViewport;
 
     public webBehaviorSelectionHandler: ISelectionHandler;
 
 //         private mainSvgElement: d3.Selection<SVGElement>;
 //         private mainGElement: d3.Selection<SVGElement>;
-//         private xAxisSvgGroup: d3.Selection<SVGElement>;
-//         private yAxisSvgGroup: d3.Selection<SVGElement>;
+    private xAxisSvgGroup: d3Selection<SVGElement>;
+    private yAxisSvgGroup: d3Selection<SVGElement>;
 //         private axisGraphicsContext: d3.Selection<SVGElement>;
 //         private axisLabelsGroup: d3.selection.Update<string>;
     private legendElement: d3Selection<SVGElement>;
     private legendElementRoot: d3Selection<SVGElement>;
 
 //         public readonly barClassName: string = Selectors.BarSelect.className;
-//         private labelGraphicsContext: d3.Selection<any>;
-//         private labelBackgroundContext: d3.Selection<any>;
-//
+    private labelGraphicsContext: d3Selection<any>;
+    private labelBackgroundContext: d3Selection<any>;
+
 //         public scrollBar: visualUtils.ScrollBar = new visualUtils.ScrollBar(this);
 //
 //         private dataPointThickness: number = 0; // height for bars, width for columns
-//
-//         public settings: VisualSettings;
+
+    public settings: VisualSettings;
     public host: IVisualHost;
-//         private dataView: DataView;
+    private dataView: DataView;
 //         private data: VisualData;
 //         public visualSize: ISize;
 //         public visualMargin: IMargin;
@@ -110,11 +121,11 @@ export class Visual implements IBarVisual {
 //         private legendProperties: LegendProperties;
 //
 //         private hasHighlight: boolean;
-//         private isLegendNeeded: boolean;
+    private isLegendNeeded: boolean;
 //         private isSelectionRestored: boolean = false;
-//
-//         private metadata: VisualMeasureMetadata;
-//
+
+    private metadata: VisualMeasureMetadata;
+
 //         private lassoSelection: visualUtils.LassoSelection = new visualUtils.LassoSelection(this);
 //         private LassoSelectionForSmallMultiple: visualUtils.LassoSelectionForSmallMultiple = new visualUtils.LassoSelectionForSmallMultiple(Selectors.BarSelect, this);
 //
@@ -125,9 +136,9 @@ export class Visual implements IBarVisual {
 //
     private mainElement: d3Selection<any>;
     private mainHtmlElement: HTMLElement;
-//         private mainDivElement: d3.Selection<any>;
+    private mainDivElement: d3Selection<any>;
 //         private chartsContainer: d3.Selection<SVGElement>;
-//         private barGroup: d3.Selection<SVGElement>;
+    private barGroup: d3Selection<SVGElement>;
 //         public readonly axesSize: IAxesSize = {xAxisHeight: 10, yAxisWidth: 15};
 //
     constructor(options: VisualConstructorOptions) {
@@ -172,40 +183,39 @@ export class Visual implements IBarVisual {
 //             selectionSaveUtils.saveSelection(data, this.host);
     }
 
-//
-//         public clearAll() {
-//             if (this.isSmallMultiple()) {
-//                 this.mainElement.selectAll(".selection-rect").remove();
-//                 this.mainDivElement.selectAll("*").remove();
-//             } else {
-//                 this.barGroup && this.barGroup.selectAll(Selectors.BarGroupSelect.selectorName).remove();
-//                 this.xAxisSvgGroup && this.xAxisSvgGroup.selectAll("*").remove();
-//                 this.yAxisSvgGroup && this.yAxisSvgGroup.selectAll("*").remove();
-//                 this.legendElement && this.legendElement.selectAll("*").remove();
-//                 this.labelGraphicsContext && this.labelGraphicsContext.selectAll("*").remove();
-//                 this.labelBackgroundContext && this.labelBackgroundContext.selectAll("*").remove();
-//             }
-//         }
-//
-//         private optionsAreValid(options: VisualUpdateOptions) {
-//             const dataView = options && options.dataViews && options.dataViews[0];
-//
-//             if (!dataView || options.type === VisualUpdateType.ResizeEnd) {
-//                 return;
-//             }
-//
-//             if (!DataViewConverter.IsCategoryFilled(dataView, Field.Axis) || !DataViewConverter.IsCategoryFilled(dataView, Field.Axis)) {
-//                 this.clearAll();
-//                 return;
-//             }
-//
-//             return true;
-//         }
-//
-//         private isSmallMultiple(): boolean {
-//             return !!this.metadata && (this.metadata.idx.columnBy > -1 || this.metadata.idx.rowBy > -1);
-//         }
-//
+    public clearAll() {
+        if (this.isSmallMultiple()) {
+            this.mainElement.selectAll(".selection-rect").remove();
+            this.mainDivElement.selectAll("*").remove();
+        } else {
+            this.barGroup && this.barGroup.selectAll(Selectors.BarGroupSelect.selectorName).remove();
+            this.xAxisSvgGroup && this.xAxisSvgGroup.selectAll("*").remove();
+            this.yAxisSvgGroup && this.yAxisSvgGroup.selectAll("*").remove();
+            this.legendElement && this.legendElement.selectAll("*").remove();
+            this.labelGraphicsContext && this.labelGraphicsContext.selectAll("*").remove();
+            this.labelBackgroundContext && this.labelBackgroundContext.selectAll("*").remove();
+        }
+    }
+
+    private optionsAreValid(options: VisualUpdateOptions) {
+        const dataView = options && options.dataViews && options.dataViews[0];
+
+        if (!dataView || options.type === VisualUpdateType.ResizeEnd) {
+            return;
+        }
+
+        if (!DataViewConverter.IsCategoryFilled(dataView, Field.Axis) || !DataViewConverter.IsCategoryFilled(dataView, Field.Axis)) {
+            this.clearAll();
+            return;
+        }
+
+        return true;
+    }
+
+    private isSmallMultiple(): boolean {
+        return !!this.metadata && (this.metadata.idx.columnBy > -1 || this.metadata.idx.rowBy > -1);
+    }
+
 //         normalChartProcess(options: VisualUpdateOptions): void {
 //             this.maxXLabelsWidth = null;
 //             this.dataPointsByCategories = this.buildDataPointsByCategoriesArray();
@@ -338,21 +348,24 @@ export class Visual implements IBarVisual {
 //         }
 //
     public update(options: VisualUpdateOptions) {
-//             if (!this.optionsAreValid(options)) {
-//                 return;
-//             }
-//
-//             const dataView = options && options.dataViews && options.dataViews[0];
-//
-//             this.dataView = dataView;
-//             this.viewport = options.viewport;
-//
-//             this.isLegendNeeded = DataViewConverter.IsLegendNeeded(dataView);
-//
-//             this.updateMetaData();
-//
-//             this.settings = Visual.parseSettings(dataView);
-//             this.updateSettings(this.settings, dataView);
+        try {
+            console.log('=== RENDER ===');
+
+            if (!this.optionsAreValid(options)) {
+                return;
+            }
+
+            const dataView = options && options.dataViews && options.dataViews[0];
+
+            this.dataView = dataView;
+            this.viewport = options.viewport;
+
+            this.isLegendNeeded = DataViewConverter.IsLegendNeeded(dataView);
+
+            this.updateMetaData();
+
+            this.settings = Visual.parseSettings(dataView);
+            this.updateSettings(this.settings, dataView);
 //
 //             this.legendProperties = legendUtils.setLegendProperties(dataView, this.host, this.settings.legend);
 //
@@ -369,6 +382,13 @@ export class Visual implements IBarVisual {
 //
 //                 this.isSelectionRestored = true;
 //             }
+
+            console.log('=== RENDER END ===');
+        } catch (e) {
+            console.error('=== ERROR ===');
+            console.error(e);
+            throw e;
+        }
     }
 
 //
@@ -1111,14 +1131,14 @@ export class Visual implements IBarVisual {
 //             RenderAxes.rotateXAxisTickLabels(this.isNeedToRotate, this.xAxisSvgGroup);
 //             this.finalRendering();
 //         }
-//
-//         private updateMetaData(): void {
-//             const grouped: DataViewValueColumnGroup[] = this.dataView.categorical.values.grouped();
-//             const source: DataViewMetadataColumn = this.dataView.metadata.columns[0];
-//             const categories: DataViewCategoryColumn[] = this.dataView.categorical.categories || [];
-//             this.metadata = metadataUtils.getMetadata(categories, grouped, source);
-//         }
-//
+
+    private updateMetaData(): void {
+        const grouped: DataViewValueColumnGroup[] = this.dataView.categorical.values.grouped();
+        const source: DataViewMetadataColumn = this.dataView.metadata.columns[0];
+        const categories: DataViewCategoryColumn[] = this.dataView.categorical.categories || [];
+        this.metadata = metadataUtils.getMetadata(categories, grouped, source);
+    }
+
 //         private getScrollbarState(): ScrollbarState {
 //             const categoryType: valueType = axis.getCategoryValueType(this.metadata.cols.category),
 //                 isOrdinal: boolean = axis.isOrdinal(categoryType);
@@ -1246,61 +1266,61 @@ export class Visual implements IBarVisual {
 //             }
 //         }
 //
-//         private updateSettings(settings: VisualSettings, dataView: DataView) {
-//             const MAX_INNER_PADDING = 50;
-//
-//             const MAX_CATEGORY_WIDTH = 180;
-//             const MIN_CATEGORY_WIDTH = 20;
-//
-//             const MAX_Y_AXIS_WIDTH = 50;
-//             const MIN_Y_AXIS_WIDTH = 15;
-//
-//             // for legend
-//             if (this.settings.legend.legendName.length === 0) {
-//                 if (dataView.categorical.values.source) {
-//                     settings.legend.legendName = dataView.categorical.values.source.displayName;
-//                 }
-//             }
-//
-//             if (this.isSmallMultiple() && (!visualUtils.categoryIsScalar(this.metadata) || this.settings.categoryAxis.axisType === "categorical")) {
-//                 settings.categoryAxis.rangeType = settings.categoryAxis.rangeTypeNoScalar;
-//             }
-//
-//             // for Y-axis
-//             const categoryAxis = settings.categoryAxis;
-//
-//             if (categoryAxis.innerPadding > MAX_INNER_PADDING) {
-//                 categoryAxis.innerPadding = MAX_INNER_PADDING;
-//             }
-//
-//             if (categoryAxis.minCategoryWidth < MIN_CATEGORY_WIDTH) {
-//                 categoryAxis.minCategoryWidth = MIN_CATEGORY_WIDTH;
-//             }
-//             if (categoryAxis.minCategoryWidth > MAX_CATEGORY_WIDTH) {
-//                 categoryAxis.minCategoryWidth = MAX_CATEGORY_WIDTH;
-//             }
-//
-//             if (categoryAxis.maximumSize < MIN_Y_AXIS_WIDTH) {
-//                 categoryAxis.maximumSize = MIN_Y_AXIS_WIDTH;
-//             }
-//             if (categoryAxis.maximumSize > MAX_Y_AXIS_WIDTH) {
-//                 categoryAxis.maximumSize = MAX_Y_AXIS_WIDTH;
-//             }
-//
-//             if (categoryAxis.showTitle && categoryAxis.axisTitle.length === 0) {
-//                 let categories = dataView.categorical.categories;
-//                 categoryAxis.axisTitle = categories ? categories[0].source.displayName : dataView.categorical.values.source.displayName;
-//             }
-//             if (!categoryAxis.showTitle) {
-//                 categoryAxis.axisTitle = '';
-//             }
-//
-//             if (typeof settings.selectionSaveSettings.selection === "string") {
-//                 settings.selectionSaveSettings.selection = JSON.parse(settings.selectionSaveSettings.selection);
-//             }
-//         }
-//
-//         private calculateOffsets() {
+    private updateSettings(settings: VisualSettings, dataView: DataView) {
+        const MAX_INNER_PADDING = 50;
+
+        const MAX_CATEGORY_WIDTH = 180;
+        const MIN_CATEGORY_WIDTH = 20;
+
+        const MAX_Y_AXIS_WIDTH = 50;
+        const MIN_Y_AXIS_WIDTH = 15;
+
+        // for legend
+        if (this.settings.legend.legendName.length === 0) {
+            if (dataView.categorical.values.source) {
+                settings.legend.legendName = dataView.categorical.values.source.displayName;
+            }
+        }
+
+        if (this.isSmallMultiple() && (!visualUtils.categoryIsScalar(this.metadata) || this.settings.categoryAxis.axisType === "categorical")) {
+            settings.categoryAxis.rangeType = settings.categoryAxis.rangeTypeNoScalar;
+        }
+
+        // for Y-axis
+        const categoryAxis = settings.categoryAxis;
+
+        if (categoryAxis.innerPadding > MAX_INNER_PADDING) {
+            categoryAxis.innerPadding = MAX_INNER_PADDING;
+        }
+
+        if (categoryAxis.minCategoryWidth < MIN_CATEGORY_WIDTH) {
+            categoryAxis.minCategoryWidth = MIN_CATEGORY_WIDTH;
+        }
+        if (categoryAxis.minCategoryWidth > MAX_CATEGORY_WIDTH) {
+            categoryAxis.minCategoryWidth = MAX_CATEGORY_WIDTH;
+        }
+
+        if (categoryAxis.maximumSize < MIN_Y_AXIS_WIDTH) {
+            categoryAxis.maximumSize = MIN_Y_AXIS_WIDTH;
+        }
+        if (categoryAxis.maximumSize > MAX_Y_AXIS_WIDTH) {
+            categoryAxis.maximumSize = MAX_Y_AXIS_WIDTH;
+        }
+
+        if (categoryAxis.showTitle && categoryAxis.axisTitle.length === 0) {
+            let categories = dataView.categorical.categories;
+            categoryAxis.axisTitle = categories ? categories[0].source.displayName : dataView.categorical.values.source.displayName;
+        }
+        if (!categoryAxis.showTitle) {
+            categoryAxis.axisTitle = '';
+        }
+
+        if (typeof settings.selectionSaveSettings.selection === "string") {
+            settings.selectionSaveSettings.selection = JSON.parse(settings.selectionSaveSettings.selection);
+        }
+    }
+
+    //         private calculateOffsets() {
 //
 //             let xtickText: d3.selection.Group = this.xAxisSvgGroup.selectAll("text")[0];
 //             let ytickText: d3.selection.Group = this.yAxisSvgGroup.selectAll("text")[0];
@@ -1443,11 +1463,11 @@ export class Visual implements IBarVisual {
 //         private yAxisHasRightPosition(): boolean {
 //             return this.settings.valueAxis.show && this.settings.valueAxis.position === "right";
 //         }
-//
-//         private static parseSettings(dataView: DataView): VisualSettings {
-//             return VisualSettings.parse(dataView) as VisualSettings;
-//         }
-//
+
+    private static parseSettings(dataView: DataView): VisualSettings {
+        return VisualSettings.parse(dataView) as VisualSettings;
+    }
+
 //         /**
 //          * This function gets called for each of the objects defined in the capabilities files and allows you to select which of the
 //          * objects and properties you want to expose to the users in the property pane.

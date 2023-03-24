@@ -1,14 +1,15 @@
 "use strict";
 
+import powerbi from "powerbi-visuals-api";
 import {Selection} from "d3-selection";
 import {SelectableDataPoint} from "powerbi-visuals-utils-interactivityutils/lib/interactivitySelectionService";
-import powerbi from "powerbi-visuals-api";
+import {ISelectionHandler} from "powerbi-visuals-utils-interactivityutils/lib/interactivityBaseService";
 
 import PrimitiveValue = powerbi.PrimitiveValue;
 import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
 import ISelectionId = powerbi.extensibility.ISelectionId;
 import IVisual = powerbi.extensibility.visual.IVisual;
-import {ISelectionHandler} from "powerbi-visuals-utils-interactivityutils/lib/interactivityBaseService";
+import DataViewMetadataColumn = powerbi.DataViewMetadataColumn;
 
 export type d3Selection<T> = Selection<any, T, any, any>;
 
@@ -107,33 +108,33 @@ export interface Coordinates {
 //         xAxisHeight: number;
 //         yAxisWidth: number;
 //     }
-//
-//     export interface VisualMeasureMetadata {
-//         idx: VisualMeasureMetadataIndexes;
-//         cols: VisualMeasureMetadataColumns;
-//         labels: VisualAxesLabels;
-//         groupingColumn: DataViewMetadataColumn;
-//     }
-//
-//     export interface VisualMeasureMetadataIndexes {
-//         category?: number;
-//         value?: number;
-//         y?: number;
-//         gradient?: number;
-//         columnBy?: number;
-//         rowBy?: number;
-//     }
-//
-//     export interface VisualMeasureMetadataColumns {
-//         value?: DataViewMetadataColumn;
-//         category?: DataViewMetadataColumn;
-//     }
-//
-//     export interface VisualAxesLabels {
-//         x: string;
-//         y: string;
-//     }
-//
+
+export interface VisualMeasureMetadata {
+    idx: VisualMeasureMetadataIndexes;
+    cols: VisualMeasureMetadataColumns;
+    labels: VisualAxesLabels;
+    groupingColumn: DataViewMetadataColumn;
+}
+
+export interface VisualMeasureMetadataIndexes {
+    category?: number;
+    value?: number;
+    y?: number;
+    gradient?: number;
+    columnBy?: number;
+    rowBy?: number;
+}
+
+export interface VisualMeasureMetadataColumns {
+    value?: DataViewMetadataColumn;
+    category?: DataViewMetadataColumn;
+}
+
+export interface VisualAxesLabels {
+    x: string;
+    y: string;
+}
+
 //     export interface LegendSize {
 //         width: number;
 //         height: number;
@@ -201,5 +202,6 @@ export interface IBarVisual extends IVisual {
     // visualSize: any;
     // visualMargin: IMargin;
     getAllDataPoints(): VisualDataPoint[];
+
     // scrollBar: visualUtils.ScrollBar
 }

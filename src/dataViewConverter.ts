@@ -1,46 +1,24 @@
-// /*
-//  *  Power BI Visualizations
-//  *
-//  *  Copyright (c) Microsoft Corporation
-//  *  All rights reserved.
-//  *  MIT License
-//  *
-//  *  Permission is hereby granted, free of charge, to any person obtaining a copy
-//  *  of this software and associated documentation files (the ""Software""), to deal
-//  *  in the Software without restriction, including without limitation the rights
-//  *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-//  *  copies of the Software, and to permit persons to whom the Software is
-//  *  furnished to do so, subject to the following conditions:
-//  *
-//  *  The above copyright notice and this permission notice shall be included in
-//  *  all copies or substantial portions of the Software.
-//  *
-//  *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-//  *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-//  *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-//  *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-//  *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-//  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-//  *  THE SOFTWARE.
-//  */
-//
-// module powerbi.extensibility.visual {
-//     import converterHelper = powerbi.extensibility.utils.dataview.converterHelper;
-//     import ValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter;
-//     import ColorHelper = powerbi.extensibility.utils.color.ColorHelper;
-//
-//     export enum Field {
-//         Axis = <any>"Axis",
-//         Legend = <any>"Legend",
-//         Value = <any>"Value",
-//         Gradient = <any>"Gradient",
-//         ColumnBy = <any>"ColumnBy",
-//         RowBy = <any>"RowBy",
-//         Tooltips = <any>"Tooltips",
-//         GroupedValues = <any>"GroupedValues"
-//     }
-//
-//     export class DataViewConverter<T> {
+"use strict";
+
+import powerbi from "powerbi-visuals-api";
+
+import DataView = powerbi.DataView;
+import DataViewCategoricalColumn = powerbi.DataViewCategoricalColumn;
+import DataViewValueColumns = powerbi.DataViewValueColumns;
+import DataViewMetadataColumn = powerbi.DataViewMetadataColumn;
+
+export const enum Field {
+    Axis = "Axis",
+    Legend = "Legend",
+    Value = "Value",
+    Gradient = "Gradient",
+    ColumnBy = "ColumnBy",
+    RowBy = "RowBy",
+    Tooltips = "Tooltips",
+    GroupedValues = "GroupedValues",
+}
+
+export class DataViewConverter<T> {
 //         private static Highlighted: string = "Highlighted";
 //         private static Blank: string = "(Blank)";
 //         private static percentFormatString: string = "#,0.00%";
@@ -56,11 +34,11 @@
 //
 //             return this.GetDataPointsWithoutLegend(dataView, hostService, settings);
 //         }
-//
-//         public static IsLegendNeeded(dataView: DataView) {
-//             return this.IsLegendFilled(dataView) || this.IsMultipleValues(dataView);
-//         }
-//
+
+    public static IsLegendNeeded(dataView: DataView) {
+        return this.IsLegendFilled(dataView) || this.IsMultipleValues(dataView);
+    }
+
 //         public static IsAxisFilled(dataView: DataView): boolean {
 //             if (dataView.categorical
 //                 && dataView.categorical.values
@@ -77,24 +55,24 @@
 //
 //             return false;
 //         }
-//
-//         public static IsCategoryFilled(dataView: DataView, categoryField: Field): boolean {
-//             if (dataView.categorical
-//                 && dataView.categorical.values
-//                 && dataView.categorical.values.source
-//                 && dataView.categorical.values.source.roles[categoryField]) {
-//                 return true;
-//             }
-//
-//             const columns: DataViewCategoricalColumn[] = dataView.categorical.categories;
-//
-//             if (columns && columns.filter(x => x.source && x.source.roles[categoryField]).length) {
-//                 return true;
-//             }
-//
-//             return false;
-//         }
-//
+
+    public static IsCategoryFilled(dataView: DataView, categoryField: Field): boolean {
+        if (dataView.categorical
+            && dataView.categorical.values
+            && dataView.categorical.values.source
+            && dataView.categorical.values.source.roles[categoryField]) {
+            return true;
+        }
+
+        const columns: DataViewCategoricalColumn[] = dataView.categorical.categories;
+
+        if (columns && columns.filter(x => x.source && x.source.roles[categoryField]).length) {
+            return true;
+        }
+
+        return false;
+    }
+
 //         public static IsValueFilled(dataView: DataView): boolean {
 //             const columns: DataViewValueColumns = dataView.categorical.values;
 //
@@ -118,35 +96,35 @@
 //
 //             return false;
 //         }
-//
-//         public static IsLegendFilled(dataView: DataView): boolean {
-//             const columns: DataViewValueColumns = dataView.categorical.values;
-//
-//             if (columns.source && columns.source.roles[Field.Legend]) {
-//                 return true;
-//             }
-//
-//             return false;
-//         }
-//
-//         public static IsMultipleValues(dataView: DataView): boolean {
-//             const columns: DataViewMetadataColumn[] = dataView.metadata.columns;
-//             let valueFieldsCount: number = 0;
-//
-//             for (let columnName in columns) {
-//                 const column: DataViewMetadataColumn = columns[columnName];
-//
-//                 if (column.roles && column.roles[Field.Value]) {
-//                     ++valueFieldsCount;
-//                     if (valueFieldsCount > 1) {
-//                         return true;
-//                     }
-//                 }
-//             }
-//
-//             return false;
-//         }
-//
+
+    public static IsLegendFilled(dataView: DataView): boolean {
+        const columns: DataViewValueColumns = dataView.categorical.values;
+
+        if (columns.source && columns.source.roles[Field.Legend]) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public static IsMultipleValues(dataView: DataView): boolean {
+        const columns: DataViewMetadataColumn[] = dataView.metadata.columns;
+        let valueFieldsCount: number = 0;
+
+        for (let columnName in columns) {
+            const column: DataViewMetadataColumn = columns[columnName];
+
+            if (column.roles && column.roles[Field.Value]) {
+                ++valueFieldsCount;
+                if (valueFieldsCount > 1) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
 //         // Legend bucket is filled
 //         private static GetDataPointsForSameAxisAndLegend(dataView: DataView, hostService: IVisualHost, legendColors: Array<string>): VisualDataPoint[] {
 //             let columns: VisualColumns = this.GetGroupedValueColumns(dataView);
@@ -661,5 +639,4 @@
 //
 //             return null;
 //         }
-//     }
-// }
+}
