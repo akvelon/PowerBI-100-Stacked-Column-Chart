@@ -55,6 +55,11 @@ import DataViewCategoryColumn = powerbi.DataViewCategoryColumn;
 import {getXAxisMaxWidth} from "./utils/axis/yAxisUtils";
 import {translate as svgTranslate} from "powerbi-visuals-utils-svgutils/lib/manipulation";
 import {axis} from "powerbi-visuals-utils-chartutils";
+import EnumerateVisualObjectInstancesOptions = powerbi.EnumerateVisualObjectInstancesOptions;
+import VisualObjectInstance = powerbi.VisualObjectInstance;
+import VisualObjectInstanceEnumerationObject = powerbi.VisualObjectInstanceEnumerationObject;
+import {EnumerateObject} from "./enumerateObject";
+import VisualObjectInstanceEnumeration = powerbi.VisualObjectInstanceEnumeration;
 
 class Selectors {
     static MainSvg = CssConstants.createClassAndSelector("bar-chart-svg");
@@ -1474,28 +1479,27 @@ export class Visual implements IBarVisual {
         return VisualSettings.parse(dataView) as VisualSettings;
     }
 
-//         /**
-//          * This function gets called for each of the objects defined in the capabilities files and allows you to select which of the
-//          * objects and properties you want to expose to the users in the property pane.
-//          *
-//          */
-//         public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstance[] | VisualObjectInstanceEnumerationObject {
-//             let instanceEnumeration: VisualObjectInstanceEnumeration = VisualSettings.enumerateObjectInstances(this.settings || VisualSettings.getDefault(), options);
-//
-//             let instances: VisualObjectInstance[] = (instanceEnumeration as VisualObjectInstanceEnumerationObject).instances;
-//             let instance: VisualObjectInstance = instances[0];
-//
-//             if (instance.objectName === "legend" && !this.isLegendNeeded) {
-//                 return null;
-//             }
-//
-//             if (instance.objectName === "smallMultiple" && !this.isSmallMultiple()) {
-//                 return null;
-//             }
-//
-//             EnumerateObject.setInstances(this.settings, instanceEnumeration, this.data.axes.xIsScalar, this.data);
-//
-//             return instanceEnumeration;
-//         }
-//     }
+    /**
+     * This function gets called for each of the objects defined in the capabilities files and allows you to select which of the
+     * objects and properties you want to expose to the users in the property pane.
+     *
+     */
+    public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstance[] | VisualObjectInstanceEnumerationObject {
+        let instanceEnumeration: VisualObjectInstanceEnumeration = VisualSettings.enumerateObjectInstances(this.settings || VisualSettings.getDefault(), options);
+
+        let instances: VisualObjectInstance[] = (instanceEnumeration as VisualObjectInstanceEnumerationObject).instances;
+        let instance: VisualObjectInstance = instances[0];
+
+        if (instance.objectName === "legend" && !this.isLegendNeeded) {
+            return null;
+        }
+
+        if (instance.objectName === "smallMultiple" && !this.isSmallMultiple()) {
+            return null;
+        }
+
+        EnumerateObject.setInstances(this.settings, instanceEnumeration, this.data.axes.xIsScalar, this.data);
+
+        return instanceEnumeration;
+    }
 }
