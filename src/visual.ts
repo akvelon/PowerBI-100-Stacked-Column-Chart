@@ -17,6 +17,8 @@ import {CssConstants} from "powerbi-visuals-utils-svgutils";
 import {pixelConverter as PixelConverter} from "powerbi-visuals-utils-typeutils";
 import {ISize} from "powerbi-visuals-utils-svgutils/lib/shapes/shapesInterfaces";
 
+import "../style/visual.less";
+
 import {
     CategoryDataPoints,
     d3Selection,
