@@ -1,6 +1,6 @@
 import {CssConstants} from "powerbi-visuals-utils-svgutils";
 import {ClassAndSelector} from "powerbi-visuals-utils-svgutils/lib/cssConstants";
-import {d3Selection, IAxes, VisualData, VisualDataPoint} from "../visualInterfaces";
+import {Coordinates, d3Selection, IAxes, VisualData, VisualDataPoint} from "../visualInterfaces";
 import {
     IInteractiveBehavior,
     IInteractivityService
@@ -139,55 +139,41 @@ export class RenderVisual {
             tooltipServiceWrapper);
     }
 
-    // public static renderDataLabelsBackground(
-    //     dataPoints: VisualDataPoint[],
-    //     settings: VisualSettings,
-    //     dataLabelsBackgroundContext: d3Selection<any>): void {
-    //
-    //     let labelSettings = settings.categoryLabels;
-    //     let isHorizontal: boolean = labelSettings.orientation === LabelOrientation.Horizontal;
-    //
-    //     dataLabelsBackgroundContext.selectAll("*").remove();
-    //
-    //     if (!labelSettings.showBackground) {
-    //         return;
-    //     }
-    //
-    //     let backgroundSelection: d3Selection<VisualDataPoint> = dataLabelsBackgroundContext
-    //         .selectAll(RenderVisual.Label.selectorName)
-    //         .data(dataPoints);
-    //
-    //     backgroundSelection
-    //         .exit()
-    //         .remove();
-    //
-    //     const backgroundSelectionEnter = backgroundSelection
-    //         .enter()
-    //         .append("svg:rect");
-    //
-    //     backgroundSelection = backgroundSelection.merge(backgroundSelectionEnter);
-    //
-    //     backgroundSelection
-    //         .attr('height', d => {
-    //             return d.labelCoordinates.height + DataLabelHelper.labelBackgroundHeightPadding * (isHorizontal ? 1 : 2);
-    //         })
-    //         .attr('width', d => {
-    //             return d.labelCoordinates.width + DataLabelHelper.labelBackgroundWidthPadding;
-    //         })
-    //         .attr('x', d => {
-    //             return d.labelCoordinates.x - (isHorizontal ? DataLabelHelper.labelBackgroundXShift : d.labelCoordinates.width);
-    //         })
-    //         .attr('y', d => {
-    //             return d.labelCoordinates.y - d.labelCoordinates.height + (isHorizontal ? -DataLabelHelper.labelBackgroundYShift : DataLabelHelper.labelBackgroundYShift);
-    //         })
-    //         .attr('rx', 4)
-    //         .attr('ry', 4)
-    //         .attr('fill', settings.categoryLabels.backgroundColor);
-    //
-    //     backgroundSelection.style(
-    //         "fill-opacity", (100 - settings.categoryLabels.transparency) / 100)
-    //         .style("pointer-events", "none");
-    // }
+    public static renderDataLabelsBackground(
+        dataPoints: VisualDataPoint[],
+        settings: VisualSettings,
+        dataLabelsBackgroundContext: d3Selection<any>): void {
+        let labelSettings = settings.categoryLabels;
+        let isHorizontal: boolean = labelSettings.orientation === LabelOrientation.Horizontal;
+
+        dataLabelsBackgroundContext.selectAll("*").remove();
+
+        if (!labelSettings.showBackground) {
+            return;
+        }
+
+        dataLabelsBackgroundContext
+            .selectAll(RenderVisual.Label.selectorName)
+            .data(dataPoints)
+            .join("svg:rect")
+            .attr('height', d => {
+                return d.labelCoordinates.height + DataLabelHelper.labelBackgroundHeightPadding * (isHorizontal ? 1 : 2);
+            })
+            .attr('width', d => {
+                return d.labelCoordinates.width + DataLabelHelper.labelBackgroundWidthPadding;
+            })
+            .attr('x', d => {
+                return d.labelCoordinates.x - (isHorizontal ? DataLabelHelper.labelBackgroundXShift : d.labelCoordinates.width);
+            })
+            .attr('y', d => {
+                return d.labelCoordinates.y - d.labelCoordinates.height + (isHorizontal ? -DataLabelHelper.labelBackgroundYShift : DataLabelHelper.labelBackgroundYShift);
+            })
+            .attr('rx', 4)
+            .attr('ry', 4)
+            .attr('fill', settings.categoryLabels.backgroundColor)
+            .style("fill-opacity", (100 - settings.categoryLabels.transparency) / 100)
+            .style("pointer-events", "none");
+    }
 
     // public static renderDataLabelsBackgroundForSmallMultiple(
     //     data: VisualData,
@@ -403,36 +389,36 @@ export class RenderVisual {
     //             });
     //         });
     // }
-    //
-    // public static filterData(dataPoints: VisualDataPoint[]): VisualDataPoint[] {
-    //     let filteredDatapoints: VisualDataPoint[] = [];
-    //     let validCoordinatesDataPoints: VisualDataPoint[] = dataPoints.filter(x => x.labelCoordinates && !isNaN(x.percentValue));
-    //
-    //     for (let index in validCoordinatesDataPoints) {
-    //         let dataPoint = validCoordinatesDataPoints[index];
-    //         let coords: Coordinates = dataPoint.labelCoordinates;
-    //         let isIntersected: boolean = false;
-    //
-    //         for (let i in filteredDatapoints) {
-    //             let filteredDatapoint: VisualDataPoint = filteredDatapoints[i];
-    //             let filteredCoods: Coordinates = filteredDatapoint.labelCoordinates;
-    //
-    //             if (coords.x < filteredCoods.x + filteredCoods.width + 8
-    //                 && coords.x + coords.width > filteredCoods.x + 8
-    //                 && coords.y < filteredCoods.y + filteredCoods.height + 2
-    //                 && coords.y + coords.height > filteredCoods.y + 2) {
-    //                 isIntersected = true;
-    //                 break;
-    //             }
-    //         }
-    //
-    //         if (!isIntersected) {
-    //             filteredDatapoints.push(dataPoint);
-    //         }
-    //     }
-    //
-    //     return filteredDatapoints;
-    // }
+
+    public static filterData(dataPoints: VisualDataPoint[]): VisualDataPoint[] {
+        let filteredDatapoints: VisualDataPoint[] = [];
+        let validCoordinatesDataPoints: VisualDataPoint[] = dataPoints.filter(x => x.labelCoordinates && !isNaN(x.percentValue));
+
+        for (let index in validCoordinatesDataPoints) {
+            let dataPoint = validCoordinatesDataPoints[index];
+            let coords: Coordinates = dataPoint.labelCoordinates;
+            let isIntersected: boolean = false;
+
+            for (let i in filteredDatapoints) {
+                let filteredDatapoint: VisualDataPoint = filteredDatapoints[i];
+                let filteredCoods: Coordinates = filteredDatapoint.labelCoordinates;
+
+                if (coords.x < filteredCoods.x + filteredCoods.width + 8
+                    && coords.x + coords.width > filteredCoods.x + 8
+                    && coords.y < filteredCoods.y + filteredCoods.height + 2
+                    && coords.y + coords.height > filteredCoods.y + 2) {
+                    isIntersected = true;
+                    break;
+                }
+            }
+
+            if (!isIntersected) {
+                filteredDatapoints.push(dataPoint);
+            }
+        }
+
+        return filteredDatapoints;
+    }
 
     public static renderTooltip(selection: d3Selection<any>, tooltipServiceWrapper: ITooltipServiceWrapper): void {
         tooltipServiceWrapper.addTooltip(

@@ -1230,21 +1230,21 @@ export class Visual implements IColumnVisual {
 
         let chartHeight: number = (<Element>this.barGroup.node()).getBoundingClientRect().height;
 
-//             visualUtils.calculateLabelCoordinates(
-//                 this.data,
-//                 this.settings.categoryLabels,
-//                 chartHeight,
-//                 this.isLegendNeeded
-//             );
-//
-//             let filteredDataLabels: VisualDataPoint[] = RenderVisual.filterData(this.data.dataPoints);
-//
-//             RenderVisual.renderDataLabelsBackground(
-//                 filteredDataLabels,
-//                 this.settings,
-//                 this.labelBackgroundContext
-//             );
-//
+        visualUtils.calculateLabelCoordinates(
+            this.data,
+            this.settings.categoryLabels,
+            chartHeight,
+            this.isLegendNeeded
+        );
+
+        let filteredDataLabels: VisualDataPoint[] = RenderVisual.filterData(this.data.dataPoints);
+
+        RenderVisual.renderDataLabelsBackground(
+            filteredDataLabels,
+            this.settings,
+            this.labelBackgroundContext
+        );
+
 //             RenderVisual.renderDataLabels(
 //                 filteredDataLabels,
 //                 this.settings,
