@@ -80,8 +80,7 @@ module.exports = {
                                     require.resolve('babel-plugin-module-resolver'),
                                     {
                                         root: ['./'],
-                                        alias: {
-                                        },
+                                        alias: {},
                                     },
                                 ],
                             ],
@@ -125,7 +124,7 @@ module.exports = {
                     {
                         loader: require.resolve('less-loader'),
                         options: {
-                            lessOptions:{
+                            lessOptions: {
                                 paths: [path.resolve(__dirname, "..", 'node_modules')]
                             }
                         }
@@ -139,7 +138,7 @@ module.exports = {
                         loader: MiniCssExtractPlugin.loader
                     },
                     {
-                        loader: require.resolve('css-loader')
+                        loader: require.resolve('css-loader'),
                     }
                 ]
             },
@@ -155,8 +154,7 @@ module.exports = {
     },
     resolve: {
         extensions: ['.tsx', '.ts', '.jsx', '.js', '.css'],
-        alias: {
-        },
+        alias: {},
     },
     output: {
         publicPath: '/assets',
@@ -170,8 +168,7 @@ module.exports = {
         port: 8080, // dev server port
         hot: false,
         liveReload: false,
-        https: {
-        },
+        https: {},
         headers: {
             "access-control-allow-origin": "*",
             "cache-control": "public, max-age=0"
