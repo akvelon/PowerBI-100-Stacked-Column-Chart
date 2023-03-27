@@ -994,6 +994,7 @@ export class Visual implements IColumnVisual {
 //
 //                     if (this.settings.valueAxis.show) {
 //                         let xWidth: number = (<Element>yAxisSvgGroup.selectAll("line").node()).getBoundingClientRect().width;
+    //                     // TODO Fix data domain
 //                         if (axes.y.dataDomain[0] <= this.settings.constantLine.value && this.settings.constantLine.value <= axes.y.dataDomain[1]) {
 //                             RenderVisual.renderConstantLine(this.settings.constantLine, barGroup, axes, xWidth);
 //                         }

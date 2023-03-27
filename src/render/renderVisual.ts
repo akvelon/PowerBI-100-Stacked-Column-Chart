@@ -490,10 +490,13 @@ export class RenderVisual {
 
         let yValue: number = settings.value;
 
-        if (yValue < axes.y.dataDomain[0]) {
-            yValue = axes.y.dataDomain[0];
-        } else if (yValue > axes.y.dataDomain[1]) {
-            yValue = axes.y.dataDomain[1];
+        const yMinDomain = axes.y.dataDomain[1];
+        const yMaxDomain = axes.y.dataDomain[0];
+
+        if (yValue < yMinDomain) {
+            yValue = yMinDomain;
+        } else if (yValue > yMaxDomain) {
+            yValue = yMaxDomain;
         }
 
         let y = axes.y.scale(yValue);
@@ -602,6 +605,7 @@ export class RenderVisual {
     //         positionAcross = y + (marginAcross + textHeight);
     //     }
     //
+    //     // TODO Fix data domains
     //     let minPosition: number = axes.y.scale(axes.y.dataDomain[1]);
     //     let maxPosition: number = axes.y.scale(axes.y.dataDomain[0]);
     //
