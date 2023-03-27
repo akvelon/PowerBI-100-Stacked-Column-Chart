@@ -122,8 +122,7 @@ export class RenderVisual {
             interactivityService.applySelectionStateToData(data.dataPoints);
 
             let behaviorOptions: WebBehaviorOptions = {
-                bars: barGroupSelect
-                    .selectAll(Selectors.BarSelect.selectorName),
+                bars: barGroupSelect.selectAll(Selectors.BarSelect.selectorName),
                 clearCatcher: clearCatcher,
                 interactivityService: visualInteractivityService,
                 host: host,
@@ -134,9 +133,10 @@ export class RenderVisual {
 
             interactivityService.bind(behaviorOptions);
         }
-        //
-        // this.renderTooltip(barGroupSelect
-        //     .selectAll(Selectors.BarSelect.selectorName), tooltipServiceWrapper);
+
+        this.renderTooltip(
+            barGroupSelect.selectAll(Selectors.BarSelect.selectorName),
+            tooltipServiceWrapper);
     }
 
     // public static renderDataLabelsBackground(
@@ -437,9 +437,7 @@ export class RenderVisual {
     public static renderTooltip(selection: d3Selection<any>, tooltipServiceWrapper: ITooltipServiceWrapper): void {
         tooltipServiceWrapper.addTooltip(
             selection,
-            (tooltipEvent: TooltipEventArgs<VisualDataPoint>) => {
-                return (<VisualDataPoint>tooltipEvent.data).tooltips;
-            },
+            (tooltipEvent: VisualDataPoint) => tooltipEvent.tooltips,
             null,
             true);
     }
@@ -496,9 +494,6 @@ export class RenderVisual {
         let text: string = this.getLineText(settings);
         let textWidth: number = textMeasurementService.measureSvgTextWidth(textProperties, text);
         let textHeight: number = textMeasurementService.estimateSvgTextHeight(textProperties);
-
-        console.log(settings);
-        console.log(text);
 
         let label: d3Selection<any> = element.select(".const-label");
 

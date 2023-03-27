@@ -256,7 +256,6 @@ export class Visual implements IColumnVisual {
         this.scrollBar.updateData(this.getScrollbarState(), options.type);
 
         let visibleDataPoints: VisualDataPoint[] = this.scrollBar.getVisibleDataPoints();
-        console.log(visibleDataPoints);
 
         let axes: IAxes = this.createAxes(visibleDataPoints);
 
