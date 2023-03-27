@@ -70,7 +70,8 @@ export class RenderVisual {
             .join("g")
             .attr("class", Selectors.BarGroupSelect.className);
 
-        console.log(data.dataPoints);
+        let interactivityService = visualInteractivityService,
+            hasSelection: boolean = interactivityService.hasSelection();
 
         barGroupSelect
             .selectAll(Selectors.BarSelect.selectorName)
@@ -89,105 +90,53 @@ export class RenderVisual {
             .attr('y', d => {
                 return d.barCoordinates.y;
             })
-            .attr('fill', d => d.color);
+            .attr('fill', d => d.color)
+            .style(
+                "fill-opacity", (p: VisualDataPoint) => visualUtils.getFillOpacity(
+                    p.selected,
+                    p.highlight,
+                    !p.highlight && hasSelection,
+                    !p.selected && data.hasHighlight))
+            .style("stroke", (p: VisualDataPoint) => {
+                if ((hasHighlight || hasSelection) && visualUtils.isSelected(p.selected,
+                    p.highlight,
+                    !p.highlight && hasSelection,
+                    !p.selected && hasHighlight)) {
+                    return Visual.DefaultStrokeSelectionColor;
+                }
 
-        // // Select all bar groups in our chart and bind them to our categories.
-        // // Each group will contain a set of bars, one for each of the values in category.
-        // let barGroupSelect = visualSvgGroup.selectAll(Selectors.BarGroupSelect.selectorName)
-        //     .data([data.dataPoints]);
+                return p.color;
+            })
+            .style("stroke-width", p => {
+                if ((hasHighlight || hasSelection) && visualUtils.isSelected(p.selected,
+                    p.highlight,
+                    !p.highlight && hasSelection,
+                    !p.selected && hasHighlight)) {
+                    return Visual.DefaultStrokeSelectionWidth;
+                }
+
+                return Visual.DefaultStrokeWidth;
+            });
+
+        if (interactivityService) {
+            interactivityService.applySelectionStateToData(data.dataPoints);
+
+            let behaviorOptions: WebBehaviorOptions = {
+                bars: barGroupSelect
+                    .selectAll(Selectors.BarSelect.selectorName),
+                clearCatcher: clearCatcher,
+                interactivityService: visualInteractivityService,
+                host: host,
+                selectionSaveSettings: settings.selectionSaveSettings,
+                behavior: visualBehavior,
+                dataPoints: data.dataPoints
+            };
+
+            interactivityService.bind(behaviorOptions);
+        }
         //
-        // // For removed categories, remove the SVG group.
-        // barGroupSelect.exit()
-        //     .remove();
-        //
-        // // When a new category added, create a new SVG group for it.
-        // barGroupSelect = barGroupSelect.enter()
-        //     .append("g")
-        //     .attr("class", Selectors.BarGroupSelect.className)
-        //     .merge(<any>barGroupSelect);
-        //
-        // // Update the position of existing SVG groups.
-        // // barGroupSelect.attr("transform", d => `translate(0, ${data.axes.y(d.category)})`);
-        //
-        // // Now we bind each SVG group to the values in corresponding category.
-        // // To keep the length of the values array, we transform each value into object,
-        // // that contains both value and total count of all values in this category.
-        // let barSelect = barGroupSelect
-        //     .selectAll(Selectors.BarSelect.selectorName)
-        //     .data(data.dataPoints);
-        //
-        // // Remove rectangles, that no longer have matching values.
-        // barSelect.exit()
-        //     .remove();
-        //
-        // // For each new value, we create a new rectange.
-        // const barSelectEnter = barSelect.enter().append("rect")
-        //     .attr("class", Selectors.BarSelect.className);
-        //
-        // barSelect = barSelect.merge(barSelectEnter);
-        //
-        // barSelect
-        //     .attr('height', d => {
-        //         return d.barCoordinates.height;
-        //     })
-        //     .attr('width', d => {
-        //         return d.barCoordinates.width;
-        //     })
-        //     .attr('x', d => {
-        //         return d.barCoordinates.x;
-        //     })
-        //     .attr('y', d => {
-        //         return d.barCoordinates.y;
-        //     })
-        //     .attr('fill', d => d.color);
-        //
-        // let interactivityService = visualInteractivityService,
-        //     hasSelection: boolean = interactivityService.hasSelection();
-        //
-        // barSelect.style(
-        //     "fill-opacity", (p: VisualDataPoint) => visualUtils.getFillOpacity(
-        //         p.selected,
-        //         p.highlight,
-        //         !p.highlight && hasSelection,
-        //         !p.selected && data.hasHighlight))
-        //     .style("stroke", (p: VisualDataPoint) => {
-        //         if ((hasHighlight || hasSelection) && visualUtils.isSelected(p.selected,
-        //             p.highlight,
-        //             !p.highlight && hasSelection,
-        //             !p.selected && hasHighlight)) {
-        //             return Visual.DefaultStrokeSelectionColor;
-        //         }
-        //
-        //         return p.color;
-        //     })
-        //     .style("stroke-width", p => {
-        //         if ((hasHighlight || hasSelection) && visualUtils.isSelected(p.selected,
-        //             p.highlight,
-        //             !p.highlight && hasSelection,
-        //             !p.selected && hasHighlight)) {
-        //             return Visual.DefaultStrokeSelectionWidth;
-        //         }
-        //
-        //         return Visual.DefaultStrokeWidth;
-        //     });
-        //
-        // if (interactivityService) {
-        //     interactivityService.applySelectionStateToData(data.dataPoints);
-        //
-        //     let behaviorOptions: WebBehaviorOptions = {
-        //         bars: barSelect,
-        //         clearCatcher: clearCatcher,
-        //         interactivityService: visualInteractivityService,
-        //         host: host,
-        //         selectionSaveSettings: settings.selectionSaveSettings,
-        //         behavior: visualBehavior,
-        //         dataPoints: data.dataPoints
-        //     };
-        //
-        //     interactivityService.bind(behaviorOptions);
-        // }
-        //
-        // this.renderTooltip(barSelect, tooltipServiceWrapper);
+        // this.renderTooltip(barGroupSelect
+        //     .selectAll(Selectors.BarSelect.selectorName), tooltipServiceWrapper);
     }
 
     // public static renderDataLabelsBackground(
