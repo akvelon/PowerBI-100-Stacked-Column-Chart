@@ -401,7 +401,7 @@ export class RenderAxes {
         let start = skipStartEnd ? null : settings.valueAxis.start;
         let end = skipStartEnd ? null : settings.valueAxis.end;
 
-        return [start != null ? start : dataDomainMinY, end != null ? end : dataDomainMaxY];
+        return [end != null ? end : dataDomainMaxY, start != null ? start : dataDomainMinY];
     }
 
     private static Blank: string = "(Blank)";

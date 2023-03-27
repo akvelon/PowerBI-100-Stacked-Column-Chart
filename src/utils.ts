@@ -73,25 +73,27 @@ export function calculateBarCoordianates(dataPoints: VisualDataPoint[], axes: IA
 
         let x: number = axes.x.scale(point.category);
 
-        if (point.shiftValue > axes.y.dataDomain[1]) {
+        const minYDomain = axes.y.dataDomain[1]
+        const maxYDomain = axes.y.dataDomain[0];
+        if (point.shiftValue > maxYDomain) {
             console.log('setZeroCoordinatesForPoint 2');
             setZeroCoordinatesForPoint(point);
             return;
         }
 
-        const fromValue: number = Math.max(point.shiftValue, axes.y.dataDomain[0]);
+        const fromValue: number = Math.max(point.shiftValue, minYDomain);
         let fromCoordinate: number;
         fromCoordinate = axes.y.scale(fromValue);
-        if (point.shiftValue + point.percentValueForHeight < axes.y.dataDomain[0]) {
+        if (point.shiftValue + point.percentValueForHeight < minYDomain) {
             console.log('setZeroCoordinatesForPoint 3');
             setZeroCoordinatesForPoint(point);
             return;
         }
 
-        const toValue = Math.max(point.shiftValue + point.percentValueForHeight, axes.y.dataDomain[0]);
+        const toValue = Math.max(point.shiftValue + point.percentValueForHeight, minYDomain);
 
         let toCoordinate: number = axes.y.scale(toValue);
-        toCoordinate = Math.max(toCoordinate, axes.y.dataDomain[0]);
+        toCoordinate = Math.max(toCoordinate, minYDomain);
 
         if (toCoordinate >= fromCoordinate) {
             console.log(`setZeroCoordinatesForPoint 4 ${toCoordinate} >= ${fromCoordinate}`);
