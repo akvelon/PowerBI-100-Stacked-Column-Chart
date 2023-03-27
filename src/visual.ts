@@ -73,7 +73,7 @@ class Selectors {
 }
 
 export class Visual implements IBarVisual {
-//         public static DefaultColor: string = "#777777";
+    public static DefaultColor: string = "#777777";
 
     private allDataPoints: VisualDataPoint[];
     public categoriesCount: number;
@@ -235,7 +235,6 @@ export class Visual implements IBarVisual {
         // TODO
         // this.lassoSelection.init(this.mainElement);
 
-        // TODO
         if (this.isLegendNeeded) {
             legendUtils.renderLegend(this.legend, this.mainSvgElement, options.viewport, this.legendProperties, this.legendElement);
         } else {
@@ -295,8 +294,8 @@ export class Visual implements IBarVisual {
         RenderAxes.rotateXAxisTickLabels(this.isNeedToRotate, this.xAxisSvgGroup);
         this.finalRendering();
 
-//             this.scrollBar.update();
-//
+        this.scrollBar.update();
+
 //             let bars = this.barGroup.selectAll(Selectors.BarSelect.selectorName).data(visibleDataPoints);
 //             this.LassoSelectionForSmallMultiple.disable();
 //             this.lassoSelection.update(bars);
@@ -1108,36 +1107,38 @@ export class Visual implements IBarVisual {
         const visibleDataPoints: VisualDataPoint[] = this.scrollBar.getVisibleDataPoints();
 
         let axes: IAxes = this.createAxes(visibleDataPoints);
-        // let legendData = legendUtils.getSuitableLegendData(this.dataView, this.host, this.settings.legend);
-        // this.data = {
-        //     dataPoints: visibleDataPoints,
-        //     size: this.visualSize,
-        //     axes: axes,
-        //     categoriesCount: this.categoriesCount,
-        //     legendData: legendData,
-        //     hasHighlight: this.hasHighlight,
-        //     isLegendNeeded: this.isLegendNeeded,
-        //     isSmallMultiple: this.isSmallMultiple()
-        // };
-        //
-        // // render for calculate width of labels text
-        // this.renderAxes();
-        // // Rerender for dynamic y-axis titles
-        // this.legendSize = this.isLegendNeeded ? this.calculateLegendSize(this.settings.legend, this.legendElementRoot) : null;
-        // this.calculateOffsets();
-        // this.calculateVisualSizeAndPosition(this.legendSize);
-        //
-        // this.calculateDataPointThickness();
-        //
-        // axes = this.createAxes(visibleDataPoints);
-        // this.data.size = this.visualSize;
-        // this.data.axes = axes;
-        // this.interactivityService.applySelectionStateToData(this.data.dataPoints);
-        //
-        // this.renderAxes();
-        //
-        // RenderAxes.rotateXAxisTickLabels(this.isNeedToRotate, this.xAxisSvgGroup);
-        // this.finalRendering();
+        let legendData = legendUtils.getSuitableLegendData(this.dataView, this.host, this.settings.legend);
+        this.data = {
+            dataPoints: visibleDataPoints,
+            size: this.visualSize,
+            axes: axes,
+            categoriesCount: this.categoriesCount,
+            legendData: legendData,
+            hasHighlight: this.hasHighlight,
+            isLegendNeeded: this.isLegendNeeded,
+            isSmallMultiple: this.isSmallMultiple()
+        };
+
+        // render for calculate width of labels text
+        this.renderAxes();
+
+        // Rerender for dynamic y-axis titles
+        this.legendSize = this.isLegendNeeded ? this.calculateLegendSize(this.settings.legend, this.legendElementRoot) : null;
+
+        this.calculateOffsets();
+        this.calculateVisualSizeAndPosition(this.legendSize);
+
+        this.calculateDataPointThickness();
+
+        axes = this.createAxes(visibleDataPoints);
+        this.data.size = this.visualSize;
+        this.data.axes = axes;
+        this.interactivityService.applySelectionStateToData(this.data.dataPoints);
+
+        this.renderAxes();
+
+        RenderAxes.rotateXAxisTickLabels(this.isNeedToRotate, this.xAxisSvgGroup);
+        this.finalRendering();
     }
 
     private updateMetaData(): void {
@@ -1195,7 +1196,8 @@ export class Visual implements IBarVisual {
     }
 
     private finalRendering(): void {
-        let labelMaxHeight: number = visualUtils.getLabelsMaxHeight(this.xAxisSvgGroup.selectAll("text"));
+        const xAxisLabels = this.xAxisSvgGroup.selectAll("text");
+        let labelMaxHeight: number = visualUtils.getLabelsMaxHeight(xAxisLabels);
 
         // render axes labels
         RenderAxes.renderLabels(
@@ -1205,9 +1207,7 @@ export class Visual implements IBarVisual {
             [this.data.axes.x.axisLabel, this.data.axes.y.axisLabel],
             this.settings,
             this.data.axes,
-            this.axisLabelsGroup,
-            this.axisGraphicsContext,
-            labelMaxHeight);
+            this.axisGraphicsContext);
 
 //             visualUtils.calculateBarCoordianates(this.data.dataPoints, this.data.axes, this.settings, this.dataPointThickness);
 //

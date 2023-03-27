@@ -274,9 +274,7 @@ export class RenderAxes {
         axisLabelsData: Array<string>,
         settings: VisualSettings,
         axes: IAxes,
-        axisLabelsGroup: d3Selection<string>,
-        axisGraphicsContext: d3Selection<SVGElement>,
-        tickLabelHeight: number) {
+        axisGraphicsContext: d3Selection<SVGElement>) {
         const margin: IMargin = visualMargin,
             width: number = viewport.width,
             height: number = viewport.height,
@@ -308,16 +306,13 @@ export class RenderAxes {
         let yAxisStyle: DataViewPropertyValue = settings.valueAxis.titleStyle;
         let yAxisFontFamily: string = settings.valueAxis.titleFontFamily;
 
-        axisLabelsGroup = axisGraphicsContext.selectAll("*")
-            .data(axisLabelsData);
-
-        // When a new category added, create a new SVG group for it.
-        axisLabelsGroup.enter()
-            .append("text")
+        axisGraphicsContext.selectAll("*")
+            .data(axisLabelsData)
+            .join("text")
+            .text(d => d)
             .attr("class", Selectors.AxisLabelSelector.className)
             .style("text-anchor", "middle")
-            .text(d => d)
-            .call((text: d3Selection<any>) => {
+            .call(text => {
                 const textSelectionX: d3Selection<any> = d3select(text.nodes()[0]);
 
                 textSelectionX.attr(
@@ -365,11 +360,6 @@ export class RenderAxes {
                     .style("font-size", yFontSizeString)
                     .style("font-family", yAxisFontFamily);
             });
-        ;
-
-        // For removed categories, remove the SVG group.
-        axisLabelsGroup.exit()
-            .remove();
     }
 
     public static calculateAxesDomains(allDatapoint: VisualDataPoint[],
