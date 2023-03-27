@@ -7,7 +7,7 @@ import {
 } from "powerbi-visuals-utils-interactivityutils/lib/interactivityBaseService";
 import powerbi from "powerbi-visuals-api";
 
-import {d3Selection, IBarVisual, VisualDataPoint} from "./visualInterfaces";
+import {d3Selection, IColumnVisual, VisualDataPoint} from "./visualInterfaces";
 import * as visualUtils from './utils';
 import {Visual} from "./visual";
 
@@ -22,10 +22,10 @@ export interface WebBehaviorOptions extends IBehaviorOptions<BaseDataPoint> {
 }
 
 export class WebBehavior implements IInteractiveBehavior {
-    private visual: IBarVisual;
+    private visual: IColumnVisual;
     private options: WebBehaviorOptions;
 
-    constructor(visual: IBarVisual) {
+    constructor(visual: IColumnVisual) {
         this.visual = visual;
     }
 
@@ -36,10 +36,6 @@ export class WebBehavior implements IInteractiveBehavior {
 
     public renderSelection(hasSelection: boolean) {
         let hasHighlight = this.visual.getAllDataPoints().filter(x => x.highlight).length > 0;
-
-        let allDatapoints: VisualDataPoint[] = this.visual.getAllDataPoints();
-        //this.options.interactivityService.applySelectionStateToData(allDatapoints);
-        let currentSelection = allDatapoints.filter(d => d.selected);
 
         this.options.bars.style(
             "fill-opacity", (p: VisualDataPoint) => visualUtils.getFillOpacity(

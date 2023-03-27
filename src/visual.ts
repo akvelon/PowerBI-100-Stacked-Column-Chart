@@ -16,6 +16,9 @@ import {
 import {CssConstants} from "powerbi-visuals-utils-svgutils";
 import {pixelConverter as PixelConverter} from "powerbi-visuals-utils-typeutils";
 
+// import "powerbi-visuals-utils-interactivityutils/lib/index.css";
+// import "powerbi-visuals-utils-chartutils/lib/index.css";
+// import "powerbi-visuals-utils-formattingutils/lib/index.css";
 import "../style/visual.less";
 
 import {
@@ -23,7 +26,7 @@ import {
     d3Selection,
     IAxes,
     IAxesSize,
-    IBarVisual,
+    IColumnVisual,
     IMargin,
     ISize,
     LegendProperties,
@@ -60,6 +63,9 @@ import VisualObjectInstance = powerbi.VisualObjectInstance;
 import VisualObjectInstanceEnumerationObject = powerbi.VisualObjectInstanceEnumerationObject;
 import {EnumerateObject} from "./enumerateObject";
 import VisualObjectInstanceEnumeration = powerbi.VisualObjectInstanceEnumeration;
+import {LassoSelection} from "./lassoSelectionUtil";
+import {LassoSelectionForSmallMultiple} from "./lassoSelectionUtilForSmallMultiple";
+import {RenderVisual} from "./render/renderVisual";
 
 class Selectors {
     static MainSvg = CssConstants.createClassAndSelector("bar-chart-svg");
@@ -72,7 +78,7 @@ class Selectors {
     static LabelBackgroundContext = CssConstants.createClassAndSelector("labelBackgroundContext");
 }
 
-export class Visual implements IBarVisual {
+export class Visual implements IColumnVisual {
     public static DefaultColor: string = "#777777";
 
     private allDataPoints: VisualDataPoint[];
@@ -91,7 +97,7 @@ export class Visual implements IBarVisual {
     private legendElement: d3Selection<SVGElement>;
     private legendElementRoot: d3Selection<SVGElement>;
 
-//         public readonly barClassName: string = Selectors.BarSelect.className;
+    public readonly barClassName: string = Selectors.BarSelect.className;
     private labelGraphicsContext: d3Selection<any>;
     private labelBackgroundContext: d3Selection<any>;
 
@@ -120,7 +126,7 @@ export class Visual implements IBarVisual {
     private behavior: IInteractiveBehavior;
     private interactivityService: IInteractivityService<any>;
 
-//         private clearCatcher: d3.Selection<any>;
+    private clearCatcher: d3Selection<any>;
     private tooltipServiceWrapper: ITooltipServiceWrapper;
 
     private legendProperties: LegendProperties;
@@ -131,8 +137,8 @@ export class Visual implements IBarVisual {
 
     private metadata: VisualMeasureMetadata;
 
-//         private lassoSelection: visualUtils.LassoSelection = new visualUtils.LassoSelection(this);
-//         private LassoSelectionForSmallMultiple: visualUtils.LassoSelectionForSmallMultiple = new visualUtils.LassoSelectionForSmallMultiple(Selectors.BarSelect, this);
+    private lassoSelection = new LassoSelection(this);
+    private LassoSelectionForSmallMultiple = new LassoSelectionForSmallMultiple(Selectors.BarSelect, this);
 
     private visualTranslation: VisualTranslation;
 //         public skipScrollbarUpdate: boolean = false;
@@ -232,8 +238,7 @@ export class Visual implements IBarVisual {
 
         this.createNormalChartElements();
 
-        // TODO
-        // this.lassoSelection.init(this.mainElement);
+        this.lassoSelection.init(this.mainElement);
 
         if (this.isLegendNeeded) {
             legendUtils.renderLegend(this.legend, this.mainSvgElement, options.viewport, this.legendProperties, this.legendElement);
@@ -296,9 +301,9 @@ export class Visual implements IBarVisual {
 
         this.scrollBar.update();
 
-//             let bars = this.barGroup.selectAll(Selectors.BarSelect.selectorName).data(visibleDataPoints);
+        let bars = this.barGroup.selectAll(Selectors.BarSelect.selectorName).data(visibleDataPoints);
 //             this.LassoSelectionForSmallMultiple.disable();
-//             this.lassoSelection.update(bars);
+        this.lassoSelection.update(bars);
 //
 //             if ( this.settings.constantLine.show && this.settings.constantLine.value ){
 //                 let xWidth: number = (<Element>this.yAxisSvgGroup.selectAll("line").node()).getBoundingClientRect().width;
@@ -1048,17 +1053,17 @@ export class Visual implements IBarVisual {
         return this.settings;
     }
 
-//         public getVisualSize(): ISize {
-//             return this.visualSize;
-//         }
-//
-//         getDataView(): DataView {
-//             return this.dataView;
-//         }
-//
-//         public getChartBoundaries(): ClientRect {
-//             return (<Element>this.clearCatcher.node()).getBoundingClientRect();
-//         }
+    public getVisualSize(): ISize {
+        return this.visualSize;
+    }
+
+    getDataView(): DataView {
+        return this.dataView;
+    }
+
+    public getChartBoundaries(): ClientRect {
+        return (<Element>this.clearCatcher.node()).getBoundingClientRect();
+    }
 
     public getVisualTranslation(): VisualTranslation {
         return this.visualTranslation;
@@ -1197,6 +1202,7 @@ export class Visual implements IBarVisual {
 
     private finalRendering(): void {
         const xAxisLabels = this.xAxisSvgGroup.selectAll("text");
+        // TODO Remove
         let labelMaxHeight: number = visualUtils.getLabelsMaxHeight(xAxisLabels);
 
         // render axes labels
@@ -1209,23 +1215,23 @@ export class Visual implements IBarVisual {
             this.data.axes,
             this.axisGraphicsContext);
 
-//             visualUtils.calculateBarCoordianates(this.data.dataPoints, this.data.axes, this.settings, this.dataPointThickness);
-//
-//             // render main visual
-//             RenderVisual.render(
-//                 this.data,
-//                 this.barGroup,
-//                 this.clearCatcher,
-//                 this.interactivityService,
-//                 this.behavior,
-//                 this.tooltipServiceWrapper,
-//                 this.host,
-//                 this.hasHighlight,
-//                 this.settings
-//             );
-//
-//             let chartHeight: number = (<Element>this.barGroup.node()).getBoundingClientRect().height;
-//
+        visualUtils.calculateBarCoordianates(this.data.dataPoints, this.data.axes, this.settings, this.dataPointThickness);
+
+        // render main visual
+        RenderVisual.render(
+            this.data,
+            this.barGroup,
+            this.clearCatcher,
+            this.interactivityService,
+            this.behavior,
+            this.tooltipServiceWrapper,
+            this.host,
+            this.hasHighlight,
+            this.settings
+        );
+
+        let chartHeight: number = (<Element>this.barGroup.node()).getBoundingClientRect().height;
+
 //             visualUtils.calculateLabelCoordinates(
 //                 this.data,
 //                 this.settings.categoryLabels,

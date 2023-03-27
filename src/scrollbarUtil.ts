@@ -3,7 +3,7 @@
 import powerbi from "powerbi-visuals-api";
 import {select as d3select} from "d3-selection";
 
-import {CategoryDataPoints, d3Selection, IBarVisual, VisualDataPoint} from "./visualInterfaces";
+import {CategoryDataPoints, d3Selection, IColumnVisual, VisualDataPoint} from "./visualInterfaces";
 
 import VisualUpdateType = powerbi.VisualUpdateType;
 
@@ -46,7 +46,7 @@ export class ScrollBar {
     // Easiest way to allow/disallow scrollbar functionality
     private readonly allow: boolean = true;
     private enabled: boolean = false;
-    private visual: IBarVisual;
+    private visual: IColumnVisual;
     private scrolling: Scrolling = {
         active: false,
         mousedownClientCoord: 0,
@@ -72,7 +72,7 @@ export class ScrollBar {
 
     private handle: d3Selection<HTMLElement>;
 
-    constructor(visual: IBarVisual) {
+    constructor(visual: IColumnVisual) {
         this.visual = visual;
     }
 

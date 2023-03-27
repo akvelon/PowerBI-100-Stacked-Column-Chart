@@ -1,26 +1,30 @@
+import {ClassAndSelector} from "powerbi-visuals-utils-svgutils/lib/cssConstants";
+import {IColumnVisual} from "./visualInterfaces";
+
 // module powerbi.extensibility.visual.visualUtils {
 //     import ClassAndSelector = powerbi.extensibility.utils.svg.CssConstants.ClassAndSelector;
 //     import ISelectionHandler = powerbi.extensibility.utils.interactivity.ISelectionHandler;
-//
-//     interface CursorPosition {
-//         x: number;
-//         y: number;
-//     }
-//
-//     enum SelectionAction {
-//         Add = 1,
-//         Remove
-//     }
-//
-//     module Constants {
-//         export const RectClass: string = 'selection-rect';
-//         export const RectAdditionalClass: string = 'selection-rect-small-multiple';
-//         export const EventNameSpace: string = '.selectionForSmallMultiple';
-//     }
-//
-//     export class LassoSelectionForSmallMultiple {
-//         private visual: Visual;
-//
+
+interface CursorPosition {
+    x: number;
+    y: number;
+}
+
+enum SelectionAction {
+    Add = 1,
+    Remove
+}
+
+class Constants {
+    static RectClass: string = 'selection-rect';
+    static RectAdditionalClass: string = 'selection-rect-small-multiple';
+    static EventNameSpace: string = '.selectionForSmallMultiple';
+}
+
+
+export class LassoSelectionForSmallMultiple {
+    private visual: IColumnVisual;
+
 //         private lasso: Lasso = new Lasso();
 //         private lassoElement: LassoElement;
 //
@@ -30,14 +34,15 @@
 //         private preselection: Preselection = new Preselection();
 //
 //         private legendBucketFilled: boolean;
-//
-//         private barClassName: string;
-//
-//         constructor(barSelect: ClassAndSelector, visual: Visual){
-//             this.barClassName = barSelect.className;
-//             this.visual = visual;
-//         }
-//
+
+    private barClassName: string;
+
+
+    constructor(barSelect: ClassAndSelector, visual: IColumnVisual) {
+        this.barClassName = barSelect.className;
+        this.visual = visual;
+    }
+
 //         init(mainElement: d3.Selection<HTMLElement>): void {
 //
 //             const rectangleElement: d3.Selection<any> = mainElement.append('div').classed(Constants.RectClass, true).classed(Constants.RectAdditionalClass, true);
@@ -451,5 +456,4 @@
 //         private resetStyleAttribute(): void {
 //             this.element.setAttribute('style', '');
 //         }
-//     }
-// }
+}

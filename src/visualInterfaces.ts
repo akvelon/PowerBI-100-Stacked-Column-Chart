@@ -3,10 +3,13 @@
 import powerbiApi from "powerbi-visuals-api";
 import {axisInterfaces, legendInterfaces} from "powerbi-visuals-utils-chartutils";
 import {interactivitySelectionService} from "powerbi-visuals-utils-interactivityutils";
+import {ISelectionHandler} from "powerbi-visuals-utils-interactivityutils/lib/interactivityBaseService";
 import {Selection} from "d3-selection";
 
 import {VisualSettings} from "./settings";
+import {ScrollBar} from "./scrollbarUtil";
 
+import DataView = powerbiApi.DataView;
 import PrimitiveValue = powerbiApi.PrimitiveValue;
 import ISelectionId = powerbiApi.extensibility.ISelectionId;
 import DataViewValueColumn = powerbiApi.DataViewValueColumn;
@@ -19,7 +22,6 @@ import IViewport = powerbiApi.IViewport;
 import IAxisProperties = axisInterfaces.IAxisProperties;
 import SelectableDataPoint = interactivitySelectionService.SelectableDataPoint;
 import LegendData = legendInterfaces.LegendData;
-import {ISelectionHandler} from "powerbi-visuals-utils-interactivityutils/lib/interactivityBaseService";
 
 export type d3Selection<T> = Selection<any, T, any, any>;
 
@@ -163,8 +165,8 @@ export interface AxesDomains {
 //         X = <any>'x',
 //         Y = <any>'y'
 //     }
-//
-//     export type SelectionState = undefined | null | 'selected' | 'justSelected' | 'justRemoved';
+
+export type SelectionState = undefined | null | 'selected' | 'justSelected' | 'justRemoved';
 
 export interface LegendProperties {
     legendObject: DataViewObject;
@@ -189,7 +191,7 @@ export interface SmallMultipleOptions {
     rowsInFlow?: number
 }
 
-export interface IBarVisual extends IVisual {
+export interface IColumnVisual extends IVisual {
     axesSize: IAxesSize;
     yTickOffset: number;
     webBehaviorSelectionHandler: ISelectionHandler;
@@ -199,6 +201,8 @@ export interface IBarVisual extends IVisual {
     legendSize: LegendSize;
     visualMargin: IMargin;
     categoriesCount: number;
+    scrollBar: ScrollBar;
+    barClassName: string;
 
     onScrollPosChanged(): void;
 
@@ -209,4 +213,8 @@ export interface IBarVisual extends IVisual {
     getVisualTranslation(): VisualTranslation;
 
     getSettings(): VisualSettings;
+
+    saveSelection(): void;
+
+    getDataView(): DataView;
 }
