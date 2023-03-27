@@ -1,6 +1,14 @@
 import {CssConstants} from "powerbi-visuals-utils-svgutils";
 import {ClassAndSelector} from "powerbi-visuals-utils-svgutils/lib/cssConstants";
-import {Coordinates, d3Selection, IAxes, VisualData, VisualDataPoint} from "../visualInterfaces";
+import {
+    Coordinates,
+    d3Selection,
+    IAxes, ISize,
+    SmallMultipleOptions,
+    VisualData,
+    VisualDataPoint,
+    VisualMeasureMetadata
+} from "../visualInterfaces";
 import {
     IInteractiveBehavior,
     IInteractivityService
@@ -11,9 +19,9 @@ import IVisualHost = powerbi.extensibility.visual.IVisualHost;
 import {
     ConstantLineSettings,
     HorizontalPosition,
-    LabelOrientation,
+    LabelOrientation, LayoutMode,
     LineStyle,
-    Position, VerticalPosition,
+    Position, SmallMultipleSettings, VerticalPosition,
     VisualSettings
 } from "../settings";
 import * as visualUtils from '../utils';
@@ -23,9 +31,13 @@ import {DataLabelHelper} from "../utils/dataLabelHelper";
 import {TextProperties} from "powerbi-visuals-utils-formattingutils/lib/src/interfaces";
 import {textMeasurementService, valueFormatter} from "powerbi-visuals-utils-formattingutils";
 import {Text} from "../settings";
-import {translate} from "powerbi-visuals-utils-svgutils/lib/manipulation";
+import {translate as svgTranslate} from "powerbi-visuals-utils-svgutils/lib/manipulation";
 import {pixelConverter as PixelConverter} from "powerbi-visuals-utils-typeutils";
 import {dataLabelUtils} from "powerbi-visuals-utils-chartutils";
+import * as formattingUtils from '../utils/formattingUtils';
+import PrimitiveValue = powerbi.PrimitiveValue;
+import {select as d3select} from "d3-selection";
+
 
 class Selectors {
     static BarSelect = CssConstants.createClassAndSelector("bar");
@@ -157,57 +169,45 @@ export class RenderVisual {
             .style("pointer-events", "none");
     }
 
-    // public static renderDataLabelsBackgroundForSmallMultiple(
-    //     data: VisualData,
-    //     settings: VisualSettings,
-    //     dataLabelsBackgroundContext: d3.Selection<any>,
-    //     dataPoints: VisualDataPoint[] = null): void {
-    //
-    //     let labelSettings: categoryLabelsSettings = settings.categoryLabels;
-    //
-    //     dataLabelsBackgroundContext.selectAll("*").remove();
-    //
-    //     if (!labelSettings.showBackground) {
-    //         return;
-    //     }
-    //
-    //     let dataPointsArray: VisualDataPoint[] = this.filterData(dataPoints || data.dataPoints),
-    //         backgroundSelection: UpdateSelection<VisualDataPoint> = dataLabelsBackgroundContext
-    //             .selectAll(RenderVisual.Label.selectorName)
-    //             .data(dataPointsArray);
-    //
-    //     backgroundSelection
-    //         .enter()
-    //         .append("svg:rect");
-    //
-    //     backgroundSelection
-    //         .attr({
-    //             height: d => {
-    //                 return d.labelCoordinates.height + DataLabelHelper.labelBackgroundHeightPadding;
-    //             },
-    //             width: d => {
-    //                 return d.labelCoordinates.width + DataLabelHelper.labelBackgroundWidthPadding;
-    //             },
-    //             x: d => {
-    //                 return d.labelCoordinates.x - DataLabelHelper.labelBackgroundXShift;
-    //             },
-    //             y: d => {
-    //                 return d.labelCoordinates.y - d.labelCoordinates.height - DataLabelHelper.labelBackgroundYShift;
-    //             },
-    //             rx: 4,
-    //             ry: 4,
-    //             fill: settings.categoryLabels.backgroundColor
-    //         });
-    //
-    //     backgroundSelection.style({
-    //         "fill-opacity": (100 - settings.categoryLabels.transparency) / 100,
-    //         "pointer-events": "none"
-    //     });
-    //
-    //     backgroundSelection
-    //         .exit()
-    //         .remove();
-    // }
+    public static renderDataLabelsBackgroundForSmallMultiple(
+        data: VisualData,
+        settings: VisualSettings,
+        dataLabelsBackgroundContext: d3Selection<any>,
+        dataPoints: VisualDataPoint[] = null): void {
+
+        let labelSettings = settings.categoryLabels;
+
+        dataLabelsBackgroundContext.selectAll("*").remove();
+
+        if (!labelSettings.showBackground) {
+            return;
+        }
+
+        const dataPointsArray: VisualDataPoint[] = this.filterData(dataPoints || data.dataPoints);
+
+        dataLabelsBackgroundContext
+            .selectAll(RenderVisual.Label.selectorName)
+            .data(dataPointsArray)
+            .join("svg:rect")
+            .attr(
+                'height', d => {
+                    return d.labelCoordinates.height + DataLabelHelper.labelBackgroundHeightPadding;
+                })
+            .attr('width', d => {
+                return d.labelCoordinates.width + DataLabelHelper.labelBackgroundWidthPadding;
+            })
+            .attr('x', d => {
+                return d.labelCoordinates.x - DataLabelHelper.labelBackgroundXShift;
+            })
+            .attr('y', d => {
+                return d.labelCoordinates.y - d.labelCoordinates.height - DataLabelHelper.labelBackgroundYShift;
+            })
+            .attr('rx', 4)
+            .attr('ry', 4)
+            .attr('fill', settings.categoryLabels.backgroundColor)
+            .style("fill-opacity", (100 - settings.categoryLabels.transparency) / 100)
+            .style("pointer-events", "none");
+    }
 
     public static renderDataLabels(
         dataPoints: VisualDataPoint[],
@@ -242,7 +242,7 @@ export class RenderVisual {
             .data(dataPoints)
             .join("svg:text")
             .attr("transform", (p: VisualDataPoint) => {
-                return translate(p.labelCoordinates.x, p.labelCoordinates.y) + (labelSettings.orientation === LabelOrientation.Horizontal ? "" : "rotate(-90)");
+                return svgTranslate(p.labelCoordinates.x, p.labelCoordinates.y) + (labelSettings.orientation === LabelOrientation.Horizontal ? "" : "rotate(-90)");
             })
             .style("fill", labelSettings.color)
             .style("font-size", fontSizeInPx)
@@ -251,112 +251,88 @@ export class RenderVisual {
             .text((p: VisualDataPoint) => dataLabelFormatter.format(p.percentValue));
     }
 
-    // public static renderDataLabelsForSmallMultiple(
-    //     data: VisualData,
-    //     settings: VisualSettings,
-    //     dataLabelsContext: d3.Selection<any>,
-    //     metadata: VisualMeasureMetadata,
-    //     dataPoints: VisualDataPoint[] = null): void {
-    //
-    //     let labelSettings: categoryLabelsSettings = settings.categoryLabels;
-    //
-    //     dataLabelsContext.selectAll("*").remove();
-    //
-    //     if (!labelSettings.show) {
-    //         return;
-    //     }
-    //
-    //     let dataPointsArray: VisualDataPoint[] = this.filterData(dataPoints || data.dataPoints),
-    //         labelSelection: UpdateSelection<VisualDataPoint> = dataLabelsContext
-    //             .selectAll(RenderVisual.Label.selectorName)
-    //             .data(dataPointsArray);
-    //
-    //     let dataLabelFormatter: IValueFormatter =
-    //         formattingUtils.createFormatter(labelSettings.displayUnits,
-    //             labelSettings.precision,
-    //             metadata.cols.value,
-    //             formattingUtils.getValueForFormatter(data));
-    //
-    //     labelSelection
-    //         .enter()
-    //         .append("svg:text");
-    //
-    //     let fontSizeInPx: string = PixelConverter.fromPoint(labelSettings.fontSize);
-    //     let fontFamily: string = labelSettings.fontFamily ? labelSettings.fontFamily : dataLabelUtils.LabelTextProperties.fontFamily;
-    //
-    //     labelSelection
-    //         .attr("transform", (p: VisualDataPoint) => {
-    //             return translate(p.labelCoordinates.x, p.labelCoordinates.y);
-    //         });
-    //
-    //     labelSelection
-    //         .style({
-    //             "fill": labelSettings.color,
-    //             "font-size": fontSizeInPx,
-    //             "font-family": fontFamily,
-    //             "pointer-events": "none"
-    //         })
-    //         .text((p: VisualDataPoint) => dataLabelFormatter.format(p.value));
-    //
-    //     labelSelection
-    //         .exit()
-    //         .remove();
-    // }
-    //
-    // public static renderSmallMultipleTopTitle(options: SmallMultipleOptions, settings: smallMultipleSettings) {
-    //     let uniqueColumns: PrimitiveValue[] = options.columns,
-    //         index: number = options.index,
-    //         chartSize: ISize = options.chartSize,
-    //         chartElement: d3.Selection<any> = options.chartElement,
-    //         leftSpace: number = options.leftSpace,
-    //         topSpace: number = options.topSpace,
-    //         textHeight: number = options.textHeight,
-    //         fontSizeInPx: string = PixelConverter.fromPoint(settings.fontSize),
-    //         fontFamily: string = settings.fontFamily;
-    //
-    //     let topTitles: d3.Selection<SVGElement> = chartElement.append("svg");
-    //     let topTitlestext: d3.selection.Update<PrimitiveValue> = topTitles.selectAll("*").data([uniqueColumns[index]]);
-    //
-    //     topTitlestext.enter()
-    //         .append("text")
-    //         .attr("class", Selectors.AxisLabelSelector.className);
-    //
-    //     // For removed categories, remove the SVG group.
-    //     topTitlestext.exit()
-    //         .remove();
-    //
-    //     let textProperties: TextProperties = {
-    //         fontFamily,
-    //         fontSize: fontSizeInPx
-    //     };
-    //
-    //     topTitlestext
-    //         .style({
-    //             "text-anchor": "middle",
-    //             "font-size": fontSizeInPx,
-    //             "font-family": fontFamily,
-    //             "fill": settings.fontColor
-    //         })
-    //         .attr({
-    //             dy: "0.3em"
-    //         })
-    //         .text(d => {
-    //             if (d || d === 0) {
-    //                 textProperties.text = d.toString();
-    //                 return TextMeasurementService.getTailoredTextOrDefault(textProperties, chartSize.width - 10);
-    //             }
-    //
-    //             return null;
-    //         })
-    //         .call((text: d3.Selection<any>) => {
-    //             const textSelectionX: d3.Selection<any> = d3.select(text[0][0]);
-    //             let x = leftSpace + chartSize.width / 2;
-    //
-    //             textSelectionX.attr({
-    //                 "transform": svg.translate(x, topSpace + textHeight / 2)
-    //             });
-    //         });
-    // }
+    public static renderDataLabelsForSmallMultiple(
+        data: VisualData,
+        settings: VisualSettings,
+        dataLabelsContext: d3Selection<any>,
+        metadata: VisualMeasureMetadata,
+        dataPoints: VisualDataPoint[] = null): void {
+
+        let labelSettings = settings.categoryLabels;
+
+        dataLabelsContext.selectAll("*").remove();
+
+        if (!labelSettings.show) {
+            return;
+        }
+
+        const dataPointsArray: VisualDataPoint[] = this.filterData(dataPoints || data.dataPoints);
+
+        let dataLabelFormatter =
+            formattingUtils.createFormatter(labelSettings.displayUnits,
+                labelSettings.precision,
+                metadata.cols.value,
+                formattingUtils.getValueForFormatter(data));
+
+        let fontSizeInPx: string = PixelConverter.fromPoint(labelSettings.fontSize);
+        let fontFamily: string = labelSettings.fontFamily ? labelSettings.fontFamily : dataLabelUtils.LabelTextProperties.fontFamily;
+
+        dataLabelsContext
+            .selectAll(RenderVisual.Label.selectorName)
+            .data(dataPointsArray)
+            .join("svg:text")
+            .attr("transform", (p: VisualDataPoint) => {
+                return svgTranslate(p.labelCoordinates.x, p.labelCoordinates.y);
+            })
+            .style("fill", labelSettings.color)
+            .style("font-size", fontSizeInPx)
+            .style("font-family", fontFamily)
+            .style("pointer-events", "none")
+            .text((p: VisualDataPoint) => dataLabelFormatter.format(p.value));
+    }
+
+    public static renderSmallMultipleTopTitle(options: SmallMultipleOptions, settings: SmallMultipleSettings) {
+        let uniqueColumns = options.columns,
+            index: number = options.index,
+            chartSize: ISize = options.chartSize,
+            chartElement: d3Selection<any> = options.chartElement,
+            leftSpace: number = options.leftSpace,
+            topSpace: number = options.topSpace,
+            textHeight: number = options.textHeight,
+            fontSizeInPx: string = PixelConverter.fromPoint(settings.fontSize),
+            fontFamily: string = settings.fontFamily;
+
+        let topTitles: d3Selection<SVGElement> = chartElement.append("svg");
+
+        let textProperties: TextProperties = {
+            fontFamily,
+            fontSize: fontSizeInPx
+        };
+
+        topTitles.selectAll("*")
+            .data([uniqueColumns[index]])
+            .join("text")
+            .attr("class", Selectors.AxisLabelSelector.className)
+            .style("text-anchor", "middle")
+            .style("font-size", fontSizeInPx)
+            .style("font-family", fontFamily)
+            .style("fill", settings.fontColor)
+            .attr('dy', "0.3em")
+            .text(d => {
+                if (d || d === 0) {
+                    textProperties.text = d.toString();
+                    return textMeasurementService.getTailoredTextOrDefault(textProperties, chartSize.width - 10);
+                }
+
+                return null;
+            })
+            .call((text: d3Selection<any>) => {
+                const textSelectionX: d3Selection<any> = d3select(text.nodes()[0]);
+                let x = leftSpace + chartSize.width / 2;
+
+                textSelectionX.attr("transform", svgTranslate(x, topSpace + textHeight / 2));
+            });
+    }
 
     public static filterData(dataPoints: VisualDataPoint[]): VisualDataPoint[] {
         let filteredDatapoints: VisualDataPoint[] = [];
@@ -521,169 +497,164 @@ export class RenderVisual {
             positionAcross = maxPosition - (textHeight + marginAcross);
         }
 
-        return translate(positionAlong, positionAcross);
+        return svgTranslate(positionAlong, positionAcross);
     }
 
-    // private static gapBetweenCharts: number = 10;
-    //
-    // public static renderSmallMultipleLines(options: SmallMultipleOptions, settings: smallMultipleSettings) {
-    //
-    //     let uniqueRows: PrimitiveValue[] = options.rows,
-    //         uniqueColumns: PrimitiveValue[] = options.columns,
-    //         chartSize: ISize = options.chartSize,
-    //         chartElement: d3.Selection<any> = options.chartElement,
-    //         leftSpace: number = options.leftSpace,
-    //         topSpace: number = options.topSpace,
-    //         rowsInFlow: number = options.rowsInFlow;
-    //
-    //     for (let i = 1; i < uniqueRows.length; ++i) {
-    //         let y: number = 0;
-    //         if (settings.layoutMode === LayoutMode.Matrix) {
-    //             y = topSpace * 2 + i * chartSize.height + this.gapBetweenCharts * (i - 1);
-    //         } else {
-    //             y = topSpace * i * rowsInFlow + i * chartSize.height * rowsInFlow + this.gapBetweenCharts * (i * rowsInFlow - 1) + this.gapBetweenCharts / 2;
-    //         }
-    //
-    //         let line = chartElement.append("line").style({
-    //             "stroke": "#aaa",
-    //             "stroke-width": 1
-    //         });
-    //
-    //         line.attr({
-    //             x1: 0,//leftSpace + gapBetweenCharts / 2,
-    //             x2: leftSpace + uniqueColumns.length * chartSize.width + this.gapBetweenCharts * uniqueColumns.length,
-    //             y1: y,
-    //             y2: y
-    //         });
-    //     }
-    //
-    //     if (settings.layoutMode === LayoutMode.Matrix) {
-    //         for (let j = 1; j < uniqueColumns.length; ++j) {
-    //             let x = leftSpace + j * chartSize.width + this.gapBetweenCharts * j;
-    //
-    //             let line = chartElement.append("line").style({
-    //                 "stroke": "#aaa",
-    //                 "stroke-width": 1
-    //             });
-    //
-    //             line.attr({
-    //                 x1: x,
-    //                 x2: x,
-    //                 y1: 0,
-    //                 y2: topSpace + uniqueRows.length * chartSize.height + this.gapBetweenCharts * uniqueRows.length
-    //             });
-    //         }
-    //     }
-    // }
-    //
-    // public static renderSmallMultipleTitles(options: SmallMultipleOptions, settings: smallMultipleSettings) {
-    //     let uniqueColumns: PrimitiveValue[] = options.columns,
-    //         uniqueRows: PrimitiveValue[] = options.rows,
-    //         chartSize: ISize = options.chartSize,
-    //         chartElement: d3.Selection<any> = options.chartElement,
-    //         leftSpace: number = options.leftSpace,
-    //         topSpace: number = options.topSpace,
-    //         fontSizeInPx: string = PixelConverter.fromPoint(settings.fontSize),
-    //         fontFamily: string = settings.fontFamily,
-    //         rowsInFlow: number = options.rowsInFlow;
-    //
-    //     if (settings.layoutMode === LayoutMode.Matrix) {
-    //         let topTitles: d3.Selection<SVGElement> = chartElement.append("svg");
-    //         let topTitlestext: d3.selection.Update<PrimitiveValue> = topTitles.selectAll("*").data(uniqueColumns);
-    //
-    //         topTitlestext.enter()
-    //             .append("text")
-    //             .attr("class", Selectors.AxisLabelSelector.className);
-    //
-    //         // For removed categories, remove the SVG group.
-    //         topTitlestext.exit()
-    //             .remove();
-    //
-    //         let textProperties: TextProperties = {
-    //             fontFamily,
-    //             fontSize: fontSizeInPx
-    //         };
-    //
-    //         topTitlestext
-    //             .style({
-    //                 "text-anchor": "middle",
-    //                 "font-size": fontSizeInPx,
-    //                 "font-family": fontFamily,
-    //                 "fill": settings.fontColor
-    //             })
-    //             .attr({
-    //                 dy: "1em"
-    //             })
-    //             .text(d => {
-    //                 if (d || d === 0) {
-    //                     textProperties.text = d.toString();
-    //                     return TextMeasurementService.getTailoredTextOrDefault(textProperties, chartSize.width - 10);
-    //                 }
-    //
-    //                 return null;
-    //             })
-    //             .call((text: d3.Selection<any>) => {
-    //                 for (let j = 0; j < uniqueColumns.length; ++j) {
-    //                     const textSelectionX: d3.Selection<any> = d3.select(text[0][j]);
-    //                     let x = leftSpace + j * chartSize.width + chartSize.width / 2 + this.gapBetweenCharts * j;
-    //
-    //                     textSelectionX.attr({
-    //                         "transform": svg.translate(x, topSpace / 2)
-    //                     });
-    //                 }
-    //             });
-    //     }
-    //
-    //     const leftTitleSpace: number = 120;
-    //
-    //     let textProperties: TextProperties = {
-    //         fontFamily,
-    //         fontSize: fontSizeInPx
-    //     };
-    //
-    //     let leftTitles: d3.Selection<SVGElement> = chartElement.append("svg");
-    //     let leftTitlesText: d3.selection.Update<PrimitiveValue> = leftTitles.selectAll("*").data(uniqueRows);
-    //
-    //     leftTitlesText.enter()
-    //         .append("text")
-    //         .attr("class", Selectors.AxisLabelSelector.className);
-    //
-    //     // For removed categories, remove the SVG group.
-    //     leftTitlesText.exit()
-    //         .remove();
-    //
-    //     leftTitlesText
-    //         .style({
-    //             "text-anchor": "middle",
-    //             "font-size": fontSizeInPx,
-    //             "font-family": fontFamily,
-    //             "fill": settings.fontColor
-    //         })
-    //         .text(d => {
-    //             if (d || d === 0) {
-    //                 textProperties.text = d.toString();
-    //                 return TextMeasurementService.getTailoredTextOrDefault(textProperties, leftTitleSpace);
-    //             }
-    //
-    //             return null;
-    //         })
-    //         .call((text: d3.Selection<any>) => {
-    //             for (let i = 0; i < uniqueRows.length; ++i) {
-    //                 const textSelectionX: d3.Selection<any> = d3.select(text[0][i]);
-    //                 let y = 0;
-    //
-    //                 if (settings.layoutMode === LayoutMode.Flow) {
-    //
-    //                     let previousChartGroupHeight: number = i * rowsInFlow * chartSize.height + this.gapBetweenCharts * i * rowsInFlow + topSpace * rowsInFlow * i;
-    //                     y = previousChartGroupHeight + rowsInFlow * chartSize.height / 2 + topSpace;
-    //                 } else {
-    //                     y = i * chartSize.height + chartSize.height / 2 + topSpace * 2 + this.gapBetweenCharts * i;
-    //                 }
-    //
-    //                 textSelectionX.attr({
-    //                     "transform": svg.translate(leftSpace / 2, y)
-    //                 });
-    //             }
-    //         });
-    // }
+    private static gapBetweenCharts: number = 10;
+
+    public static renderSmallMultipleLines(options: SmallMultipleOptions, settings: SmallMultipleSettings) {
+
+        let uniqueRows: PrimitiveValue[] = options.rows,
+            uniqueColumns: PrimitiveValue[] = options.columns,
+            chartSize: ISize = options.chartSize,
+            chartElement: d3Selection<any> = options.chartElement,
+            leftSpace: number = options.leftSpace,
+            topSpace: number = options.topSpace,
+            rowsInFlow: number = options.rowsInFlow;
+
+        for (let i = 1; i < uniqueRows.length; ++i) {
+            let y: number = 0;
+            if (settings.layoutMode === LayoutMode.Matrix) {
+                y = topSpace * 2 + i * chartSize.height + this.gapBetweenCharts * (i - 1);
+            } else {
+                y = topSpace * i * rowsInFlow + i * chartSize.height * rowsInFlow + this.gapBetweenCharts * (i * rowsInFlow - 1) + this.gapBetweenCharts / 2;
+            }
+
+            let line = chartElement.append("line")
+                .style("stroke", "#aaa")
+                .style("stroke-width", 1);
+
+            line.attr('x1', 0)//leftSpace + gapBetweenCharts / 2,
+                .attr('x2', leftSpace + uniqueColumns.length * chartSize.width + this.gapBetweenCharts * uniqueColumns.length)
+                .attr('y1', y)
+                .attr('y2', y);
+        }
+
+        if (settings.layoutMode === LayoutMode.Matrix) {
+            for (let j = 1; j < uniqueColumns.length; ++j) {
+                let x = leftSpace + j * chartSize.width + this.gapBetweenCharts * j;
+
+                let line = chartElement.append("line")
+                    .style("stroke", "#aaa")
+                    .style("stroke-width", 1);
+
+                line.attr('x1', x)
+                    .attr('x2', x)
+                    .attr('y1', 0)
+                    .attr('y2', topSpace + uniqueRows.length * chartSize.height + this.gapBetweenCharts * uniqueRows.length);
+            }
+        }
+    }
+
+    public static renderSmallMultipleTitles(options: SmallMultipleOptions, settings: SmallMultipleSettings) {
+        let uniqueColumns: PrimitiveValue[] = options.columns,
+            uniqueRows: PrimitiveValue[] = options.rows,
+            chartSize: ISize = options.chartSize,
+            chartElement: d3Selection<any> = options.chartElement,
+            leftSpace: number = options.leftSpace,
+            topSpace: number = options.topSpace,
+            fontSizeInPx: string = PixelConverter.fromPoint(settings.fontSize),
+            fontFamily: string = settings.fontFamily,
+            rowsInFlow: number = options.rowsInFlow;
+
+        if (settings.layoutMode === LayoutMode.Matrix) {
+            let topTitles: d3Selection<SVGElement> = chartElement.append("svg");
+
+            topTitles.selectAll("*").data(uniqueColumns);
+
+            // topTitlestext.enter()
+            //     .append("text")
+            //     .attr("class", Selectors.AxisLabelSelector.className);
+            //
+            // // For removed categories, remove the SVG group.
+            // topTitlestext.exit()
+            //     .remove();
+            //
+            // let textProperties: TextProperties = {
+            //     fontFamily,
+            //     fontSize: fontSizeInPx
+            // };
+            //
+            // topTitlestext
+            //     .style({
+            //         "text-anchor": "middle",
+            //         "font-size": fontSizeInPx,
+            //         "font-family": fontFamily,
+            //         "fill": settings.fontColor
+            //     })
+            //     .attr({
+            //         dy: "1em"
+            //     })
+            //     .text(d => {
+            //         if (d || d === 0) {
+            //             textProperties.text = d.toString();
+            //             return TextMeasurementService.getTailoredTextOrDefault(textProperties, chartSize.width - 10);
+            //         }
+            //
+            //         return null;
+            //     })
+            //     .call((text: d3.Selection<any>) => {
+            //         for (let j = 0; j < uniqueColumns.length; ++j) {
+            //             const textSelectionX: d3.Selection<any> = d3.select(text[0][j]);
+            //             let x = leftSpace + j * chartSize.width + chartSize.width / 2 + this.gapBetweenCharts * j;
+            //
+            //             textSelectionX.attr({
+            //                 "transform": svg.translate(x, topSpace / 2)
+            //             });
+            //         }
+            //     });
+        }
+
+        const leftTitleSpace: number = 120;
+
+        let textProperties: TextProperties = {
+            fontFamily,
+            fontSize: fontSizeInPx
+        };
+
+        let leftTitles: d3Selection<SVGElement> = chartElement.append("svg");
+        let leftTitlesText: d3Selection<PrimitiveValue> = leftTitles.selectAll("*").data(uniqueRows);
+
+        // leftTitlesText.enter()
+        //     .append("text")
+        //     .attr("class", Selectors.AxisLabelSelector.className);
+        //
+        // // For removed categories, remove the SVG group.
+        // leftTitlesText.exit()
+        //     .remove();
+        //
+        // leftTitlesText
+        //     .style({
+        //         "text-anchor": "middle",
+        //         "font-size": fontSizeInPx,
+        //         "font-family": fontFamily,
+        //         "fill": settings.fontColor
+        //     })
+        //     .text(d => {
+        //         if (d || d === 0) {
+        //             textProperties.text = d.toString();
+        //             return TextMeasurementService.getTailoredTextOrDefault(textProperties, leftTitleSpace);
+        //         }
+        //
+        //         return null;
+        //     })
+        //     .call((text: d3.Selection<any>) => {
+        //         for (let i = 0; i < uniqueRows.length; ++i) {
+        //             const textSelectionX: d3.Selection<any> = d3.select(text[0][i]);
+        //             let y = 0;
+        //
+        //             if (settings.layoutMode === LayoutMode.Flow) {
+        //
+        //                 let previousChartGroupHeight: number = i * rowsInFlow * chartSize.height + this.gapBetweenCharts * i * rowsInFlow + topSpace * rowsInFlow * i;
+        //                 y = previousChartGroupHeight + rowsInFlow * chartSize.height / 2 + topSpace;
+        //             } else {
+        //                 y = i * chartSize.height + chartSize.height / 2 + topSpace * 2 + this.gapBetweenCharts * i;
+        //             }
+        //
+        //             textSelectionX.attr({
+        //                 "transform": svg.translate(leftSpace / 2, y)
+        //             });
+        //         }
+        //     });
+    }
 }

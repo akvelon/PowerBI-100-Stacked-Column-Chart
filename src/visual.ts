@@ -19,6 +19,7 @@ import {pixelConverter as PixelConverter} from "powerbi-visuals-utils-typeutils"
 import "../style/visual.less";
 
 import {
+    AxesDomains,
     CategoryDataPoints,
     d3Selection,
     IAxes,
@@ -27,15 +28,15 @@ import {
     IMargin,
     ISize,
     LegendProperties,
-    LegendSize, VisualData,
+    LegendSize, SmallMultipleSizeOptions, VisualData,
     VisualDataPoint,
     VisualMeasureMetadata,
     VisualTranslation,
 } from "./visualInterfaces";
 import {CustomLegendBehavior} from "./customLegendBehavior";
-import {WebBehavior} from "./behavior";
+import {WebBehavior, WebBehaviorOptions} from "./behavior";
 import {DataViewConverter, Field} from "./dataViewConverter";
-import {LegendSettings, VisualSettings} from "./settings";
+import {AxisRangeType, LayoutMode, LegendSettings, SmallMultipleSettings, VisualSettings} from "./settings";
 import * as metadataUtils from './metadataUtils';
 import * as visualUtils from './utils';
 import * as selectionSaveUtils from './selectionSaveUtils';
@@ -63,6 +64,10 @@ import VisualObjectInstanceEnumeration = powerbi.VisualObjectInstanceEnumeration
 import {LassoSelection} from "./lassoSelectionUtil";
 import {LassoSelectionForSmallMultiple} from "./lassoSelectionUtilForSmallMultiple";
 import {RenderVisual} from "./render/renderVisual";
+import {TextProperties} from "powerbi-visuals-utils-formattingutils/lib/src/interfaces";
+import {textMeasurementService, valueFormatter} from "powerbi-visuals-utils-formattingutils";
+import PrimitiveValue = powerbi.PrimitiveValue;
+import {IValueFormatter} from "powerbi-visuals-utils-formattingutils/lib/src/valueFormatter";
 
 class Selectors {
     static MainSvg = CssConstants.createClassAndSelector("bar-chart-svg");
@@ -378,12 +383,12 @@ export class Visual implements IColumnVisual {
 
             this.allDataPoints = DataViewConverter.Convert(dataView, this.host, this.settings, this.legendProperties.colors);
 
-//             if ( this.isSmallMultiple() ) {
-//                 this.smallMultipleProcess(options.viewport);
-//             } else {
-            this.normalChartProcess(options);
-//             }
-//
+            if (this.isSmallMultiple()) {
+                this.smallMultipleProcess(options.viewport);
+            } else {
+                this.normalChartProcess(options);
+            }
+
             if (!this.isSelectionRestored) {
                 this.restoreSelection();
 
@@ -410,641 +415,622 @@ export class Visual implements IColumnVisual {
         }
     }
 
-//         private calculateLabelsSize(settings: smallMultipleSettings): number {
-//             return settings.showChartTitle ? 120 : 0;
-//         }
-//
-//         private calculateTopSpace(settings: smallMultipleSettings): number {
-//
-//             if (!settings.showChartTitle) {
-//                 return 0;
-//             }
-//
-//             let textProperties: TextProperties = {
-//                 fontFamily: settings.fontFamily,
-//                 fontSize: PixelConverter.toString(settings.fontSize)
-//             };
-//
-//             let height: number = textMeasurementService.measureSvgTextHeight(textProperties),
-//                 additionalSpace: number = settings.layoutMode === LayoutMode.Flow ? 15 : 0;
-//
-//             return height + additionalSpace;
-//         }
-//
-//         public calculateYAxisSize(): number {
-//
-//             return 35;
-//         }
-//
-//         public calculateXAxisSize(settings: VisualSettings): number {
-//
-//             let fontSize: string = PixelConverter.toString(settings.categoryAxis.fontSize);
-//             let fontFamily: string = settings.categoryAxis.fontFamily;
-//
-//             let textProperties: TextProperties = {
-//                 fontFamily: fontFamily,
-//                 fontSize: fontSize
-//             };
-//
-//             let height: number = textMeasurementService.measureSvgTextHeight(textProperties);
-//
-//             return height + 8;
-//         }
-//
-//         public calculateXAxisSizeForCategorical(values: PrimitiveValue[], settings: VisualSettings, metadata: VisualMeasureMetadata, barHeight: number): number {
-//             let formatter: IValueFormatter;
-//
-//             if (typeof (values.some(x => x && (<any>x).getMonth === 'function'))) {
-//                 if (metadata.cols.category) {
-//                     formatter = valueFormatter.create({
-//                         format: valueFormatter.getFormatStringByColumn(metadata.cols.category, true) || metadata.cols.category.format,
-//                         cultureSelector: this.host.locale
-//                     });
-//                 } else if (metadata.groupingColumn) {
-//                     formatter = valueFormatter.create({
-//                         format: valueFormatter.getFormatStringByColumn(metadata.groupingColumn, true) || metadata.groupingColumn.format,
-//                         cultureSelector: this.host.locale
-//                     });
-//                 }
-//             } else {
-//                 let yAxisFormatString: string = valueFormatter.getFormatStringByColumn(metadata.cols.category) || valueFormatter.getFormatStringByColumn(metadata.groupingColumn);
-//
-//                 formatter = valueFormatter.create({ format: yAxisFormatString });
-//             }
-//
-//             let fontSize: string = PixelConverter.toString(settings.categoryAxis.fontSize);
-//             let fontFamily: string = settings.categoryAxis.fontFamily;
-//
-//             let maxWidth: number = 0;
-//
-//             values.forEach(value => {
-//                 let textProperties: TextProperties = {
-//                     text: formatter.format(value),
-//                     fontFamily: fontFamily,
-//                     fontSize: fontSize
-//                 };
-//
-//                 let width: number = textMeasurementService.measureSvgTextWidth(textProperties);
-//                 maxWidth = width > maxWidth ? width : maxWidth;
-//             });
-//
-//             if (maxWidth >= barHeight ) {
-//                 return maxWidth + 4;
-//             }
-//
-//             return -1;
-//         }
-//
-//         public prepareMainDiv(el: d3.Selection<any>) {
-//             if ( this.mainSvgElement ){
-//                 this.mainSvgElement.remove();
-//                 this.mainSvgElement = null;
-//             }
-//
-//             if (this.mainDivElement) {
-//                 this.mainDivElement.selectAll("*").remove();
-//             } else {
-//                 this.mainDivElement = el.append("div");
-//             }
-//         }
-//
-//         private calculateChartSize(viewport: IViewport,
-//             settings: smallMultipleSettings,
-//             leftSpace: number,
-//             topSpace: number,
-//             rows: number,
-//             columns: number,
-//             legendSize: LegendSize): SmallMultipleSizeOptions {
-//
-//             const scrollHeight: number = 22,
-//                 scrollWidth: number = 20,
-//                 gapBetweenCharts: number = 10;
-//             let minHeight: number = settings.minUnitHeight,
-//                 minWidth: number = settings.minUnitWidth;
-//
-//             let chartHeight: number = 0;
-//             let chartWidth: number = 0;
-//
-//             if(settings.layoutMode === LayoutMode.Matrix) {
-//                 let clientHeight: number = viewport.height - topSpace - scrollHeight - legendSize.height;
-//                 let clientWidth: number = viewport.width - leftSpace - scrollWidth - legendSize.width;
-//
-//                 chartHeight = (clientHeight - gapBetweenCharts * rows) / rows;
-//                 chartWidth = (clientWidth - gapBetweenCharts * columns) / columns;
-//             } else {
-//                 let clientHeight: number = viewport.height - scrollHeight - legendSize.height;
-//                 let clientWidth: number = viewport.width - leftSpace - scrollWidth - legendSize.width;;
-//
-//                 chartHeight = (clientHeight - gapBetweenCharts * rows - topSpace * rows ) / rows;
-//                 chartWidth = (clientWidth - gapBetweenCharts * (columns)) / columns;
-//             }
-//
-//             let isVerticalScrollBarNeeded: boolean = chartHeight < minHeight - scrollWidth / rows,
-//                 isHorizontalScrollBarNeeded: boolean = chartWidth < minWidth - scrollHeight / columns;
-//
-//             if (!isVerticalScrollBarNeeded) {
-//                 chartWidth += scrollHeight / columns;
-//             }
-//
-//             if (!isHorizontalScrollBarNeeded) {
-//                 chartHeight += scrollWidth / rows;
-//             }
-//
-//             return {
-//                 height: isVerticalScrollBarNeeded ? minHeight : chartHeight,
-//                 width: isHorizontalScrollBarNeeded ? minWidth : chartWidth,
-//                 isHorizontalSliderNeeded: isHorizontalScrollBarNeeded,
-//                 isVerticalSliderNeeded: isVerticalScrollBarNeeded
-//             }
-//         }
-//
-//         private createSmallMultipleAxesByDomains(categoryDomain: any[], valueDomain: any[], visualSize: ISize, maxYAxisLabelWidth: number, categoriesCount: number = null): IAxes {
-//             let axesDomains: AxesDomains = {
-//                 yAxisDomain: valueDomain,
-//                 xAxisDomain: categoryDomain
-//             };
-//
-//             let barHeight: number = categoriesCount ? visualSize.width / (categoriesCount > 2 ? categoriesCount + 1 : categoriesCount) : 0;
-//
-//             let axes: IAxes = RenderAxes.createD3Axes(
-//                 axesDomains,
-//                 visualSize,
-//                 this.metadata,
-//                 this.settings,
-//                 this.host,
-//                 true,
-//                 barHeight,
-//                 maxYAxisLabelWidth
-//             );
-//
-//             return axes;
-//         }
-//
-//         private renderSmallMultipleAxes(dataPoints: VisualDataPoint[], axes: IAxes, xAxisSvgGroup: d3.Selection<SVGElement>, yAxisSvgGroup: d3.Selection<SVGElement>, barHeight: number): void {
-//             visualUtils.calculateBarCoordianates(dataPoints, axes, this.settings, barHeight, true);
-//
-//             RenderAxes.render(
-//                 this.settings,
-//                 xAxisSvgGroup,
-//                 yAxisSvgGroup,
-//                 axes
-//             );
-//         }
-//
-//         public smallMultipleProcess(viewport: IViewport) {
-//             let uniqueColumns: PrimitiveValue[] = this.allDataPoints.map(x => x.columnBy).filter((v, i, a) => a.indexOf(v) === i);
-//             let uniqueRows: PrimitiveValue[] = this.allDataPoints.map(x => x.rowBy).filter((v, i, a) => a.indexOf(v) === i);
-//             let uniqueCategories: PrimitiveValue[] = this.allDataPoints.map(x => x.category).filter((v, i, a) => a.indexOf(v) === i);
-//
-//             let leftSpace: number = uniqueRows && uniqueRows.length === 1 && uniqueRows[0] === null ? 0 : this.calculateLabelsSize(this.settings.smallMultiple);
-//             let topSpace: number = this.calculateTopSpace(this.settings.smallMultiple);
-//
-//             let hasHighlight = this.allDataPoints.filter(x => x.highlight).length > 0;
-//
-//             let marginLeft: number = 10;
-//
-//             let gapBetweenCharts: number = 10;
-//
-//             this.prepareMainDiv(this.mainElement);
-//             this.mainElement.select('.scrollbar-track').remove();
-//
-//             let legendSize: LegendSize = {
-//                 width: 0,
-//                 height: 0
-//             };
-//
-//             if (this.isLegendNeeded) {
-//                 legendUtils.renderLegend(this.legend, this.mainDivElement, this.viewport, this.legendProperties, this.legendElement);
-//                 legendSize = this.calculateLegendSize(this.settings.legend, this.legendElementRoot);
-//             } else {
-//                 this.legendElement && this.legendElement.selectAll("*").remove();
-//                 this.mainDivElement && this.mainDivElement.style({
-//                     "margin-top": 0,
-//                     "margin-bottom": 0,
-//                     "margin-left": 0,
-//                     "margin-right": 0
-//                 });
-//                 legendSize = {
-//                     height: 0,
-//                     width: 0
-//                 };
-//             }
-//
-//             let layoutMode: LayoutMode = this.settings.smallMultiple.layoutMode;
-//             let maxRowWidth: number = this.settings.smallMultiple.maxRowWidth;
-//
-//             let rowsInFlow: number = uniqueColumns.length <= maxRowWidth ? 1 : (Math.floor(uniqueColumns.length / maxRowWidth) + (uniqueColumns.length % maxRowWidth > 0 ? 1 : 0));
-//
-//             let columns: number = layoutMode === LayoutMode.Matrix ? uniqueColumns.length : Math.min(uniqueColumns.length, maxRowWidth);
-//             let rows: number = layoutMode === LayoutMode.Matrix ? uniqueRows.length : rowsInFlow * uniqueRows.length;
-//
-//             let chartSize: SmallMultipleSizeOptions = this.calculateChartSize(viewport, this.settings.smallMultiple, leftSpace, topSpace, rows, columns, legendSize);
-//
-//             let yAxisSize: number = this.calculateYAxisSize();
-//
-//             let barsSectionSize: ISize = {
-//                 height: chartSize.height - gapBetweenCharts,
-//                 width: chartSize.width - yAxisSize - gapBetweenCharts * 2
-//             }
-//
-//             let xIsScalar: boolean = visualUtils.isScalar(this.metadata.cols.category);
-//             let barHeight: number = !xIsScalar || this.settings.categoryAxis.axisType === "categorical" ? visualUtils.calculateDataPointThickness(
-//                 null,
-//                 barsSectionSize,
-//                 uniqueCategories.length,
-//                 this.settings.categoryAxis.innerPadding,
-//                 this.settings,
-//                 !xIsScalar) : 0;
-//
-//             let xAxisSizeReverted: number = this.settings.categoryAxis.axisType === "categorical" || !xIsScalar ? this.calculateXAxisSizeForCategorical(uniqueCategories, this.settings, this.metadata, barHeight) : -1;
-//             let xAxisSize: number = xAxisSizeReverted > 0 ? xAxisSizeReverted : this.calculateXAxisSize(this.settings);
-//
-//             barsSectionSize.height -= xAxisSize;
-//
-//             this.mainDivElement.style({
-//                 width: viewport.width - legendSize.width + "px",
-//                 height: viewport.height - legendSize.height + "px",
-//                 "overflow-x": chartSize.isHorizontalSliderNeeded ? "auto" : "hidden",
-//                 "overflow-y": chartSize.isVerticalSliderNeeded ? "auto" : "hidden"
-//             });
-//
-//             let maxLabelHeight: number = (chartSize.height) / 100 * this.settings.categoryAxis.maximumSize;
-//             let forceRotaion: boolean = xAxisSizeReverted > 0;
-//
-//             if (this.settings.categoryAxis.maximumSize) {
-//                 if (xAxisSize > maxLabelHeight) {
-//                     barsSectionSize.height += xAxisSize;
-//                     xAxisSize = maxLabelHeight;
-//                     barsSectionSize.height -= xAxisSize;
-//                     forceRotaion = true;
-//                 } else {
-//                     maxLabelHeight = Number.MAX_VALUE;
-//                 }
-//             }
-//
-//             let axes: IAxes;
-//
-//             const xIsSeparate: boolean = this.settings.categoryAxis.rangeType === AxisRangeType.Separate;
-//             const yIsSeparate: boolean = this.settings.valueAxis.rangeType === AxisRangeType.Separate;
-//
-//             const yIsCustom: boolean = this.settings.valueAxis.rangeType === AxisRangeType.Custom;
-//             const xIsCustom: boolean = this.settings.categoryAxis.rangeType === AxisRangeType.Custom;
-//
-//             const defaultYDomain: any[] = RenderAxes.calculateValueDomain(this.allDataPoints, this.settings, true);
-//             const defaultXDomain: any[] = RenderAxes.calculateCategoryDomain(this.allDataPoints, this.settings, this.metadata, true);
-//
-//             const defaultAxes: IAxes = this.createSmallMultipleAxesByDomains(defaultXDomain, defaultYDomain, barsSectionSize, maxLabelHeight, uniqueCategories.length);
-//
-//             let xDomain: any[] = [],
-//                 yDomain: any[] = [];
-//
-//             if (!yIsSeparate && !xIsSeparate) {
-//                 axes = defaultAxes;
-//             } else {
-//                 if (!yIsSeparate) {
-//                     yDomain = defaultYDomain;
-//                 }
-//
-//                 if (!xIsSeparate) {
-//                     xDomain = defaultXDomain;
-//                 }
-//             }
-//
-//             this.data = {
-//                 axes: axes,
-//                 dataPoints: this.allDataPoints,
-//                 hasHighlight: hasHighlight,
-//                 isLegendNeeded: this.isLegendNeeded,
-//                 legendData: this.legendProperties.data,
-//                 categoriesCount: null,
-//                 isSmallMultiple: this.isSmallMultiple()
-//             }
-//
-//             let svgHeight: number = 0,
-//                 svgWidth: number = 0;
-//
-//             if (layoutMode === LayoutMode.Matrix) {
-//                 svgHeight = topSpace + rows * chartSize.height + gapBetweenCharts * (rows),
-//                 svgWidth = leftSpace + columns * chartSize.width + gapBetweenCharts * (columns);
-//             } else {
-//                 svgHeight = topSpace * rows + rows * chartSize.height + gapBetweenCharts * (rows - 1),
-//                 svgWidth = leftSpace + columns * chartSize.width + gapBetweenCharts * (columns);
-//             }
-//
-//             let svgChart = this.mainDivElement
-//                     .append("svg")
-//                     .classed("chart", true)
-//                     .style({
-//                         width: svgWidth + "px",
-//                         height: svgHeight + "px"
-//                     });
-//
-//             for (let i = 0; i < uniqueRows.length; ++i) {
-//                 for (let j = 0; j < uniqueColumns.length; ++j) {
-//
-//                     let leftMove: number = 0;
-//                     let topMove: number = 0;
-//
-//                     if (layoutMode === LayoutMode.Matrix) {
-//                         leftMove = gapBetweenCharts / 2 + j * chartSize.width + gapBetweenCharts * j;
-//                         topMove = topSpace + i * chartSize.height + gapBetweenCharts * i;
-//                     } else {
-//                         let xPosition: number = Math.floor(j % maxRowWidth);
-//                         let yPosition: number = Math.floor(j / maxRowWidth) + i * rowsInFlow;
-//
-//                         leftMove = xPosition * chartSize.width + gapBetweenCharts * xPosition;
-//                         topMove = yPosition * chartSize.height + gapBetweenCharts * yPosition + topSpace * yPosition + gapBetweenCharts / 2;
-//                     }
-//
-//                     let dataPoints: VisualDataPoint[] = this.allDataPoints.filter(x => x.rowBy === uniqueRows[i]).filter(x => x.columnBy === uniqueColumns[j]);
-//
-//                     let chart = svgChart
-//                         .append("g")
-//                         .attr({
-//                             transform: svg.translate(leftSpace + leftMove, topMove + topSpace)
-//                         });
-//
-//                     let xAxisSvgGroup: d3.Selection<SVGElement> = chart.append("g");
-//                     let yAxisSvgGroup: d3.Selection<SVGElement> = chart.append("g");
-//
-//                     let yHasRightPosition: boolean = this.settings.valueAxis.show && this.settings.valueAxis.position === "right";
-//
-//                     xAxisSvgGroup.attr(
-//                         "transform",
-//                         svg.translate(
-//                             marginLeft +
-//                             (yHasRightPosition ? 0 : yAxisSize),
-//                             barsSectionSize.height));
-//
-//                     yAxisSvgGroup.attr(
-//                         "transform",
-//                         svg.translate(
-//                             marginLeft +
-//                             (yHasRightPosition ? barsSectionSize.width : yAxisSize),
-//                             0));
-//
-//                     if (yIsSeparate || xIsSeparate) {
-//                         if (!dataPoints || !dataPoints.length) {
-//                             axes = defaultAxes;
-//                         }
-//
-//                         if (yIsSeparate) {
-//                             yDomain = dataPoints && dataPoints.length ? RenderAxes.calculateValueDomain(dataPoints, this.settings, true) : defaultYDomain;
-//                         }
-//
-//                         if (xIsSeparate) {
-//                             xDomain = dataPoints && dataPoints.length ? RenderAxes.calculateCategoryDomain(dataPoints, this.settings, this.metadata, true) : defaultXDomain;
-//                         }
-//
-//                         if (!yIsSeparate && !xIsSeparate ) {
-//                             axes = defaultAxes;
-//                         } else {
-//                             let uniqueCategoriesCount: number = dataPoints.map(x => x.category).filter((v, i, a) => a.indexOf(v) === i).length;
-//                             axes = !yIsSeparate && !xIsSeparate ? defaultAxes : this.createSmallMultipleAxesByDomains(xDomain, yDomain, barsSectionSize, maxLabelHeight, uniqueCategoriesCount);
-//                         }
-//                     }
-//
-//                     if (!this.data.axes) {
-//                         this.data.axes = defaultAxes;
-//                     }
-//
-//                     let barHeight: number = !xIsScalar || this.settings.categoryAxis.axisType === "categorical" ? axes.x.scale.rangeBand() : visualUtils.calculateDataPointThickness(
-//                         dataPoints,
-//                         barsSectionSize,
-//                         uniqueCategories.length,
-//                         this.settings.categoryAxis.innerPadding,
-//                         this.settings,
-//                         !xIsScalar
-//                     );
-//
-//                     this.renderSmallMultipleAxes(dataPoints, axes, xAxisSvgGroup, yAxisSvgGroup, barHeight);
-//
-//                     if (xIsCustom) {
-//                         let divider: number = 1;
-//                         let xText = xAxisSvgGroup.selectAll("text")[0];
-//
-//                         let axisWidth = (xText.parentNode  as SVGGraphicsElement).getBBox().width;
-//                         let maxTextWidth = visualUtils.getLabelsMaxWidth(xText);
-//
-//                         for (let i = 0; i < xText.length; ++i) {
-//                             let actualAllAxisTextWidth: number = maxTextWidth * xText.length / divider;
-//
-//                             if (actualAllAxisTextWidth > axisWidth) {
-//                                 divider += 1;
-//                             } else {
-//                                 break;
-//                             }
-//                         }
-//
-//                         for (let i = 0; i < xText.length; ++i) {
-//                             if (i % divider > 0) {
-//                                 d3.select(xText[i]).remove();
-//                             }
-//                         }
-//                     }
-//
-//                     if (yIsCustom) {
-//                         let divider: number = 1;
-//                         let yText = yAxisSvgGroup.selectAll("text")[0];
-//
-//                         let axisWidth = (yText.parentNode  as SVGGraphicsElement).getBBox().height;
-//                         let maxTextWidth = visualUtils.getLabelsMaxHeight(yText);
-//
-//                         for (let i = 0; i < yText.length; ++i) {
-//                             let actualAllAxisTextWidth: number = maxTextWidth * yText.length / divider;
-//
-//                             if (actualAllAxisTextWidth > axisWidth) {
-//                                 divider += 1;
-//                             } else {
-//                                 break;
-//                             }
-//                         }
-//
-//                         for (let i = 0; i < yText.length; ++i) {
-//                             if (i % divider > 0) {
-//                                 d3.select(yText[i]).remove();
-//                             }
-//                         }
-//                     }
-//
-//                     const labelRotationIsNeeded: boolean = forceRotaion ? true : visualUtils.smallMultipleLabelRotationIsNeeded(
-//                         xAxisSvgGroup,
-//                         barHeight,
-//                         this.settings.categoryAxis,
-//                         maxLabelHeight
-//                     );
-//                     if ( labelRotationIsNeeded ){
-//                         RenderAxes.rotateXAxisTickLabels(true, xAxisSvgGroup);
-//                     }
-//
-//                     let barGroup = chart
-//                         .append("g")
-//                         .classed("bar-group", true)
-//                         .attr({
-//                             transform: svg.translate(marginLeft + (yHasRightPosition ? 0 : yAxisSize), 0)
-//                         });
-//
-//                     let interactivityService = this.interactivityService,
-//                         hasSelection: boolean = interactivityService.hasSelection();
-//                     interactivityService.applySelectionStateToData(dataPoints);
-//
-//                     const barSelect = barGroup
-//                         .selectAll(Selectors.BarSelect.selectorName)
-//                         .data(dataPoints);
-//
-//                     barSelect.enter().append("rect")
-//                         .attr("class", Selectors.BarSelect.className);
-//
-//                     barSelect.exit()
-//                         .remove();
-//
-//                     barSelect
-//                         .attr({
-//                             height: d => {
-//                                 return d.barCoordinates.height;
-//                             },
-//                             width: d => {
-//                                 return d.barCoordinates.width;
-//                             },
-//                             x: d => {
-//                                 return d.barCoordinates.x;
-//                             },
-//                             y: d => {
-//                                 return d.barCoordinates.y;
-//                             },
-//                             fill: d => d.color
-//                         });
-//
-//                     barSelect.style({
-//                         "fill-opacity": (p: VisualDataPoint) => visualUtils.getFillOpacity(
-//                             p.selected,
-//                             p.highlight,
-//                             !p.highlight && hasSelection,
-//                             !p.selected && hasHighlight),
-//                         "stroke": (p: VisualDataPoint)  => {
-//                             if (hasSelection && visualUtils.isSelected(p.selected,
-//                                 p.highlight,
-//                                 !p.highlight && hasSelection,
-//                                 !p.selected && hasHighlight)) {
-//                                     return Visual.DefaultStrokeSelectionColor;
-//                                 }
-//
-//                             return p.color;
-//                         },
-//                         "stroke-width": p => {
-//                             if (hasSelection && visualUtils.isSelected(p.selected,
-//                                 p.highlight,
-//                                 !p.highlight && hasSelection,
-//                                 !p.selected && hasHighlight)) {
-//                                 return Visual.DefaultStrokeSelectionWidth;
-//                             }
-//
-//                             return Visual.DefaultStrokeWidth;
-//                         }
-//                     });
-//
-//                     RenderVisual.renderTooltip(barSelect, this.tooltipServiceWrapper);
-//
-//                     visualUtils.calculateLabelCoordinates(
-//                         this.data,
-//                         this.settings.categoryLabels,
-//                         chartSize.width,
-//                         this.isLegendNeeded,
-//                         dataPoints
-//                     );
-//
-//                     let labelGraphicsContext = barGroup
-//                             .append("g")
-//                             .classed(Selectors.LabelGraphicsContext.className, true);
-//
-//                     RenderVisual.renderDataLabelsForSmallMultiple(
-//                         this.data,
-//                         this.settings,
-//                         labelGraphicsContext,
-//                         this.metadata,
-//                         dataPoints
-//                     );
-//
-//                     let labelBackgroundContext = barGroup
-//                         .append("g")
-//                         .classed(Selectors.LabelBackgroundContext.className, true);
-//
-//                     RenderVisual.renderDataLabelsBackgroundForSmallMultiple(
-//                         this.data,
-//                         this.settings,
-//                         labelBackgroundContext,
-//                         dataPoints
-//                     );
-//
-//                     if (this.settings.smallMultiple.showChartTitle && layoutMode === LayoutMode.Flow) {
-//                         RenderVisual.renderSmallMultipleTopTitle({
-//                             chartElement: svgChart,
-//                             chartSize: chartSize,
-//                             columns: uniqueColumns,
-//                             index: j,
-//                             leftSpace: leftMove + leftSpace,
-//                             topSpace: topMove,
-//                             textHeight: topSpace,
-//                             rows: uniqueRows,
-//                             xAxisLabelSize: xAxisSize
-//                         }, this.settings.smallMultiple);
-//                     }
-//
-//                     if (this.settings.valueAxis.show) {
-//                         let xWidth: number = (<Element>yAxisSvgGroup.selectAll("line").node()).getBoundingClientRect().width;
-    //                     // TODO Fix data domain
-//                         if (axes.y.dataDomain[0] <= this.settings.constantLine.value && this.settings.constantLine.value <= axes.y.dataDomain[1]) {
-//                             RenderVisual.renderConstantLine(this.settings.constantLine, barGroup, axes, xWidth);
-//                         }
-//                     }
-//                 }
-//             }
-//
-//             if (this.settings.smallMultiple.showSeparators) {
-//                 RenderVisual.renderSmallMultipleLines({
-//                     chartElement: svgChart,
-//                     chartSize: chartSize,
-//                     columns: uniqueColumns,
-//                     rows: uniqueRows,
-//                     leftSpace: leftSpace,
-//                     topSpace: topSpace,
-//                     xAxisLabelSize: xAxisSize,
-//                     rowsInFlow: rowsInFlow
-//                 }, this.settings.smallMultiple);
-//             }
-//
-//             if (this.settings.smallMultiple.showChartTitle) {
-//                 RenderVisual.renderSmallMultipleTitles({
-//                     chartElement: svgChart,
-//                     chartSize: chartSize,
-//                     columns: uniqueColumns,
-//                     leftSpace: leftSpace,
-//                     topSpace: topSpace,
-//                     rows: uniqueRows,
-//                     xAxisLabelSize: xAxisSize,
-//                     rowsInFlow: rowsInFlow
-//                 }, this.settings.smallMultiple);
-//             }
-//
-//             const legendBucketFilled: boolean = !!(this.dataView.categorical && this.dataView.categorical.values && this.dataView.categorical.values.source);
-//             this.lassoSelection.disable();
-//             this.LassoSelectionForSmallMultiple.init(this.mainElement);
-//             this.LassoSelectionForSmallMultiple.update(svgChart, svgChart.selectAll(Selectors.BarSelect.selectorName), legendBucketFilled);
-//
-//             if (this.interactivityService) {
-//                 this.interactivityService.applySelectionStateToData(this.allDataPoints);
-//
-//                 let behaviorOptions: WebBehaviorOptions = {
-//                     bars: this.mainElement.selectAll(Selectors.BarSelect.selectorName),
-//                     clearCatcher: d3.select( document.createElement('div') ),
-//                     interactivityService: this.interactivityService,
-//                     host: this.host,
-//                     selectionSaveSettings: this.settings.selectionSaveSettings
-//                 };
-//
-//                 this.interactivityService.bind(this.allDataPoints, this.behavior, behaviorOptions);
-//             }
-//         }
+    private calculateLabelsSize(settings: SmallMultipleSettings): number {
+        return settings.showChartTitle ? 120 : 0;
+    }
+
+    private calculateTopSpace(settings: SmallMultipleSettings): number {
+        if (!settings.showChartTitle) {
+            return 0;
+        }
+
+        let textProperties: TextProperties = {
+            fontFamily: settings.fontFamily,
+            fontSize: PixelConverter.toString(settings.fontSize)
+        };
+
+        let height: number = textMeasurementService.measureSvgTextHeight(textProperties),
+            additionalSpace: number = settings.layoutMode === LayoutMode.Flow ? 15 : 0;
+
+        return height + additionalSpace;
+    }
+
+    public calculateYAxisSize(): number {
+
+        return 35;
+    }
+
+    public calculateXAxisSize(settings: VisualSettings): number {
+
+        let fontSize: string = PixelConverter.toString(settings.categoryAxis.fontSize);
+        let fontFamily: string = settings.categoryAxis.fontFamily;
+
+        let textProperties: TextProperties = {
+            fontFamily: fontFamily,
+            fontSize: fontSize
+        };
+
+        let height: number = textMeasurementService.measureSvgTextHeight(textProperties);
+
+        return height + 8;
+    }
+
+    public calculateXAxisSizeForCategorical(values: PrimitiveValue[], settings: VisualSettings, metadata: VisualMeasureMetadata, barHeight: number): number {
+        let formatter: IValueFormatter;
+
+        if (typeof (values.some(x => x && (<any>x).getMonth === 'function'))) {
+            if (metadata.cols.category) {
+                formatter = valueFormatter.create({
+                    format: valueFormatter.getFormatStringByColumn(<any>metadata.cols.category, true) || metadata.cols.category.format,
+                    cultureSelector: this.host.locale
+                });
+            } else if (metadata.groupingColumn) {
+                formatter = valueFormatter.create({
+                    format: valueFormatter.getFormatStringByColumn(<any>metadata.groupingColumn, true) || metadata.groupingColumn.format,
+                    cultureSelector: this.host.locale
+                });
+            }
+        } else {
+            let yAxisFormatString: string = valueFormatter.getFormatStringByColumn(<any>metadata.cols.category) || valueFormatter.getFormatStringByColumn(<any>metadata.groupingColumn);
+
+            formatter = valueFormatter.create({format: yAxisFormatString});
+        }
+
+        let fontSize: string = PixelConverter.toString(settings.categoryAxis.fontSize);
+        let fontFamily: string = settings.categoryAxis.fontFamily;
+
+        let maxWidth: number = 0;
+
+        values.forEach(value => {
+            let textProperties: TextProperties = {
+                text: formatter.format(value),
+                fontFamily: fontFamily,
+                fontSize: fontSize
+            };
+
+            let width: number = textMeasurementService.measureSvgTextWidth(textProperties);
+            maxWidth = width > maxWidth ? width : maxWidth;
+        });
+
+        if (maxWidth >= barHeight) {
+            return maxWidth + 4;
+        }
+
+        return -1;
+    }
+
+    public prepareMainDiv(el: d3Selection<any>) {
+        if (this.mainSvgElement) {
+            this.mainSvgElement.remove();
+            this.mainSvgElement = null;
+        }
+
+        if (this.mainDivElement) {
+            this.mainDivElement.selectAll("*").remove();
+        } else {
+            this.mainDivElement = el.append("div");
+        }
+    }
+
+    private calculateChartSize(viewport: IViewport,
+                               settings: SmallMultipleSettings,
+                               leftSpace: number,
+                               topSpace: number,
+                               rows: number,
+                               columns: number,
+                               legendSize: LegendSize): SmallMultipleSizeOptions {
+        const scrollHeight: number = 22,
+            scrollWidth: number = 20,
+            gapBetweenCharts: number = 10;
+        let minHeight: number = settings.minUnitHeight,
+            minWidth: number = settings.minUnitWidth;
+
+        let chartHeight: number = 0;
+        let chartWidth: number = 0;
+
+        if (settings.layoutMode === LayoutMode.Matrix) {
+            let clientHeight: number = viewport.height - topSpace - scrollHeight - legendSize.height;
+            let clientWidth: number = viewport.width - leftSpace - scrollWidth - legendSize.width;
+
+            chartHeight = (clientHeight - gapBetweenCharts * rows) / rows;
+            chartWidth = (clientWidth - gapBetweenCharts * columns) / columns;
+        } else {
+            let clientHeight: number = viewport.height - scrollHeight - legendSize.height;
+            let clientWidth: number = viewport.width - leftSpace - scrollWidth - legendSize.width;
+
+            chartHeight = (clientHeight - gapBetweenCharts * rows - topSpace * rows) / rows;
+            chartWidth = (clientWidth - gapBetweenCharts * (columns)) / columns;
+        }
+
+        let isVerticalScrollBarNeeded: boolean = chartHeight < minHeight - scrollWidth / rows,
+            isHorizontalScrollBarNeeded: boolean = chartWidth < minWidth - scrollHeight / columns;
+
+        if (!isVerticalScrollBarNeeded) {
+            chartWidth += scrollHeight / columns;
+        }
+
+        if (!isHorizontalScrollBarNeeded) {
+            chartHeight += scrollWidth / rows;
+        }
+
+        return {
+            height: isVerticalScrollBarNeeded ? minHeight : chartHeight,
+            width: isHorizontalScrollBarNeeded ? minWidth : chartWidth,
+            isHorizontalSliderNeeded: isHorizontalScrollBarNeeded,
+            isVerticalSliderNeeded: isVerticalScrollBarNeeded
+        };
+    }
+
+    private createSmallMultipleAxesByDomains(categoryDomain: any[], valueDomain: any[], visualSize: ISize, maxYAxisLabelWidth: number, categoriesCount: number = null): IAxes {
+        let axesDomains: AxesDomains = {
+            yAxisDomain: valueDomain,
+            xAxisDomain: categoryDomain
+        };
+
+        let barHeight: number = categoriesCount ? visualSize.width / (categoriesCount > 2 ? categoriesCount + 1 : categoriesCount) : 0;
+
+        let axes: IAxes = RenderAxes.createD3Axes(
+            axesDomains,
+            visualSize,
+            this.metadata,
+            this.settings,
+            this.host,
+            true,
+            barHeight,
+            maxYAxisLabelWidth
+        );
+
+        return axes;
+    }
+
+    private renderSmallMultipleAxes(dataPoints: VisualDataPoint[], axes: IAxes, xAxisSvgGroup: d3Selection<SVGElement>, yAxisSvgGroup: d3Selection<SVGElement>, barHeight: number): void {
+        visualUtils.calculateBarCoordianates(dataPoints, axes, this.settings, barHeight, true);
+
+        RenderAxes.render(
+            this.settings,
+            xAxisSvgGroup,
+            yAxisSvgGroup,
+            axes
+        );
+    }
+
+    public smallMultipleProcess(viewport: IViewport) {
+        let uniqueColumns = this.allDataPoints.map(x => x.columnBy).filter((v, i, a) => a.indexOf(v) === i);
+        let uniqueRows = this.allDataPoints.map(x => x.rowBy).filter((v, i, a) => a.indexOf(v) === i);
+        let uniqueCategories = this.allDataPoints.map(x => x.category).filter((v, i, a) => a.indexOf(v) === i);
+
+        let leftSpace: number = uniqueRows && uniqueRows.length === 1 && uniqueRows[0] === null ? 0 : this.calculateLabelsSize(this.settings.smallMultiple);
+        let topSpace: number = this.calculateTopSpace(this.settings.smallMultiple);
+
+        let hasHighlight = this.allDataPoints.filter(x => x.highlight).length > 0;
+
+        let marginLeft: number = 10;
+        let gapBetweenCharts: number = 10;
+
+        this.prepareMainDiv(this.mainElement);
+        this.mainElement.select('.scrollbar-track').remove();
+
+        let legendSize: LegendSize = {
+            width: 0,
+            height: 0
+        };
+
+        if (this.isLegendNeeded) {
+            legendUtils.renderLegend(this.legend, this.mainDivElement, this.viewport, this.legendProperties, this.legendElement);
+            legendSize = this.calculateLegendSize(this.settings.legend, this.legendElementRoot);
+        } else {
+            this.legendElement && this.legendElement.selectAll("*").remove();
+            this.mainDivElement && this.mainDivElement.style("margin-top", 0)
+                .style("margin-bottom", 0)
+                .style("margin-left", 0)
+                .style("margin-right", 0);
+            legendSize = {
+                height: 0,
+                width: 0
+            };
+        }
+
+        let layoutMode: LayoutMode = this.settings.smallMultiple.layoutMode;
+        let maxRowWidth: number = this.settings.smallMultiple.maxRowWidth;
+
+        let rowsInFlow: number = uniqueColumns.length <= maxRowWidth ? 1 : (Math.floor(uniqueColumns.length / maxRowWidth) + (uniqueColumns.length % maxRowWidth > 0 ? 1 : 0));
+
+        let columns: number = layoutMode === LayoutMode.Matrix ? uniqueColumns.length : Math.min(uniqueColumns.length, maxRowWidth);
+        let rows: number = layoutMode === LayoutMode.Matrix ? uniqueRows.length : rowsInFlow * uniqueRows.length;
+
+        let chartSize = this.calculateChartSize(viewport, this.settings.smallMultiple, leftSpace, topSpace, rows, columns, legendSize);
+
+        let yAxisSize: number = this.calculateYAxisSize();
+
+        let barsSectionSize: ISize = {
+            height: chartSize.height - gapBetweenCharts,
+            width: chartSize.width - yAxisSize - gapBetweenCharts * 2
+        };
+
+        let xIsScalar: boolean = visualUtils.isScalar(this.metadata.cols.category);
+        let barHeight: number = !xIsScalar || this.settings.categoryAxis.axisType === "categorical" ? visualUtils.calculateDataPointThickness(
+            null,
+            barsSectionSize,
+            uniqueCategories.length,
+            this.settings.categoryAxis.innerPadding,
+            this.settings,
+            !xIsScalar) : 0;
+
+        let xAxisSizeReverted: number = this.settings.categoryAxis.axisType === "categorical" || !xIsScalar ? this.calculateXAxisSizeForCategorical(uniqueCategories, this.settings, this.metadata, barHeight) : -1;
+        let xAxisSize: number = xAxisSizeReverted > 0 ? xAxisSizeReverted : this.calculateXAxisSize(this.settings);
+
+        barsSectionSize.height -= xAxisSize;
+
+        this.mainDivElement.style('width', viewport.width - legendSize.width + "px")
+            .style('height', viewport.height - legendSize.height + "px")
+            .style("overflow-x", chartSize.isHorizontalSliderNeeded ? "auto" : "hidden")
+            .style("overflow-y", chartSize.isVerticalSliderNeeded ? "auto" : "hidden");
+
+        let maxLabelHeight: number = (chartSize.height) / 100 * this.settings.categoryAxis.maximumSize;
+        let forceRotaion: boolean = xAxisSizeReverted > 0;
+
+        if (this.settings.categoryAxis.maximumSize) {
+            if (xAxisSize > maxLabelHeight) {
+                barsSectionSize.height += xAxisSize;
+                xAxisSize = maxLabelHeight;
+                barsSectionSize.height -= xAxisSize;
+                forceRotaion = true;
+            } else {
+                maxLabelHeight = Number.MAX_VALUE;
+            }
+        }
+
+        let axes: IAxes;
+
+        const xIsSeparate: boolean = this.settings.categoryAxis.rangeType === AxisRangeType.Separate;
+        const yIsSeparate: boolean = this.settings.valueAxis.rangeType === AxisRangeType.Separate;
+
+        const yIsCustom: boolean = this.settings.valueAxis.rangeType === AxisRangeType.Custom;
+        const xIsCustom: boolean = this.settings.categoryAxis.rangeType === AxisRangeType.Custom;
+
+        const defaultYDomain: any[] = RenderAxes.calculateValueDomain(this.allDataPoints, this.settings, true);
+        const defaultXDomain: any[] = RenderAxes.calculateCategoryDomain(this.allDataPoints, this.settings, this.metadata, true);
+
+        const defaultAxes: IAxes = this.createSmallMultipleAxesByDomains(defaultXDomain, defaultYDomain, barsSectionSize, maxLabelHeight, uniqueCategories.length);
+
+        let xDomain: any[] = [],
+            yDomain: any[] = [];
+
+        if (!yIsSeparate && !xIsSeparate) {
+            axes = defaultAxes;
+        } else {
+            if (!yIsSeparate) {
+                yDomain = defaultYDomain;
+            }
+
+            if (!xIsSeparate) {
+                xDomain = defaultXDomain;
+            }
+        }
+
+        this.data = {
+            axes: axes,
+            dataPoints: this.allDataPoints,
+            hasHighlight: hasHighlight,
+            isLegendNeeded: this.isLegendNeeded,
+            legendData: this.legendProperties.data,
+            categoriesCount: null,
+            isSmallMultiple: this.isSmallMultiple()
+        };
+
+        let svgHeight: number = 0,
+            svgWidth: number = 0;
+
+        if (layoutMode === LayoutMode.Matrix) {
+            svgHeight = topSpace + rows * chartSize.height + gapBetweenCharts * (rows),
+                svgWidth = leftSpace + columns * chartSize.width + gapBetweenCharts * (columns);
+        } else {
+            svgHeight = topSpace * rows + rows * chartSize.height + gapBetweenCharts * (rows - 1),
+                svgWidth = leftSpace + columns * chartSize.width + gapBetweenCharts * (columns);
+        }
+
+        let svgChart = this.mainDivElement
+            .append("svg")
+            .classed("chart", true)
+            .style('width', svgWidth + "px")
+            .style('height', svgHeight + "px");
+
+        for (let i = 0; i < uniqueRows.length; ++i) {
+            for (let j = 0; j < uniqueColumns.length; ++j) {
+
+                let leftMove: number = 0;
+                let topMove: number = 0;
+
+                if (layoutMode === LayoutMode.Matrix) {
+                    leftMove = gapBetweenCharts / 2 + j * chartSize.width + gapBetweenCharts * j;
+                    topMove = topSpace + i * chartSize.height + gapBetweenCharts * i;
+                } else {
+                    let xPosition: number = Math.floor(j % maxRowWidth);
+                    let yPosition: number = Math.floor(j / maxRowWidth) + i * rowsInFlow;
+
+                    leftMove = xPosition * chartSize.width + gapBetweenCharts * xPosition;
+                    topMove = yPosition * chartSize.height + gapBetweenCharts * yPosition + topSpace * yPosition + gapBetweenCharts / 2;
+                }
+
+                let dataPoints: VisualDataPoint[] = this.allDataPoints.filter(x => x.rowBy === uniqueRows[i]).filter(x => x.columnBy === uniqueColumns[j]);
+
+                let chart = svgChart
+                    .append("g")
+                    .attr('transform', svgTranslate(leftSpace + leftMove, topMove + topSpace));
+
+                let xAxisSvgGroup: d3Selection<SVGElement> = chart.append("g");
+                let yAxisSvgGroup: d3Selection<SVGElement> = chart.append("g");
+
+                let yHasRightPosition: boolean = this.settings.valueAxis.show && this.settings.valueAxis.position === "right";
+
+                xAxisSvgGroup.attr(
+                    "transform",
+                    svgTranslate(
+                        marginLeft +
+                        (yHasRightPosition ? 0 : yAxisSize),
+                        barsSectionSize.height));
+
+                yAxisSvgGroup.attr(
+                    "transform",
+                    svgTranslate(
+                        marginLeft +
+                        (yHasRightPosition ? barsSectionSize.width : yAxisSize),
+                        0));
+
+                if (yIsSeparate || xIsSeparate) {
+                    if (!dataPoints || !dataPoints.length) {
+                        axes = defaultAxes;
+                    }
+
+                    if (yIsSeparate) {
+                        yDomain = dataPoints && dataPoints.length ? RenderAxes.calculateValueDomain(dataPoints, this.settings, true) : defaultYDomain;
+                    }
+
+                    if (xIsSeparate) {
+                        xDomain = dataPoints && dataPoints.length ? RenderAxes.calculateCategoryDomain(dataPoints, this.settings, this.metadata, true) : defaultXDomain;
+                    }
+
+                    if (!yIsSeparate && !xIsSeparate) {
+                        axes = defaultAxes;
+                    } else {
+                        let uniqueCategoriesCount: number = dataPoints.map(x => x.category).filter((v, i, a) => a.indexOf(v) === i).length;
+                        axes = !yIsSeparate && !xIsSeparate ? defaultAxes : this.createSmallMultipleAxesByDomains(xDomain, yDomain, barsSectionSize, maxLabelHeight, uniqueCategoriesCount);
+                    }
+                }
+
+                if (!this.data.axes) {
+                    this.data.axes = defaultAxes;
+                }
+
+                let barHeight: number = !xIsScalar || this.settings.categoryAxis.axisType === "categorical" ? axes.x.scale.bandwidth() : visualUtils.calculateDataPointThickness(
+                    dataPoints,
+                    barsSectionSize,
+                    uniqueCategories.length,
+                    this.settings.categoryAxis.innerPadding,
+                    this.settings,
+                    !xIsScalar
+                );
+
+                this.renderSmallMultipleAxes(dataPoints, axes, xAxisSvgGroup, yAxisSvgGroup, barHeight);
+
+                if (xIsCustom) {
+                    let divider: number = 1;
+                    let xText = xAxisSvgGroup.selectAll("text")[0];
+
+                    let axisWidth = (xText.parentNode as SVGGraphicsElement).getBBox().width;
+                    let maxTextWidth = visualUtils.getLabelsMaxWidth(xText);
+
+                    for (let i = 0; i < xText.length; ++i) {
+                        let actualAllAxisTextWidth: number = maxTextWidth * xText.length / divider;
+
+                        if (actualAllAxisTextWidth > axisWidth) {
+                            divider += 1;
+                        } else {
+                            break;
+                        }
+                    }
+
+                    for (let i = 0; i < xText.length; ++i) {
+                        if (i % divider > 0) {
+                            d3select(xText[i]).remove();
+                        }
+                    }
+                }
+
+                if (yIsCustom) {
+                    let divider: number = 1;
+                    let yText = yAxisSvgGroup.selectAll("text")[0];
+
+                    let axisWidth = (yText.parentNode as SVGGraphicsElement).getBBox().height;
+                    let maxTextWidth = visualUtils.getLabelsMaxHeight(yText);
+
+                    for (let i = 0; i < yText.length; ++i) {
+                        let actualAllAxisTextWidth: number = maxTextWidth * yText.length / divider;
+
+                        if (actualAllAxisTextWidth > axisWidth) {
+                            divider += 1;
+                        } else {
+                            break;
+                        }
+                    }
+
+                    for (let i = 0; i < yText.length; ++i) {
+                        if (i % divider > 0) {
+                            d3select(yText[i]).remove();
+                        }
+                    }
+                }
+
+                const labelRotationIsNeeded: boolean = forceRotaion ? true : visualUtils.smallMultipleLabelRotationIsNeeded(
+                    xAxisSvgGroup,
+                    barHeight,
+                    this.settings.categoryAxis,
+                    maxLabelHeight
+                );
+                if (labelRotationIsNeeded) {
+                    RenderAxes.rotateXAxisTickLabels(true, xAxisSvgGroup);
+                }
+
+                let barGroup = chart
+                    .append("g")
+                    .classed("bar-group", true)
+                    .attr('transform', svgTranslate(marginLeft + (yHasRightPosition ? 0 : yAxisSize), 0));
+
+                let interactivityService = this.interactivityService,
+                    hasSelection: boolean = interactivityService.hasSelection();
+                interactivityService.applySelectionStateToData(dataPoints);
+
+                barGroup
+                    .selectAll(Selectors.BarSelect.selectorName)
+                    .data(dataPoints)
+                    .join("rect")
+                    .attr("class", Selectors.BarSelect.className)
+                    .attr('height', d => {
+                        return d.barCoordinates.height;
+                    })
+                    .attr('width', d => {
+                        return d.barCoordinates.width;
+                    })
+                    .attr('x', d => {
+                        return d.barCoordinates.x;
+                    })
+                    .attr('y', d => {
+                        return d.barCoordinates.y;
+                    })
+                    .attr('fill', d => d.color)
+                    .style(
+                        "fill-opacity", (p: VisualDataPoint) => visualUtils.getFillOpacity(
+                            p.selected,
+                            p.highlight,
+                            !p.highlight && hasSelection,
+                            !p.selected && hasHighlight))
+                    .style("stroke", (p: VisualDataPoint) => {
+                        if (hasSelection && visualUtils.isSelected(p.selected,
+                            p.highlight,
+                            !p.highlight && hasSelection,
+                            !p.selected && hasHighlight)) {
+                            return Visual.DefaultStrokeSelectionColor;
+                        }
+
+                        return p.color;
+                    })
+                    .style("stroke-width", p => {
+                        if (hasSelection && visualUtils.isSelected(p.selected,
+                            p.highlight,
+                            !p.highlight && hasSelection,
+                            !p.selected && hasHighlight)) {
+                            return Visual.DefaultStrokeSelectionWidth;
+                        }
+
+                        return Visual.DefaultStrokeWidth;
+                    });
+
+                RenderVisual.renderTooltip(barGroup.selectAll(Selectors.BarSelect.selectorName), this.tooltipServiceWrapper);
+
+                visualUtils.calculateLabelCoordinates(
+                    this.data,
+                    this.settings.categoryLabels,
+                    chartSize.width,
+                    this.isLegendNeeded,
+                    dataPoints
+                );
+
+                let labelGraphicsContext = barGroup
+                    .append("g")
+                    .classed(Selectors.LabelGraphicsContext.className, true);
+
+                RenderVisual.renderDataLabelsForSmallMultiple(
+                    this.data,
+                    this.settings,
+                    labelGraphicsContext,
+                    this.metadata,
+                    dataPoints
+                );
+
+                let labelBackgroundContext = barGroup
+                    .append("g")
+                    .classed(Selectors.LabelBackgroundContext.className, true);
+
+                RenderVisual.renderDataLabelsBackgroundForSmallMultiple(
+                    this.data,
+                    this.settings,
+                    labelBackgroundContext,
+                    dataPoints
+                );
+
+                if (this.settings.smallMultiple.showChartTitle && layoutMode === LayoutMode.Flow) {
+                    RenderVisual.renderSmallMultipleTopTitle({
+                        chartElement: svgChart,
+                        chartSize: chartSize,
+                        columns: uniqueColumns,
+                        index: j,
+                        leftSpace: leftMove + leftSpace,
+                        topSpace: topMove,
+                        textHeight: topSpace,
+                        rows: uniqueRows,
+                        xAxisLabelSize: xAxisSize
+                    }, this.settings.smallMultiple);
+                }
+
+                if (this.settings.valueAxis.show) {
+                    let xWidth: number = (<Element>yAxisSvgGroup.selectAll("line").node()).getBoundingClientRect().width;
+
+                    const minYDomain = axes.y.dataDomain[1];
+                    const maxYDomain = axes.y.dataDomain[0];
+                    if (minYDomain <= this.settings.constantLine.value && this.settings.constantLine.value <= maxYDomain) {
+                        RenderVisual.renderConstantLine(this.settings.constantLine, barGroup, axes, xWidth);
+                    }
+                }
+            }
+        }
+
+        if (this.settings.smallMultiple.showSeparators) {
+            RenderVisual.renderSmallMultipleLines({
+                chartElement: svgChart,
+                chartSize: chartSize,
+                columns: uniqueColumns,
+                rows: uniqueRows,
+                leftSpace: leftSpace,
+                topSpace: topSpace,
+                xAxisLabelSize: xAxisSize,
+                rowsInFlow: rowsInFlow
+            }, this.settings.smallMultiple);
+        }
+
+        if (this.settings.smallMultiple.showChartTitle) {
+            RenderVisual.renderSmallMultipleTitles({
+                chartElement: svgChart,
+                chartSize: chartSize,
+                columns: uniqueColumns,
+                leftSpace: leftSpace,
+                topSpace: topSpace,
+                rows: uniqueRows,
+                xAxisLabelSize: xAxisSize,
+                rowsInFlow: rowsInFlow
+            }, this.settings.smallMultiple);
+        }
+
+        const legendBucketFilled: boolean = !!(this.dataView.categorical && this.dataView.categorical.values && this.dataView.categorical.values.source);
+        this.lassoSelection.disable();
+        this.LassoSelectionForSmallMultiple.init(this.mainElement);
+        this.LassoSelectionForSmallMultiple.update(svgChart, svgChart.selectAll(Selectors.BarSelect.selectorName), legendBucketFilled);
+
+        if (this.interactivityService) {
+            this.interactivityService.applySelectionStateToData(this.allDataPoints);
+
+            let behaviorOptions: WebBehaviorOptions = {
+                bars: this.mainElement.selectAll(Selectors.BarSelect.selectorName),
+                clearCatcher: d3select(document.createElement('div')),
+                interactivityService: this.interactivityService,
+                host: this.host,
+                selectionSaveSettings: this.settings.selectionSaveSettings,
+                behavior: this.behavior,
+                dataPoints: this.allDataPoints
+            };
+
+            this.interactivityService.bind(behaviorOptions);
+        }
+    }
 
     getSettings(): VisualSettings {
         return this.settings;
@@ -1352,7 +1338,7 @@ export class Visual implements IColumnVisual {
         let isReverted: boolean = false;
 
         if (this.data && (!this.data.axes.xIsScalar || this.settings.categoryAxis.axisType !== "continuous")) {
-            isReverted = !!this.maxXLabelsWidth || xAxisMaxLableWidth > (this.data.axes.x.scale.rangeBand ? this.data.axes.x.scale.rangeBand() : 0 + innerPadding);
+            isReverted = !!this.maxXLabelsWidth || xAxisMaxLableWidth > (this.data.axes.x.scale.bandwidth ? this.data.axes.x.scale.bandwidth() : 0 + innerPadding);
         }
 
         let titleSize: number = (showXAxisTitle
