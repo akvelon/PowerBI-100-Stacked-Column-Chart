@@ -1,5 +1,8 @@
 import {ClassAndSelector} from "powerbi-visuals-utils-svgutils/lib/cssConstants";
-import {IColumnVisual} from "./visualInterfaces";
+import {select as d3select} from "d3-selection";
+
+import {d3Selection, IColumnVisual} from "./visualInterfaces";
+
 
 // module powerbi.extensibility.visual.visualUtils {
 //     import ClassAndSelector = powerbi.extensibility.utils.svg.CssConstants.ClassAndSelector;
@@ -28,7 +31,7 @@ export class LassoSelectionForSmallMultiple {
 //         private lasso: Lasso = new Lasso();
 //         private lassoElement: LassoElement;
 //
-//         private svgChart: d3.Selection<any>;
+    private svgChart: d3Selection<any>;
 //         private domItems = new DomItems();
 //
 //         private preselection: Preselection = new Preselection();
@@ -36,7 +39,6 @@ export class LassoSelectionForSmallMultiple {
 //         private legendBucketFilled: boolean;
 
     private barClassName: string;
-
 
     constructor(barSelect: ClassAndSelector, visual: IColumnVisual) {
         this.barClassName = barSelect.className;
@@ -59,16 +61,16 @@ export class LassoSelectionForSmallMultiple {
 //                 .on(`mousemove${Constants.EventNameSpace}`, this.onMousemove.bind(this) )
 //                 .on(`mouseup${Constants.EventNameSpace}`, this.onMouseup.bind(this) );
 //         }
-//
-//         disable(): void {
-//             if ( this.svgChart ){
-//                 this.svgChart.on( `mousedown${Constants.EventNameSpace}`, null);
-//             }
-//             d3.select('html')
-//                 .on(`mousemove${Constants.EventNameSpace}`, null )
-//                 .on(`mouseup${Constants.EventNameSpace}`, null );
-//         }
-//
+
+    disable(): void {
+        if (this.svgChart) {
+            this.svgChart.on(`mousedown${Constants.EventNameSpace}`, null);
+        }
+        d3select('html')
+            .on(`mousemove${Constants.EventNameSpace}`, null)
+            .on(`mouseup${Constants.EventNameSpace}`, null);
+    }
+
 //         private onMousemove(): void {
 //             const e: MouseEvent = d3.event as MouseEvent;
 //

@@ -16,9 +16,6 @@ import {
 import {CssConstants} from "powerbi-visuals-utils-svgutils";
 import {pixelConverter as PixelConverter} from "powerbi-visuals-utils-typeutils";
 
-// import "powerbi-visuals-utils-interactivityutils/lib/index.css";
-// import "powerbi-visuals-utils-chartutils/lib/index.css";
-// import "powerbi-visuals-utils-formattingutils/lib/index.css";
 import "../style/visual.less";
 
 import {
@@ -259,6 +256,7 @@ export class Visual implements IColumnVisual {
         this.scrollBar.updateData(this.getScrollbarState(), options.type);
 
         let visibleDataPoints: VisualDataPoint[] = this.scrollBar.getVisibleDataPoints();
+        console.log(visibleDataPoints);
 
         let axes: IAxes = this.createAxes(visibleDataPoints);
 
@@ -302,13 +300,13 @@ export class Visual implements IColumnVisual {
         this.scrollBar.update();
 
         let bars = this.barGroup.selectAll(Selectors.BarSelect.selectorName).data(visibleDataPoints);
-//             this.LassoSelectionForSmallMultiple.disable();
+        this.LassoSelectionForSmallMultiple.disable();
         this.lassoSelection.update(bars);
-//
-//             if ( this.settings.constantLine.show && this.settings.constantLine.value ){
-//                 let xWidth: number = (<Element>this.yAxisSvgGroup.selectAll("line").node()).getBoundingClientRect().width;
-//                 RenderVisual.renderConstantLine(this.settings.constantLine, this.barGroup, axes, xWidth);
-//             }
+
+            if ( this.settings.constantLine.show && this.settings.constantLine.value ){
+                let xWidth: number = (<Element>this.yAxisSvgGroup.selectAll("line").node()).getBoundingClientRect().width;
+                RenderVisual.renderConstantLine(this.settings.constantLine, this.barGroup, axes, xWidth);
+            }
     }
 
     private createNormalChartElements(): void {

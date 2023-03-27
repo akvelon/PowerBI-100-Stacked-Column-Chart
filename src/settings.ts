@@ -14,7 +14,7 @@ export class VisualSettings extends DataViewObjectsParser {
     public categoryAxis = new CategoryAxisSettings();
     public valueAxis = new ValueAxisSettings();
     public categoryLabels = new CategoryLabelsSettings();
-    public constantLine: constantLineSettings = new constantLineSettings();
+    public constantLine: ConstantLineSettings = new ConstantLineSettings();
 }
 
 export const enum AxisRangeType {
@@ -197,7 +197,7 @@ export class CategoryLabelsSettings {
     public backgroundColor: string = "";
 }
 
-export class constantLineSettings {
+export class ConstantLineSettings {
     public show: boolean = false;
     public name: string = "";
     public value: number = 0;

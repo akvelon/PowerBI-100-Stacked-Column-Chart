@@ -1,6 +1,6 @@
 import {CssConstants} from "powerbi-visuals-utils-svgutils";
 import {ClassAndSelector} from "powerbi-visuals-utils-svgutils/lib/cssConstants";
-import {d3Selection, VisualData, VisualDataPoint} from "../visualInterfaces";
+import {d3Selection, IAxes, VisualData, VisualDataPoint} from "../visualInterfaces";
 import {
     IInteractiveBehavior,
     IInteractivityService
@@ -8,11 +8,12 @@ import {
 import {ITooltipServiceWrapper, TooltipEventArgs} from "powerbi-visuals-utils-tooltiputils";
 import powerbi from "powerbi-visuals-api";
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
-import {LabelOrientation, VisualSettings} from "../settings";
+import {ConstantLineSettings, LabelOrientation, LineStyle, Position, VisualSettings} from "../settings";
 import * as visualUtils from '../utils';
 import {Visual} from "../visual";
 import {WebBehaviorOptions} from "../behavior";
 import {DataLabelHelper} from "../utils/dataLabelHelper";
+import {TextProperties} from "powerbi-visuals-utils-formattingutils/lib/src/interfaces";
 
 
 // module powerbi.extensibility.visual {
@@ -54,40 +55,18 @@ export class RenderVisual {
         host: IVisualHost,
         hasHighlight: boolean,
         settings: VisualSettings) {
-        // Select all bar groups in our chart and bind them to our categories.
-        // Each group will contain a set of bars, one for each of the values in category.
-        let barGroupSelect = visualSvgGroup.selectAll(Selectors.BarGroupSelect.selectorName)
-            .data([data.dataPoints]);
+        const barGroupSelect = visualSvgGroup.selectAll(Selectors.BarGroupSelect.selectorName)
+            .data([data.dataPoints])
+            .join("g")
+            .attr("class", Selectors.BarGroupSelect.className);
 
-        // For removed categories, remove the SVG group.
-        barGroupSelect.exit()
-            .remove();
+        console.log(data.dataPoints);
 
-        // When a new category added, create a new SVG group for it.
-        barGroupSelect = barGroupSelect.enter()
-            .append("g")
-            .attr("class", Selectors.BarGroupSelect.className)
-            .merge(<any>barGroupSelect);
-
-        // Update the position of existing SVG groups.
-        // barGroupSelect.attr("transform", d => `translate(0, ${data.axes.y(d.category)})`);
-
-        // Now we bind each SVG group to the values in corresponding category.
-        // To keep the length of the values array, we transform each value into object,
-        // that contains both value and total count of all values in this category.
-        const barSelect = barGroupSelect
+        barGroupSelect
             .selectAll(Selectors.BarSelect.selectorName)
-            .data(data.dataPoints);
-
-        // Remove rectangles, that no longer have matching values.
-        barSelect.exit()
-            .remove();
-
-        // For each new value, we create a new rectange.
-        barSelect.enter().append("rect")
-            .attr("class", Selectors.BarSelect.className);
-
-        barSelect
+            .data(data.dataPoints)
+            .join("rect")
+            .attr("class", Selectors.BarSelect.className)
             .attr('height', d => {
                 return d.barCoordinates.height;
             })
@@ -102,53 +81,103 @@ export class RenderVisual {
             })
             .attr('fill', d => d.color);
 
-        let interactivityService = visualInteractivityService,
-            hasSelection: boolean = interactivityService.hasSelection();
-
-        barSelect.style(
-            "fill-opacity", (p: VisualDataPoint) => visualUtils.getFillOpacity(
-                p.selected,
-                p.highlight,
-                !p.highlight && hasSelection,
-                !p.selected && data.hasHighlight))
-            .style("stroke", (p: VisualDataPoint) => {
-                if ((hasHighlight || hasSelection) && visualUtils.isSelected(p.selected,
-                    p.highlight,
-                    !p.highlight && hasSelection,
-                    !p.selected && hasHighlight)) {
-                    return Visual.DefaultStrokeSelectionColor;
-                }
-
-                return p.color;
-            })
-            .style("stroke-width", p => {
-                if ((hasHighlight || hasSelection) && visualUtils.isSelected(p.selected,
-                    p.highlight,
-                    !p.highlight && hasSelection,
-                    !p.selected && hasHighlight)) {
-                    return Visual.DefaultStrokeSelectionWidth;
-                }
-
-                return Visual.DefaultStrokeWidth;
-            });
-
-        if (interactivityService) {
-            interactivityService.applySelectionStateToData(data.dataPoints);
-
-            let behaviorOptions: WebBehaviorOptions = {
-                bars: barSelect,
-                clearCatcher: clearCatcher,
-                interactivityService: visualInteractivityService,
-                host: host,
-                selectionSaveSettings: settings.selectionSaveSettings,
-                behavior: visualBehavior,
-                dataPoints: data.dataPoints
-            };
-
-            interactivityService.bind(behaviorOptions);
-        }
-
-        this.renderTooltip(barSelect, tooltipServiceWrapper);
+        // // Select all bar groups in our chart and bind them to our categories.
+        // // Each group will contain a set of bars, one for each of the values in category.
+        // let barGroupSelect = visualSvgGroup.selectAll(Selectors.BarGroupSelect.selectorName)
+        //     .data([data.dataPoints]);
+        //
+        // // For removed categories, remove the SVG group.
+        // barGroupSelect.exit()
+        //     .remove();
+        //
+        // // When a new category added, create a new SVG group for it.
+        // barGroupSelect = barGroupSelect.enter()
+        //     .append("g")
+        //     .attr("class", Selectors.BarGroupSelect.className)
+        //     .merge(<any>barGroupSelect);
+        //
+        // // Update the position of existing SVG groups.
+        // // barGroupSelect.attr("transform", d => `translate(0, ${data.axes.y(d.category)})`);
+        //
+        // // Now we bind each SVG group to the values in corresponding category.
+        // // To keep the length of the values array, we transform each value into object,
+        // // that contains both value and total count of all values in this category.
+        // let barSelect = barGroupSelect
+        //     .selectAll(Selectors.BarSelect.selectorName)
+        //     .data(data.dataPoints);
+        //
+        // // Remove rectangles, that no longer have matching values.
+        // barSelect.exit()
+        //     .remove();
+        //
+        // // For each new value, we create a new rectange.
+        // const barSelectEnter = barSelect.enter().append("rect")
+        //     .attr("class", Selectors.BarSelect.className);
+        //
+        // barSelect = barSelect.merge(barSelectEnter);
+        //
+        // barSelect
+        //     .attr('height', d => {
+        //         return d.barCoordinates.height;
+        //     })
+        //     .attr('width', d => {
+        //         return d.barCoordinates.width;
+        //     })
+        //     .attr('x', d => {
+        //         return d.barCoordinates.x;
+        //     })
+        //     .attr('y', d => {
+        //         return d.barCoordinates.y;
+        //     })
+        //     .attr('fill', d => d.color);
+        //
+        // let interactivityService = visualInteractivityService,
+        //     hasSelection: boolean = interactivityService.hasSelection();
+        //
+        // barSelect.style(
+        //     "fill-opacity", (p: VisualDataPoint) => visualUtils.getFillOpacity(
+        //         p.selected,
+        //         p.highlight,
+        //         !p.highlight && hasSelection,
+        //         !p.selected && data.hasHighlight))
+        //     .style("stroke", (p: VisualDataPoint) => {
+        //         if ((hasHighlight || hasSelection) && visualUtils.isSelected(p.selected,
+        //             p.highlight,
+        //             !p.highlight && hasSelection,
+        //             !p.selected && hasHighlight)) {
+        //             return Visual.DefaultStrokeSelectionColor;
+        //         }
+        //
+        //         return p.color;
+        //     })
+        //     .style("stroke-width", p => {
+        //         if ((hasHighlight || hasSelection) && visualUtils.isSelected(p.selected,
+        //             p.highlight,
+        //             !p.highlight && hasSelection,
+        //             !p.selected && hasHighlight)) {
+        //             return Visual.DefaultStrokeSelectionWidth;
+        //         }
+        //
+        //         return Visual.DefaultStrokeWidth;
+        //     });
+        //
+        // if (interactivityService) {
+        //     interactivityService.applySelectionStateToData(data.dataPoints);
+        //
+        //     let behaviorOptions: WebBehaviorOptions = {
+        //         bars: barSelect,
+        //         clearCatcher: clearCatcher,
+        //         interactivityService: visualInteractivityService,
+        //         host: host,
+        //         selectionSaveSettings: settings.selectionSaveSettings,
+        //         behavior: visualBehavior,
+        //         dataPoints: data.dataPoints
+        //     };
+        //
+        //     interactivityService.bind(behaviorOptions);
+        // }
+        //
+        // this.renderTooltip(barSelect, tooltipServiceWrapper);
     }
 
     // public static renderDataLabelsBackground(
@@ -456,90 +485,82 @@ export class RenderVisual {
             true);
     }
 
-    // public static renderConstantLine(settings: constantLineSettings, element: d3.Selection<SVGElement>, axes: IAxes, width: number) {
-    //     let line: d3.Selection<any> = element.select(".const-line");
-    //
-    //     let yValue: number = settings.value;
-    //
-    //     if (yValue < axes.y.dataDomain[0]) {
-    //         yValue = axes.y.dataDomain[0];
-    //     } else if (yValue > axes.y.dataDomain[1]) {
-    //         yValue = axes.y.dataDomain[1];
-    //     }
-    //
-    //     let y = axes.y.scale(yValue);
-    //     let x = axes.x.scale(axes.x.dataDomain[0]);
-    //
-    //     if (line[0][0]) {
-    //         element.selectAll("line").remove();
-    //     }
-    //
-    //     if (settings.position === Position.InFront) {
-    //         line = element.append("line");
-    //     } else {
-    //         line = element.insert("line", ".bar-group");
-    //     }
-    //
-    //     line
-    //         .classed("const-line", true)
-    //         .style({
-    //             display: settings.show ? "unset" : "none",
-    //             stroke: settings.lineColor,
-    //             "stroke-opacity": 1 - settings.transparency / 100,
-    //             "stroke-width": "3px"
-    //         })
-    //         .attr({
-    //             "y2": y,
-    //             "x2": width,
-    //             "y1": y
-    //         });
-    //
-    //     if (settings.lineStyle === LineStyle.Dotted) {
-    //         line.style({
-    //             "stroke-dasharray": "1, 5",
-    //             "stroke-linecap": "round"
-    //         });
-    //     } else if (settings.lineStyle === LineStyle.Dashed) {
-    //         line.style({
-    //             "stroke-dasharray": "5, 5"
-    //         });
-    //     }
-    //
-    //     let textProperties: TextProperties = {
-    //         fontFamily: "wf_standard-font, helvetica, arial, sans-serif",
-    //         fontSize: "10px"
-    //     };
-    //
-    //     let text: string = this.getLineText(settings);
-    //     let textWidth: number = TextMeasurementService.measureSvgTextWidth(textProperties, text);
-    //     let textHeight: number = TextMeasurementService.estimateSvgTextHeight(textProperties);
-    //
-    //     let label: d3.Selection<any> = element.select(".const-label");
-    //
-    //     if (label[0][0]) {
-    //         element.selectAll("text").remove();
-    //     }
-    //
-    //     if (settings.show && settings.dataLabelShow) {
-    //         label = element
-    //             .append("text")
-    //             .classed("const-label", true);
-    //
-    //         label
-    //             .attr({
-    //                 transform: this.getTranslateForStaticLineLabel(x, y, textWidth, textHeight, settings, axes, width)
-    //             });
-    //
-    //         label
-    //             .text(text)
-    //             .style({
-    //                 "font-family": "wf_standard-font, helvetica, arial, sans-serif",
-    //                 "font-size": "10px",
-    //                 fill: settings.fontColor
-    //             });
-    //     }
-    // }
-    //
+    public static renderConstantLine(settings: ConstantLineSettings, element: d3Selection<SVGElement>, axes: IAxes, width: number) {
+        let line: d3Selection<any> = element.select(".const-line");
+
+        let yValue: number = settings.value;
+
+        if (yValue < axes.y.dataDomain[0]) {
+            yValue = axes.y.dataDomain[0];
+        } else if (yValue > axes.y.dataDomain[1]) {
+            yValue = axes.y.dataDomain[1];
+        }
+
+        let y = axes.y.scale(yValue);
+        let x = axes.x.scale(axes.x.dataDomain[0]);
+
+        if (line.nodes()[0]) {
+            element.selectAll("line").remove();
+        }
+
+        if (settings.position === Position.InFront) {
+            line = element.append("line");
+        } else {
+            line = element.insert("line", ".bar-group");
+        }
+
+        line
+            .classed("const-line", true)
+            .style('display', settings.show ? "unset" : "none")
+            .style('stroke', settings.lineColor)
+            .style("stroke-opacity", 1 - settings.transparency / 100)
+            .style("stroke-width", "3px")
+            .attr("y2", y)
+            .attr("x2", width)
+            .attr("y1", y);
+
+        if (settings.lineStyle === LineStyle.Dotted) {
+            line.style("stroke-dasharray", "1, 5")
+                .style("stroke-linecap", "round");
+        } else if (settings.lineStyle === LineStyle.Dashed) {
+            line.style("stroke-dasharray", "5, 5");
+        }
+
+        // let textProperties: TextProperties = {
+        //     fontFamily: "wf_standard-font, helvetica, arial, sans-serif",
+        //     fontSize: "10px"
+        // };
+
+        // let text: string = this.getLineText(settings);
+        // let textWidth: number = TextMeasurementService.measureSvgTextWidth(textProperties, text);
+        // let textHeight: number = TextMeasurementService.estimateSvgTextHeight(textProperties);
+        //
+        // let label: d3.Selection<any> = element.select(".const-label");
+        //
+        // if (label[0][0]) {
+        //     element.selectAll("text").remove();
+        // }
+        //
+        // if (settings.show && settings.dataLabelShow) {
+        //     label = element
+        //         .append("text")
+        //         .classed("const-label", true);
+        //
+        //     label
+        //         .attr({
+        //             transform: this.getTranslateForStaticLineLabel(x, y, textWidth, textHeight, settings, axes, width)
+        //         });
+        //
+        //     label
+        //         .text(text)
+        //         .style({
+        //             "font-family": "wf_standard-font, helvetica, arial, sans-serif",
+        //             "font-size": "10px",
+        //             fill: settings.fontColor
+        //         });
+        // }
+    }
+
     // private static getLineText(settings: constantLineSettings): string {
     //     let displayUnits: number = settings.displayUnits;
     //     let precision: number = settings.precision;

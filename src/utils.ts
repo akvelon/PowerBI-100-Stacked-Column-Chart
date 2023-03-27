@@ -53,6 +53,8 @@ export function calculateBarCoordianates(dataPoints: VisualDataPoint[], axes: IA
     const thickness: number = dataPointThickness;
 
     dataPoints.forEach(point => {
+        console.log('for each point');
+        console.log(point);
         let width = 0;
         if (!axes.xIsScalar || !categoryAxisIsContinuous) {
             width = axes.x.scale.bandwidth();
@@ -63,6 +65,7 @@ export function calculateBarCoordianates(dataPoints: VisualDataPoint[], axes: IA
         if (categoryAxisIsContinuous) {
             const categoryvalueIsInRange: boolean = point.category >= categoryAxisStartValue && point.category <= categoryAxisEndValue;
             if (!categoryvalueIsInRange) {
+                console.log('setZeroCoordinatesForPoint 1');
                 setZeroCoordinatesForPoint(point);
                 return;
             }
@@ -71,14 +74,16 @@ export function calculateBarCoordianates(dataPoints: VisualDataPoint[], axes: IA
         let x: number = axes.x.scale(point.category);
 
         if (point.shiftValue > axes.y.dataDomain[1]) {
+            console.log('setZeroCoordinatesForPoint 2');
             setZeroCoordinatesForPoint(point);
             return;
         }
 
         const fromValue: number = Math.max(point.shiftValue, axes.y.dataDomain[0]);
-        let fromCoordinate: number = axes.y.scale(fromValue);
+        let fromCoordinate: number;
         fromCoordinate = axes.y.scale(fromValue);
         if (point.shiftValue + point.percentValueForHeight < axes.y.dataDomain[0]) {
+            console.log('setZeroCoordinatesForPoint 3');
             setZeroCoordinatesForPoint(point);
             return;
         }
@@ -89,6 +94,8 @@ export function calculateBarCoordianates(dataPoints: VisualDataPoint[], axes: IA
         toCoordinate = Math.max(toCoordinate, axes.y.dataDomain[0]);
 
         if (toCoordinate >= fromCoordinate) {
+            console.log(`setZeroCoordinatesForPoint 4 ${toCoordinate} >= ${fromCoordinate}`);
+
             setZeroCoordinatesForPoint(point);
             return;
         }
@@ -112,6 +119,7 @@ export function calculateBarCoordianates(dataPoints: VisualDataPoint[], axes: IA
 }
 
 function setZeroCoordinatesForPoint(point: VisualDataPoint): void {
+    console.log('setZeroCoordinatesForPoint');
     point.barCoordinates = {height: 0, width: 0, x: 0, y: 0};
 }
 
