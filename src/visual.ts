@@ -303,10 +303,10 @@ export class Visual implements IColumnVisual {
         this.LassoSelectionForSmallMultiple.disable();
         this.lassoSelection.update(bars);
 
-            if ( this.settings.constantLine.show && this.settings.constantLine.value ){
-                let xWidth: number = (<Element>this.yAxisSvgGroup.selectAll("line").node()).getBoundingClientRect().width;
-                RenderVisual.renderConstantLine(this.settings.constantLine, this.barGroup, axes, xWidth);
-            }
+        if (this.settings.constantLine.show && this.settings.constantLine.value) {
+            let xWidth: number = (<Element>this.yAxisSvgGroup.selectAll("line").node()).getBoundingClientRect().width;
+            RenderVisual.renderConstantLine(this.settings.constantLine, this.barGroup, axes, xWidth);
+        }
     }
 
     private createNormalChartElements(): void {

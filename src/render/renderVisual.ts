@@ -8,12 +8,22 @@ import {
 import {ITooltipServiceWrapper, TooltipEventArgs} from "powerbi-visuals-utils-tooltiputils";
 import powerbi from "powerbi-visuals-api";
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
-import {ConstantLineSettings, LabelOrientation, LineStyle, Position, VisualSettings} from "../settings";
+import {
+    ConstantLineSettings,
+    HorizontalPosition,
+    LabelOrientation,
+    LineStyle,
+    Position, VerticalPosition,
+    VisualSettings
+} from "../settings";
 import * as visualUtils from '../utils';
 import {Visual} from "../visual";
 import {WebBehaviorOptions} from "../behavior";
 import {DataLabelHelper} from "../utils/dataLabelHelper";
 import {TextProperties} from "powerbi-visuals-utils-formattingutils/lib/src/interfaces";
+import {textMeasurementService, valueFormatter} from "powerbi-visuals-utils-formattingutils";
+import {Text} from "../settings";
+import {translate} from "powerbi-visuals-utils-svgutils/lib/manipulation";
 
 
 // module powerbi.extensibility.visual {
@@ -529,95 +539,93 @@ export class RenderVisual {
             line.style("stroke-dasharray", "5, 5");
         }
 
-        // let textProperties: TextProperties = {
-        //     fontFamily: "wf_standard-font, helvetica, arial, sans-serif",
-        //     fontSize: "10px"
-        // };
+        let textProperties: TextProperties = {
+            fontFamily: "wf_standard-font, helvetica, arial, sans-serif",
+            fontSize: "10px"
+        };
 
-        // let text: string = this.getLineText(settings);
-        // let textWidth: number = TextMeasurementService.measureSvgTextWidth(textProperties, text);
-        // let textHeight: number = TextMeasurementService.estimateSvgTextHeight(textProperties);
-        //
-        // let label: d3.Selection<any> = element.select(".const-label");
-        //
-        // if (label[0][0]) {
-        //     element.selectAll("text").remove();
-        // }
-        //
-        // if (settings.show && settings.dataLabelShow) {
-        //     label = element
-        //         .append("text")
-        //         .classed("const-label", true);
-        //
-        //     label
-        //         .attr({
-        //             transform: this.getTranslateForStaticLineLabel(x, y, textWidth, textHeight, settings, axes, width)
-        //         });
-        //
-        //     label
-        //         .text(text)
-        //         .style({
-        //             "font-family": "wf_standard-font, helvetica, arial, sans-serif",
-        //             "font-size": "10px",
-        //             fill: settings.fontColor
-        //         });
-        // }
+        let text: string = this.getLineText(settings);
+        let textWidth: number = textMeasurementService.measureSvgTextWidth(textProperties, text);
+        let textHeight: number = textMeasurementService.estimateSvgTextHeight(textProperties);
+
+        console.log(settings);
+        console.log(text);
+
+        let label: d3Selection<any> = element.select(".const-label");
+
+        if (label.nodes()[0]) {
+            element.selectAll("text").remove();
+        }
+
+        if (settings.show && settings.dataLabelShow) {
+            label = element
+                .append("text")
+                .classed("const-label", true);
+
+            label
+                .attr('transform', this.getTranslateForStaticLineLabel(x, y, textWidth, textHeight, settings, axes, width));
+
+            label
+                .text(text)
+                .style("font-family", "wf_standard-font, helvetica, arial, sans-serif")
+                .style("font-size", "10px")
+                .style('fill', settings.fontColor);
+        }
     }
 
-    // private static getLineText(settings: constantLineSettings): string {
-    //     let displayUnits: number = settings.displayUnits;
-    //     let precision: number = settings.precision;
-    //
-    //     let formatter = ValueFormatter.create({
-    //         value: displayUnits,
-    //         value2: 0,
-    //         precision: precision,
-    //         format: "0"
-    //     });
-    //
-    //     switch (settings.text) {
-    //         case Text.Name: {
-    //             return settings.name;
-    //         }
-    //         case Text.Value: {
-    //             return formatter.format(settings.value);
-    //         }
-    //         case Text.NameAndValue: {
-    //             return settings.name + " " + formatter.format(settings.value);
-    //         }
-    //     }
-    // }
-    //
-    // private static getTranslateForStaticLineLabel(x: number, y: number, textWidth: number, textHeight: number, settings: constantLineSettings, axes: IAxes, width: number) {
-    //     let positionAlong: number;
-    //     const marginAlong: number = 8;
-    //     if (settings.horizontalPosition === HorizontalPosition.Left) {
-    //         positionAlong = marginAlong;
-    //     } else {
-    //         positionAlong = width - textWidth - marginAlong;
-    //     }
-    //
-    //     const marginAcross: number = 5;
-    //     let positionAcross: number;
-    //     if (settings.verticalPosition === VerticalPosition.Top) {
-    //         positionAcross = y - (marginAcross + textHeight);
-    //     } else {
-    //         positionAcross = y + (marginAcross + textHeight);
-    //     }
-    //
-    //     // TODO Fix data domains
-    //     let minPosition: number = axes.y.scale(axes.y.dataDomain[1]);
-    //     let maxPosition: number = axes.y.scale(axes.y.dataDomain[0]);
-    //
-    //     if (positionAcross <= minPosition) {
-    //         positionAcross = minPosition + marginAcross;
-    //     } else if (positionAcross >= maxPosition) {
-    //         positionAcross = maxPosition - (textHeight + marginAcross);
-    //     }
-    //
-    //     return translate(positionAlong, positionAcross);
-    // }
-    //
+    private static getLineText(settings: ConstantLineSettings): string {
+        let displayUnits: number = settings.displayUnits;
+        let precision: number = settings.precision;
+
+        let formatter = valueFormatter.create({
+            value: displayUnits,
+            value2: 0,
+            precision: precision,
+            format: "0"
+        });
+
+        switch (settings.text) {
+            case Text.Name: {
+                return settings.name;
+            }
+            case Text.Value: {
+                return formatter.format(settings.value);
+            }
+            case Text.NameAndValue: {
+                return settings.name + " " + formatter.format(settings.value);
+            }
+        }
+    }
+
+    private static getTranslateForStaticLineLabel(x: number, y: number, textWidth: number, textHeight: number, settings: ConstantLineSettings, axes: IAxes, width: number) {
+        let positionAlong: number;
+        const marginAlong: number = 8;
+        if (settings.horizontalPosition === HorizontalPosition.Left) {
+            positionAlong = marginAlong;
+        } else {
+            positionAlong = width - textWidth - marginAlong;
+        }
+
+        const marginAcross: number = 5;
+        let positionAcross: number;
+        if (settings.verticalPosition === VerticalPosition.Top) {
+            positionAcross = y - (marginAcross + textHeight);
+        } else {
+            positionAcross = y + (marginAcross + textHeight);
+        }
+
+        let minPosition: number = axes.y.scale(axes.y.dataDomain[0]);
+        let maxPosition: number = axes.y.scale(axes.y.dataDomain[1]);
+
+        if (positionAcross <= minPosition) {
+            positionAcross = minPosition + marginAcross;
+        } else if (positionAcross >= maxPosition) {
+            positionAcross = maxPosition - (textHeight + marginAcross);
+        }
+
+        return translate(positionAlong, positionAcross);
+    }
+
     // private static gapBetweenCharts: number = 10;
     //
     // public static renderSmallMultipleLines(options: SmallMultipleOptions, settings: smallMultipleSettings) {
