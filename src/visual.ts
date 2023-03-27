@@ -130,7 +130,7 @@ export class Visual implements IColumnVisual {
 
     private hasHighlight: boolean;
     private isLegendNeeded: boolean;
-//         private isSelectionRestored: boolean = false;
+    private isSelectionRestored: boolean = false;
 
     private metadata: VisualMeasureMetadata;
 
@@ -384,11 +384,11 @@ export class Visual implements IColumnVisual {
             this.normalChartProcess(options);
 //             }
 //
-//             if (!this.isSelectionRestored) {
-//                 this.restoreSelection();
-//
-//                 this.isSelectionRestored = true;
-//             }
+            if (!this.isSelectionRestored) {
+                this.restoreSelection();
+
+                this.isSelectionRestored = true;
+            }
 
             console.log('=== RENDER END ===');
         } catch (e) {
@@ -398,19 +398,18 @@ export class Visual implements IColumnVisual {
         }
     }
 
-//
-//         private restoreSelection(): void {
-//             const savedSelection = this.settings.selectionSaveSettings.selection;
-//
-//             const selected: any[] = this.mainElement.selectAll(`.legendItem, ${Selectors.BarSelect.selectorName}`).data().filter(d => {
-//                 return savedSelection.some(savedD => savedD.identity.key === d.identity.key);
-//             });
-//
-//             if (selected.length > 0){
-//                 this.webBehaviorSelectionHandler.handleSelection(selected, false);
-//             }
-//         }
-//
+    private restoreSelection(): void {
+        const savedSelection = this.settings.selectionSaveSettings.selection;
+
+        const selected: any[] = this.mainElement.selectAll<any, VisualDataPoint>(`.legendItem, ${Selectors.BarSelect.selectorName}`).data().filter(d => {
+            return savedSelection.some(savedD => savedD.identity.key === (<any>d.identity).key);
+        });
+
+        if (selected.length > 0) {
+            this.webBehaviorSelectionHandler.handleSelection(selected, false);
+        }
+    }
+
 //         private calculateLabelsSize(settings: smallMultipleSettings): number {
 //             return settings.showChartTitle ? 120 : 0;
 //         }
@@ -1250,9 +1249,9 @@ export class Visual implements IColumnVisual {
             this.settings,
             this.labelGraphicsContext
         );
-//
-//             let xWidth: number = (<Element>this.yAxisSvgGroup.selectAll("line").node()).getBoundingClientRect().width;
-//             RenderVisual.renderConstantLine(this.settings.constantLine, this.barGroup, this.data.axes, xWidth);
+
+        let xWidth: number = (<Element>this.yAxisSvgGroup.selectAll("line").node()).getBoundingClientRect().width;
+        RenderVisual.renderConstantLine(this.settings.constantLine, this.barGroup, this.data.axes, xWidth);
     }
 
     private calculateLegendSize(settings: LegendSettings, legendElementRoot: d3Selection<SVGElement>): LegendSize {

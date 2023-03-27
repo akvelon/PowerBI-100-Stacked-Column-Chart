@@ -27,25 +27,6 @@ import {translate} from "powerbi-visuals-utils-svgutils/lib/manipulation";
 import {pixelConverter as PixelConverter} from "powerbi-visuals-utils-typeutils";
 import {dataLabelUtils} from "powerbi-visuals-utils-chartutils";
 
-// module powerbi.extensibility.visual {
-//     import svg = powerbi.extensibility.utils.svg;
-//     import CssConstants = svg.CssConstants;
-//     import IInteractiveBehavior = powerbi.extensibility.utils.interactivity.IInteractiveBehavior;
-//     import IInteractivityService = powerbi.extensibility.utils.interactivity.IInteractivityService;
-//     import TooltipEventArgs = powerbi.extensibility.utils.tooltip.TooltipEventArgs;
-//     import ITooltipServiceWrapper = powerbi.extensibility.utils.tooltip.ITooltipServiceWrapper;
-//     import UpdateSelection = d3.selection.Update;
-//     import dataLabelUtils = powerbi.extensibility.utils.chart.dataLabel.utils;
-//     import PixelConverter = powerbi.extensibility.utils.type.PixelConverter;
-//     import ValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter;
-//     import IValueFormatter = powerbi.extensibility.utils.formatting.IValueFormatter;
-//     import translate = powerbi.extensibility.utils.svg.translate;
-//     import ClassAndSelector = powerbi.extensibility.utils.svg.CssConstants.ClassAndSelector;
-//     import createClassAndSelector = powerbi.extensibility.utils.svg.CssConstants.createClassAndSelector;
-//     import TextProperties = powerbi.extensibility.utils.formatting.TextProperties;
-//     import TextMeasurementService = powerbi.extensibility.utils.formatting.textMeasurementService;
-
-
 class Selectors {
     static BarSelect = CssConstants.createClassAndSelector("bar");
     static BarGroupSelect = CssConstants.createClassAndSelector("bar-group");
