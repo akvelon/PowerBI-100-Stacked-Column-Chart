@@ -24,7 +24,8 @@ import {TextProperties} from "powerbi-visuals-utils-formattingutils/lib/src/inte
 import {textMeasurementService, valueFormatter} from "powerbi-visuals-utils-formattingutils";
 import {Text} from "../settings";
 import {translate} from "powerbi-visuals-utils-svgutils/lib/manipulation";
-
+import {pixelConverter as PixelConverter} from "powerbi-visuals-utils-typeutils";
+import {dataLabelUtils} from "powerbi-visuals-utils-chartutils";
 
 // module powerbi.extensibility.visual {
 //     import svg = powerbi.extensibility.utils.svg;
@@ -227,62 +228,48 @@ export class RenderVisual {
     //         .remove();
     // }
 
-    // public static renderDataLabels(
-    //     dataPoints: VisualDataPoint[],
-    //     settings: VisualSettings,
-    //     dataLabelsContext: d3.Selection<any>): void {
-    //
-    //     let labelSettings: categoryLabelsSettings = settings.categoryLabels;
-    //
-    //     dataLabelsContext.selectAll("*").remove();
-    //
-    //     if (!labelSettings.show) {
-    //         return;
-    //     }
-    //
-    //     let labelSelection: UpdateSelection<VisualDataPoint> = dataLabelsContext
-    //         .selectAll(RenderVisual.Label.selectorName)
-    //         .data(dataPoints);
-    //
-    //     let precision: number = labelSettings.precision;
-    //
-    //     let precisionZeros: string = "";
-    //
-    //     for (let i = 0; i < precision; ++i) {
-    //         precisionZeros += "0";
-    //     }
-    //
-    //     let dataLabelFormatter: IValueFormatter = ValueFormatter.create({
-    //         precision: precision,
-    //         format: `0.${precisionZeros}%;-0.${precisionZeros}%;0.${precisionZeros}%`
-    //     });
-    //
-    //     labelSelection
-    //         .enter()
-    //         .append("svg:text");
-    //
-    //     let fontSizeInPx: string = PixelConverter.fromPoint(labelSettings.fontSize);
-    //     let fontFamily: string = labelSettings.fontFamily ? labelSettings.fontFamily : dataLabelUtils.LabelTextProperties.fontFamily;
-    //
-    //     labelSelection
-    //         .attr("transform", (p: VisualDataPoint) => {
-    //             return translate(p.labelCoordinates.x, p.labelCoordinates.y) + (labelSettings.orientation === LabelOrientation.Horizontal ? "" : "rotate(-90)");
-    //         });
-    //
-    //     labelSelection
-    //         .style({
-    //             "fill": labelSettings.color,
-    //             "font-size": fontSizeInPx,
-    //             "font-family": fontFamily,
-    //             "pointer-events": "none"
-    //         })
-    //         .text((p: VisualDataPoint) => dataLabelFormatter.format(p.percentValue));
-    //
-    //     labelSelection
-    //         .exit()
-    //         .remove();
-    // }
-    //
+    public static renderDataLabels(
+        dataPoints: VisualDataPoint[],
+        settings: VisualSettings,
+        dataLabelsContext: d3Selection<any>): void {
+
+        let labelSettings = settings.categoryLabels;
+
+        dataLabelsContext.selectAll("*").remove();
+
+        if (!labelSettings.show) {
+            return;
+        }
+
+        let precision: number = labelSettings.precision;
+        let precisionZeros: string = "";
+
+        for (let i = 0; i < precision; ++i) {
+            precisionZeros += "0";
+        }
+
+        let dataLabelFormatter = valueFormatter.create({
+            precision: precision,
+            format: `0.${precisionZeros}%;-0.${precisionZeros}%;0.${precisionZeros}%`
+        });
+
+        let fontSizeInPx: string = PixelConverter.fromPoint(labelSettings.fontSize);
+        let fontFamily: string = labelSettings.fontFamily ? labelSettings.fontFamily : dataLabelUtils.LabelTextProperties.fontFamily;
+
+        dataLabelsContext
+            .selectAll(RenderVisual.Label.selectorName)
+            .data(dataPoints)
+            .join("svg:text")
+            .attr("transform", (p: VisualDataPoint) => {
+                return translate(p.labelCoordinates.x, p.labelCoordinates.y) + (labelSettings.orientation === LabelOrientation.Horizontal ? "" : "rotate(-90)");
+            })
+            .style("fill", labelSettings.color)
+            .style("font-size", fontSizeInPx)
+            .style("font-family", fontFamily)
+            .style("pointer-events", "none")
+            .text((p: VisualDataPoint) => dataLabelFormatter.format(p.percentValue));
+    }
+
     // public static renderDataLabelsForSmallMultiple(
     //     data: VisualData,
     //     settings: VisualSettings,

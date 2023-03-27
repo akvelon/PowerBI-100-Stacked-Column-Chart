@@ -1245,11 +1245,11 @@ export class Visual implements IColumnVisual {
             this.labelBackgroundContext
         );
 
-//             RenderVisual.renderDataLabels(
-//                 filteredDataLabels,
-//                 this.settings,
-//                 this.labelGraphicsContext
-//             );
+        RenderVisual.renderDataLabels(
+            filteredDataLabels,
+            this.settings,
+            this.labelGraphicsContext
+        );
 //
 //             let xWidth: number = (<Element>this.yAxisSvgGroup.selectAll("line").node()).getBoundingClientRect().width;
 //             RenderVisual.renderConstantLine(this.settings.constantLine, this.barGroup, this.data.axes, xWidth);
