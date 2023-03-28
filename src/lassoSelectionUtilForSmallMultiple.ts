@@ -1,11 +1,13 @@
+"use strict";
+
+import powerbi from "powerbi-visuals-api";
 import {ClassAndSelector} from "powerbi-visuals-utils-svgutils/lib/cssConstants";
 import {select as d3select} from "d3-selection";
 
 import {d3Selection, IColumnVisual, VisualDataPoint} from "./visualInterfaces";
 import {DefaultOpacity, DimmedOpacity} from "./utils";
-import powerbi from "powerbi-visuals-api";
-import PrimitiveValue = powerbi.PrimitiveValue;
 
+import PrimitiveValue = powerbi.PrimitiveValue;
 
 interface CursorPosition {
     x: number;

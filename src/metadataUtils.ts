@@ -1,11 +1,5 @@
 "use strict";
 
-const ColumnCategory: string = "Axis";
-const ColumnValue: string = "Value";
-const ColumnGradient: string = "Gradient";
-const ColumnColumnBy: string = 'ColumnBy';
-const ColumnRowBy: string = 'RowBy';
-
 import powerbi from "powerbi-visuals-api";
 import {getCategoryIndexOfRole, getMeasureIndexOfRole} from "powerbi-visuals-utils-dataviewutils/lib/dataRoleHelper";
 
@@ -14,6 +8,12 @@ import {VisualMeasureMetadata} from "./visualInterfaces";
 import DataViewCategoryColumn = powerbi.DataViewCategoryColumn;
 import DataViewValueColumnGroup = powerbi.DataViewValueColumnGroup;
 import DataViewMetadataColumn = powerbi.DataViewMetadataColumn;
+
+const ColumnCategory: string = "Axis";
+const ColumnValue: string = "Value";
+const ColumnGradient: string = "Gradient";
+const ColumnColumnBy: string = 'ColumnBy';
+const ColumnRowBy: string = 'RowBy';
 
 export function getMetadata(
     categories: DataViewCategoryColumn[],

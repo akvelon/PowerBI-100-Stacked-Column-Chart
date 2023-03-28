@@ -1,3 +1,5 @@
+"use strict";
+
 import * as axisScale from "powerbi-visuals-utils-chartutils/lib/axis/axisScale";
 import {Axis, axisBottom, AxisDomain, axisLeft, axisRight, AxisScale, axisTop} from "d3-axis";
 import {

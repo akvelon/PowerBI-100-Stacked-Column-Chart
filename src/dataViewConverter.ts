@@ -3,6 +3,8 @@
 import powerbi from "powerbi-visuals-api";
 import {valueFormatter} from "powerbi-visuals-utils-formattingutils";
 import {sum as d3sum} from "d3-array";
+import {converterHelper} from "powerbi-visuals-utils-dataviewutils/lib/converterHelper";
+import {ColorHelper} from "powerbi-visuals-utils-colorutils";
 
 import {VisualSettings} from "./settings";
 import {VisualColumns, VisualDataPoint} from "./visualInterfaces";
@@ -18,8 +20,6 @@ import PrimitiveValue = powerbi.PrimitiveValue;
 import ISelectionId = powerbi.extensibility.ISelectionId;
 import DataViewCategorical = powerbi.DataViewCategorical;
 import DataViewCategoryColumn = powerbi.DataViewCategoryColumn;
-import {converterHelper} from "powerbi-visuals-utils-dataviewutils/lib/converterHelper";
-import {ColorHelper} from "powerbi-visuals-utils-colorutils";
 
 export const enum Field {
     Axis = "Axis",

@@ -1,12 +1,14 @@
 "use strict";
 
-import {VisualData, VisualDataPoint} from "./visualInterfaces";
 import powerbi from "powerbi-visuals-api";
 import VisualObjectInstance = powerbi.VisualObjectInstance;
 import {LegendDataPoint} from "powerbi-visuals-utils-chartutils/lib/legend/legendInterfaces";
 import {ColorHelper} from "powerbi-visuals-utils-colorutils";
-import ISelectionId = powerbi.visuals.ISelectionId;
+
+import {VisualData, VisualDataPoint} from "./visualInterfaces";
 import {AxisRangeType, LayoutMode, VisualSettings} from "./settings";
+
+import ISelectionId = powerbi.visuals.ISelectionId;
 import VisualObjectInstanceEnumerationObject = powerbi.VisualObjectInstanceEnumerationObject;
 
 export class EnumerateObject {

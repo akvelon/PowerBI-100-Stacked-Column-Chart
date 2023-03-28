@@ -15,8 +15,11 @@ import {
 } from "powerbi-visuals-utils-interactivityutils/lib/interactivitySelectionService";
 import {CssConstants} from "powerbi-visuals-utils-svgutils";
 import {pixelConverter as PixelConverter} from "powerbi-visuals-utils-typeutils";
-
-import "../style/visual.less";
+import {translate as svgTranslate} from "powerbi-visuals-utils-svgutils/lib/manipulation";
+import {axis} from "powerbi-visuals-utils-chartutils";
+import {TextProperties} from "powerbi-visuals-utils-formattingutils/lib/src/interfaces";
+import {textMeasurementService, valueFormatter} from "powerbi-visuals-utils-formattingutils";
+import {IValueFormatter} from "powerbi-visuals-utils-formattingutils/lib/src/valueFormatter";
 
 import {
     AxesDomains,
@@ -43,6 +46,11 @@ import * as selectionSaveUtils from './selectionSaveUtils';
 import * as legendUtils from './utils/legendUtils';
 import {ScrollBar, ScrollbarState} from "./scrollbarUtil";
 import {RenderAxes} from "./render/renderAxes";
+import {getXAxisMaxWidth} from "./utils/axis/yAxisUtils";
+import {EnumerateObject} from "./enumerateObject";
+import {LassoSelection} from "./lassoSelectionUtil";
+import {LassoSelectionForSmallMultiple} from "./lassoSelectionUtilForSmallMultiple";
+import {RenderVisual} from "./render/renderVisual";
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
 import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
@@ -53,21 +61,13 @@ import IViewport = powerbi.IViewport;
 import DataViewValueColumnGroup = powerbi.DataViewValueColumnGroup;
 import DataViewMetadataColumn = powerbi.DataViewMetadataColumn;
 import DataViewCategoryColumn = powerbi.DataViewCategoryColumn;
-import {getXAxisMaxWidth} from "./utils/axis/yAxisUtils";
-import {translate as svgTranslate} from "powerbi-visuals-utils-svgutils/lib/manipulation";
-import {axis} from "powerbi-visuals-utils-chartutils";
 import EnumerateVisualObjectInstancesOptions = powerbi.EnumerateVisualObjectInstancesOptions;
 import VisualObjectInstance = powerbi.VisualObjectInstance;
 import VisualObjectInstanceEnumerationObject = powerbi.VisualObjectInstanceEnumerationObject;
-import {EnumerateObject} from "./enumerateObject";
 import VisualObjectInstanceEnumeration = powerbi.VisualObjectInstanceEnumeration;
-import {LassoSelection} from "./lassoSelectionUtil";
-import {LassoSelectionForSmallMultiple} from "./lassoSelectionUtilForSmallMultiple";
-import {RenderVisual} from "./render/renderVisual";
-import {TextProperties} from "powerbi-visuals-utils-formattingutils/lib/src/interfaces";
-import {textMeasurementService, valueFormatter} from "powerbi-visuals-utils-formattingutils";
 import PrimitiveValue = powerbi.PrimitiveValue;
-import {IValueFormatter} from "powerbi-visuals-utils-formattingutils/lib/src/valueFormatter";
+
+import "../style/visual.less";
 
 class Selectors {
     static MainSvg = CssConstants.createClassAndSelector("bar-chart-svg");
@@ -360,46 +360,36 @@ export class Visual implements IColumnVisual {
     }
 
     public update(options: VisualUpdateOptions) {
-        try {
-            console.log('=== RENDER ===');
+        if (!this.optionsAreValid(options)) {
+            return;
+        }
 
-            if (!this.optionsAreValid(options)) {
-                return;
-            }
+        const dataView = options && options.dataViews && options.dataViews[0];
 
-            const dataView = options && options.dataViews && options.dataViews[0];
+        this.dataView = dataView;
+        this.viewport = options.viewport;
 
-            this.dataView = dataView;
-            this.viewport = options.viewport;
+        this.isLegendNeeded = DataViewConverter.IsLegendNeeded(dataView);
 
-            this.isLegendNeeded = DataViewConverter.IsLegendNeeded(dataView);
+        this.updateMetaData();
 
-            this.updateMetaData();
+        this.settings = Visual.parseSettings(dataView);
+        this.updateSettings(this.settings, dataView);
 
-            this.settings = Visual.parseSettings(dataView);
-            this.updateSettings(this.settings, dataView);
+        this.legendProperties = legendUtils.setLegendProperties(dataView, this.host, this.settings.legend);
 
-            this.legendProperties = legendUtils.setLegendProperties(dataView, this.host, this.settings.legend);
+        this.allDataPoints = DataViewConverter.Convert(dataView, this.host, this.settings, this.legendProperties.colors);
 
-            this.allDataPoints = DataViewConverter.Convert(dataView, this.host, this.settings, this.legendProperties.colors);
+        if (this.isSmallMultiple()) {
+            this.smallMultipleProcess(options.viewport);
+        } else {
+            this.normalChartProcess(options);
+        }
 
-            if (this.isSmallMultiple()) {
-                this.smallMultipleProcess(options.viewport);
-            } else {
-                this.normalChartProcess(options);
-            }
+        if (!this.isSelectionRestored) {
+            this.restoreSelection();
 
-            if (!this.isSelectionRestored) {
-                this.restoreSelection();
-
-                this.isSelectionRestored = true;
-            }
-
-            console.log('=== RENDER END ===');
-        } catch (e) {
-            console.error('=== ERROR ===');
-            console.error(e);
-            throw e;
+            this.isSelectionRestored = true;
         }
     }
 
@@ -1184,10 +1174,6 @@ export class Visual implements IColumnVisual {
     }
 
     private finalRendering(): void {
-        const xAxisLabels = this.xAxisSvgGroup.selectAll("text");
-        // TODO Remove
-        let labelMaxHeight: number = visualUtils.getLabelsMaxHeight(xAxisLabels);
-
         // render axes labels
         RenderAxes.renderLabels(
             this.viewport,

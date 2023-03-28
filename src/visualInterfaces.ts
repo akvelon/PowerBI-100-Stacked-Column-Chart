@@ -48,17 +48,6 @@ export interface IAxes {
     xIsScalar?: boolean;
 }
 
-//     export interface VisualDataRow {
-//         rects: VisualDataRect[];
-//         category: PrimitiveValue;
-//     }
-//
-//     export interface VisualDataRect {
-//         value: PrimitiveValue;
-//         color?: string;
-//         selectionId?: ISelectionId;
-//     }
-
 export class VisualColumns {
     public Axis: DataViewValueColumn | null = null;
     public Legend: DataViewValueColumn | null = null;
@@ -161,11 +150,6 @@ export interface AxesDomains {
     xAxisDomain: number[];
 }
 
-//     export enum ScrollableAxisName {
-//         X = <any>'x',
-//         Y = <any>'y'
-//     }
-
 export type SelectionState = undefined | null | 'selected' | 'justSelected' | 'justRemoved';
 
 export interface LegendProperties {
@@ -173,10 +157,6 @@ export interface LegendProperties {
     data: LegendData;
     colors: string[];
 }
-
-//     export interface ChartOptions {
-//         maxYLabelWidth
-//     }
 
 export interface SmallMultipleOptions {
     rows: PrimitiveValue[],
