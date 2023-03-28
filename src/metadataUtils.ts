@@ -20,13 +20,14 @@ export function getMetadata(
     grouped: DataViewValueColumnGroup[],
     source: DataViewMetadataColumn): VisualMeasureMetadata {
 
-    let xAxisLabel: string = "",
-        yAxisLabel: string = "",
-        valueIndex: number = getMeasureIndexOfRole(grouped, ColumnValue),
-        categoryIndex: number = getCategoryIndexOfRole(categories, ColumnCategory),
-        gradientIndex: number = getMeasureIndexOfRole(grouped, ColumnGradient),
-        valueCol: DataViewMetadataColumn,
-        categoryCol: DataViewMetadataColumn;
+    const valueIndex: number = getMeasureIndexOfRole(grouped, ColumnValue);
+    const categoryIndex: number = getCategoryIndexOfRole(categories, ColumnCategory);
+    const gradientIndex: number = getMeasureIndexOfRole(grouped, ColumnGradient);
+
+    let xAxisLabel: string = "";
+    let yAxisLabel: string = "";
+    let valueCol: DataViewMetadataColumn;
+    let categoryCol: DataViewMetadataColumn;
 
     if (grouped && grouped.length) {
         const firstGroup: DataViewValueColumnGroup = grouped[0];

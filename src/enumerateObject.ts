@@ -51,7 +51,6 @@ export class EnumerateObject {
         instanceEnumeration: any,
         yIsScalar: boolean,
         visualData: VisualData) {
-
         const instances: VisualObjectInstance[] = (instanceEnumeration as VisualObjectInstanceEnumerationObject).instances;
         const instance: VisualObjectInstance = instances[0];
 
@@ -80,55 +79,7 @@ export class EnumerateObject {
                 break;
             }
             case "categoryAxis": {
-                if (!settings.categoryAxis.showTitle) {
-                    delete instance.properties["titleStyle"];
-                    delete instance.properties["axisTitleColor"];
-                    delete instance.properties["axisTitle"];
-                    delete instance.properties["titleFontSize"];
-                    delete instance.properties["titleFontFamily"];
-                }
-
-                if (!isSmallMultiple) {
-                    delete instance.properties["rangeType"];
-                    delete instance.properties["rangeTypeNoScalar"];
-                } else {
-                    if (yIsScalar && !isCategorical) {
-                        delete instance.properties["rangeTypeNoScalar"];
-                    } else {
-                        delete instance.properties["rangeType"];
-                    }
-                }
-
-                if (yIsScalar) {
-                    if (settings.categoryAxis.axisType === "categorical") {
-                        delete instance.properties["axisScale"];
-                        delete instance.properties["axisStyle"];
-                        delete instance.properties["displayUnits"];
-                        delete instance.properties["precision"];
-                        delete instance.properties["start"];
-                        delete instance.properties["end"];
-                    } else if (settings.categoryAxis.axisType === "continuous") {
-                        delete instance.properties["minCategoryWidth"];
-                        delete instance.properties["maximumSize"];
-                        delete instance.properties["innerPadding"];
-
-                        if (visualData.isSmallMultiple) {
-                            if (settings.categoryAxis.rangeType !== AxisRangeType.Custom) {
-                                delete instance.properties["start"];
-                                delete instance.properties["end"];
-                            }
-                        }
-                    }
-                } else {
-                    delete instance.properties["axisType"];
-                    delete instance.properties["axisScale"];
-                    delete instance.properties["axisStyle"];
-                    delete instance.properties["displayUnits"];
-                    delete instance.properties["precision"];
-                    delete instance.properties["start"];
-                    delete instance.properties["end"];
-                }
-
+                this.setCategoryAxis(settings, instance, visualData, isSmallMultiple, yIsScalar, isCategorical);
                 break;
             }
             case "valueAxis": {
@@ -178,6 +129,64 @@ export class EnumerateObject {
                 }
                 break;
             }
+        }
+    }
+
+    private static setCategoryAxis(
+        settings: VisualSettings,
+        instance: VisualObjectInstance,
+        visualData: VisualData,
+        isSmallMultiple: boolean,
+        yIsScalar: boolean,
+        isCategorical: boolean,
+    ) {
+        if (!settings.categoryAxis.showTitle) {
+            delete instance.properties["titleStyle"];
+            delete instance.properties["axisTitleColor"];
+            delete instance.properties["axisTitle"];
+            delete instance.properties["titleFontSize"];
+            delete instance.properties["titleFontFamily"];
+        }
+
+        if (!isSmallMultiple) {
+            delete instance.properties["rangeType"];
+            delete instance.properties["rangeTypeNoScalar"];
+        } else {
+            if (yIsScalar && !isCategorical) {
+                delete instance.properties["rangeTypeNoScalar"];
+            } else {
+                delete instance.properties["rangeType"];
+            }
+        }
+
+        if (yIsScalar) {
+            if (settings.categoryAxis.axisType === "categorical") {
+                delete instance.properties["axisScale"];
+                delete instance.properties["axisStyle"];
+                delete instance.properties["displayUnits"];
+                delete instance.properties["precision"];
+                delete instance.properties["start"];
+                delete instance.properties["end"];
+            } else if (settings.categoryAxis.axisType === "continuous") {
+                delete instance.properties["minCategoryWidth"];
+                delete instance.properties["maximumSize"];
+                delete instance.properties["innerPadding"];
+
+                if (visualData.isSmallMultiple) {
+                    if (settings.categoryAxis.rangeType !== AxisRangeType.Custom) {
+                        delete instance.properties["start"];
+                        delete instance.properties["end"];
+                    }
+                }
+            }
+        } else {
+            delete instance.properties["axisType"];
+            delete instance.properties["axisScale"];
+            delete instance.properties["axisStyle"];
+            delete instance.properties["displayUnits"];
+            delete instance.properties["precision"];
+            delete instance.properties["start"];
+            delete instance.properties["end"];
         }
     }
 }

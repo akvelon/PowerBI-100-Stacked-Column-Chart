@@ -44,8 +44,7 @@ export function calculateBarCoordianatesByData(data: VisualData, settings: Visua
 export function calculateBarCoordianates(dataPoints: VisualDataPoint[], axes: IAxes, settings: VisualSettings, dataPointThickness: number, isSmallMultiple: boolean = false): void {
     const categoryAxisIsContinuous: boolean = axes.xIsScalar && settings.categoryAxis.axisType !== "categorical";
 
-    const skipCategoryStartEnd: boolean = isSmallMultiple && settings.categoryAxis.rangeType !== AxisRangeType.Custom,
-        skipValueStartEnd: boolean = isSmallMultiple && settings.valueAxis.rangeType !== AxisRangeType.Custom;
+    const skipCategoryStartEnd: boolean = isSmallMultiple && settings.categoryAxis.rangeType !== AxisRangeType.Custom;
 
     const categoryAxisStartValue: number = categoryAxisIsContinuous && settings.categoryAxis.start ? settings.categoryAxis.start : -Number.MAX_VALUE;
     const categoryAxisEndValue: number = categoryAxisIsContinuous && settings.categoryAxis.end ? settings.categoryAxis.end : Number.MAX_VALUE;
@@ -70,7 +69,7 @@ export function calculateBarCoordianates(dataPoints: VisualDataPoint[], axes: IA
 
         const x: number = axes.x.scale(point.category);
 
-        const minYDomain = axes.y.dataDomain[1]
+        const minYDomain = axes.y.dataDomain[1];
         const maxYDomain = axes.y.dataDomain[0];
         if (point.shiftValue > maxYDomain) {
             setZeroCoordinatesForPoint(point);
@@ -78,8 +77,7 @@ export function calculateBarCoordianates(dataPoints: VisualDataPoint[], axes: IA
         }
 
         const fromValue: number = Math.max(point.shiftValue, minYDomain);
-        let fromCoordinate: number;
-        fromCoordinate = axes.y.scale(fromValue);
+        const fromCoordinate = axes.y.scale(fromValue);
         if (point.shiftValue + point.percentValueForHeight < minYDomain) {
             setZeroCoordinatesForPoint(point);
             return;
@@ -139,9 +137,7 @@ export function recalculateThicknessForContinuous(dataPoints: VisualDataPoint[],
         firstCoodinate = sortedBarCoordinates[i];
     }
 
-    if (minDistance < minWidth) {
-
-    } else if (minWidth < minDistance) {
+    if (minWidth < minDistance) {
         minWidth = minDistance;
     }
 
@@ -326,8 +322,6 @@ export function getFillOpacity(selected: boolean, highlight: boolean, hasSelecti
 
 const CategoryMinWidth: number = 1;
 const CategoryMaxWidth: number = 450;
-
-const CategoryContinuousMinHeight: number = 1;
 
 export function calculateDataPointThickness(
     visualDataPoints: VisualDataPoint[],

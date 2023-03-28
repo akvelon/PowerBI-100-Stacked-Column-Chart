@@ -32,7 +32,7 @@ export const enum Field {
     GroupedValues = "GroupedValues",
 }
 
-export class DataViewConverter<T> {
+export class DataViewConverter {
     private static Highlighted: string = "Highlighted";
     private static Blank: string = "(Blank)";
     private static percentFormatString: string = "#,0.00%";

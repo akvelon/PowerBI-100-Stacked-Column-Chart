@@ -71,7 +71,7 @@ export class LassoSelection {
             });
     }
 
-    update<Datum>(bars: d3Selection<any>): void {
+    update(bars: d3Selection<any>): void {
         this.visibleBars = [];
         const barsArray = this.visibleBars;
         bars.each(function () {

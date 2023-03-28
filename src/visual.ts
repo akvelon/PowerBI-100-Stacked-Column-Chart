@@ -188,7 +188,7 @@ export class Visual implements IColumnVisual {
             .filter(d => d.selected)
             .each(d => {
                 // saving prototype value if no own value (needed for legend)
-                d.identity = d.identity;
+                d.identity = Object.getPrototypeOf(d).identity;
             });
 
         const data: any[] = selected.data();
@@ -243,7 +243,7 @@ export class Visual implements IColumnVisual {
         this.lassoSelection.init(this.mainElement);
 
         if (this.isLegendNeeded) {
-            legendUtils.renderLegend(this.legend, this.mainSvgElement, options.viewport, this.legendProperties, this.legendElement);
+            legendUtils.renderLegend(this.legend, this.mainSvgElement, options.viewport, this.legendProperties);
         } else {
             this.legendElement && this.legendElement.selectAll("*").remove();
             this.mainSvgElement && this.mainSvgElement.style(
@@ -448,7 +448,7 @@ export class Visual implements IColumnVisual {
     public calculateXAxisSizeForCategorical(values: PrimitiveValue[], settings: VisualSettings, metadata: VisualMeasureMetadata, barHeight: number): number {
         let formatter: IValueFormatter;
 
-        if (typeof (values.some(x => x && (<any>x).getMonth === 'function'))) {
+        if (values.some(x => x && typeof (<any>x).getMonth === 'function')) {
             if (metadata.cols.category) {
                 formatter = valueFormatter.create({
                     format: valueFormatter.getFormatStringByColumn(<any>metadata.cols.category, true) || metadata.cols.category.format,
@@ -584,6 +584,7 @@ export class Visual implements IColumnVisual {
         );
     }
 
+    // eslint-disable-next-line max-lines-per-function
     public smallMultipleProcess(viewport: IViewport) {
         const uniqueColumns = this.allDataPoints.map(x => x.columnBy).filter((v, i, a) => a.indexOf(v) === i);
         const uniqueRows = this.allDataPoints.map(x => x.rowBy).filter((v, i, a) => a.indexOf(v) === i);
@@ -606,7 +607,7 @@ export class Visual implements IColumnVisual {
         };
 
         if (this.isLegendNeeded) {
-            legendUtils.renderLegend(this.legend, this.mainDivElement, this.viewport, this.legendProperties, this.legendElement);
+            legendUtils.renderLegend(this.legend, this.mainDivElement, this.viewport, this.legendProperties);
             legendSize = this.calculateLegendSize(this.settings.legend, this.legendElementRoot);
         } else {
             this.legendElement && this.legendElement.selectAll("*").remove();

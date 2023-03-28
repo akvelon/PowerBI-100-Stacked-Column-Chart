@@ -42,6 +42,7 @@ export class RenderAxes {
     private static YAxisLabelTransformRotate: string = "rotate(-90)";
     private static DefaultDY: string = "1em";
 
+    // eslint-disable-next-line max-lines-per-function
     public static createD3Axes(
         axesDomains: AxesDomains,
         size: ISize,

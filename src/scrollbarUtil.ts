@@ -281,9 +281,8 @@ export class ScrollBar {
 
         const visibleCategoriesCount: number = this.visibleDataPointsByCategories.length;
         const allCategoriesCount: number = this.visual.getDataPointsByCategories().length;
-        let handleSize: number;
 
-        handleSize = track.width * (visibleCategoriesCount / allCategoriesCount);
+        const handleSize = track.width * (visibleCategoriesCount / allCategoriesCount);
         this.handle.style('width', handleSize + 'px');
         track.availableScrollDistance = track.width - handleSize;
     }

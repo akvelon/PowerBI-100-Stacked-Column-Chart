@@ -216,7 +216,7 @@ class Preselection {
         const self: Preselection = this;
 
         if (!ctrlKey) {
-            self.action = SelectionAction.Add;
+            this.action = SelectionAction.Add;
         }
 
         bars.each(function (d: VisualDataPoint) {
@@ -326,21 +326,18 @@ class DomItems {
 
     private setStroke(hasSelection: boolean) {
         this.bars.each(function (d: VisualDataPoint) {
-            const bar: HTMLElement = this;
-            bar.style.stroke = hasSelection ? "#000000" : d.color;
+            this.style.stroke = hasSelection ? "#000000" : d.color;
         });
     }
 
     private setOpacity(opacity: number, calculateOpacity?: ((d: VisualDataPoint) => number)): void {
         this.bars.each(function (d: VisualDataPoint) {
-            const bar: HTMLElement = this;
             const opacityValue: number = opacity ? opacity : calculateOpacity(d);
 
-            bar.style.fillOpacity = opacityValue.toString();
-            bar.style.strokeOpacity = opacityValue.toString();
+            this.style.fillOpacity = opacityValue.toString();
+            this.style.strokeOpacity = opacityValue.toString();
         });
     }
-
 }
 
 class Lasso {
