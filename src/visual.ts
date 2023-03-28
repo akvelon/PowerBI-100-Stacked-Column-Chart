@@ -193,6 +193,7 @@ export class Visual implements IColumnVisual {
             .filter(d => d.selected)
             .each(d => {
                 // saving prototype value if no own value (needed for legend)
+                // eslint-disable-next-line no-self-assign
                 d.identity = d.identity;
             });
 
@@ -248,7 +249,7 @@ export class Visual implements IColumnVisual {
         this.lassoSelection.init(this.mainElement);
 
         if (this.isLegendNeeded) {
-            legendUtils.renderLegend(this.legend, this.mainSvgElement, options.viewport, this.legendProperties, this.legendElement);
+            legendUtils.renderLegend(this.legend, this.mainSvgElement, options.viewport, this.legendProperties);
         } else {
             this.legendElement && this.legendElement.selectAll("*").remove();
             this.mainSvgElement && this.mainSvgElement.style(
@@ -618,7 +619,7 @@ export class Visual implements IColumnVisual {
         };
 
         if (this.isLegendNeeded) {
-            legendUtils.renderLegend(this.legend, this.mainDivElement, this.viewport, this.legendProperties, this.legendElement);
+            legendUtils.renderLegend(this.legend, this.mainDivElement, this.viewport, this.legendProperties);
             legendSize = this.calculateLegendSize(this.settings.legend, this.legendElementRoot);
         } else {
             this.legendElement && this.legendElement.selectAll("*").remove();
