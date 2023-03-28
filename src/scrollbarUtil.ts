@@ -107,7 +107,7 @@ export class ScrollBar {
     updateData(action: ScrollbarState, updateType: VisualUpdateType): void {
         this.settings.minCategorySpace = this.visual.getSettings().categoryAxis.minCategoryWidth;
 
-        let availableSpace: number = this.visual.viewport.width - this.visual.visualMargin.left - this.visual.visualMargin.right;
+        const availableSpace: number = this.visual.viewport.width - this.visual.visualMargin.left - this.visual.visualMargin.right;
 
         this.capacity = Math.floor(availableSpace / this.settings.minCategorySpace);
         this.scrolling.positionsCount = this.visual.categoriesCount - this.capacity;
@@ -140,8 +140,8 @@ export class ScrollBar {
     }
 
     getIndexOfFirstVisibleDataPoint(): number {
-        let allDataPoints: VisualDataPoint[] = this.visual.getAllDataPoints().filter(x => !x.highlight);
-        let firstVisibleDataPoint: VisualDataPoint = this.visibleDataPoints[0];
+        const allDataPoints: VisualDataPoint[] = this.visual.getAllDataPoints().filter(x => !x.highlight);
+        const firstVisibleDataPoint: VisualDataPoint = this.visibleDataPoints[0];
 
         for (let i: number = 0; i < allDataPoints.length; i++) {
             if (allDataPoints[i] === firstVisibleDataPoint) {
@@ -214,7 +214,7 @@ export class ScrollBar {
         this.visibleDataPointsByCategories = [];
         this.visibleDataPoints = [];
 
-        let dataPointsByCategories: CategoryDataPoints[] = this.visual.getDataPointsByCategories();
+        const dataPointsByCategories: CategoryDataPoints[] = this.visual.getDataPointsByCategories();
 
         for (let categoryIndex: number = 0; categoryIndex < dataPointsByCategories.length; categoryIndex++) {
             if (categoryIndex < this.scrolling.currentPosition) {
@@ -256,17 +256,17 @@ export class ScrollBar {
     }
 
     private updateMeasurements(): void {
-        let visualTranslation = this.visual.getVisualTranslation();
+        const visualTranslation = this.visual.getVisualTranslation();
         const track: Track = this.track;
 
-        let leftMargin: number = this.visual.settings.valueAxis.position === "left" ? this.visual.axesSize.yAxisWidth + this.visual.yTickOffset : 0;
+        const leftMargin: number = this.visual.settings.valueAxis.position === "left" ? this.visual.axesSize.yAxisWidth + this.visual.yTickOffset : 0;
 
         track.height = this.settings.trackSize;
         track.width = this.visual.visualSize.width;
         track.left = visualTranslation.x + leftMargin;
         track.top = this.visual.viewport.height - this.settings.trackSize;
 
-        let legendPosition = this.visual.settings.legend.position;
+        const legendPosition = this.visual.settings.legend.position;
 
         if (legendPosition === 'Left' || legendPosition === 'LeftCenter') {
             track.left += this.visual.legendSize.width;
@@ -279,8 +279,8 @@ export class ScrollBar {
             .style('height', this.track.height + 'px')
             .style('width', this.track.width + 'px');
 
-        let visibleCategoriesCount: number = this.visibleDataPointsByCategories.length;
-        let allCategoriesCount: number = this.visual.getDataPointsByCategories().length;
+        const visibleCategoriesCount: number = this.visibleDataPointsByCategories.length;
+        const allCategoriesCount: number = this.visual.getDataPointsByCategories().length;
         let handleSize: number;
 
         handleSize = track.width * (visibleCategoriesCount / allCategoriesCount);
@@ -299,7 +299,7 @@ export class ScrollBar {
             this.scrolling.currentCoord = this.track.availableScrollDistance;
         }
 
-        let transform: string = `translateX(${this.scrolling.currentCoord}px)`;
+        const transform: string = `translateX(${this.scrolling.currentCoord}px)`;
         this.handle.style('transform', transform);
     }
 }

@@ -35,7 +35,7 @@ export class WebBehavior implements IInteractiveBehavior {
     }
 
     public renderSelection(hasSelection: boolean) {
-        let hasHighlight = this.visual.getAllDataPoints().filter(x => x.highlight).length > 0;
+        const hasHighlight = this.visual.getAllDataPoints().filter(x => x.highlight).length > 0;
 
         this.options.bars.style(
             "fill-opacity", (p: VisualDataPoint) => visualUtils.getFillOpacity(

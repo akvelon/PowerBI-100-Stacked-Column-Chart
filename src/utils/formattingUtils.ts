@@ -29,8 +29,8 @@ export function getValueForFormatter(data: VisualData) {
 }
 
 export function getTextProperties(settings: CategoryLabelsSettings): TextProperties {
-    let fontSizeInPx: string = PixelConverter.fromPoint(settings.fontSize);
-    let fontFamily: string = settings.fontFamily ? settings.fontFamily : dataLabelUtils.LabelTextProperties.fontFamily;
+    const fontSizeInPx: string = PixelConverter.fromPoint(settings.fontSize);
+    const fontFamily: string = settings.fontFamily ? settings.fontFamily : dataLabelUtils.LabelTextProperties.fontFamily;
 
     return {
         fontSize: fontSizeInPx.toString(),
@@ -39,7 +39,7 @@ export function getTextProperties(settings: CategoryLabelsSettings): TextPropert
 }
 
 export function getTextPropertiesForHeightCalculation(settings: CategoryLabelsSettings): TextProperties {
-    let fontFamily: string = settings.fontFamily ? settings.fontFamily : dataLabelUtils.LabelTextProperties.fontFamily;
+    const fontFamily: string = settings.fontFamily ? settings.fontFamily : dataLabelUtils.LabelTextProperties.fontFamily;
 
     return {
         fontSize: settings.fontSize.toString(),

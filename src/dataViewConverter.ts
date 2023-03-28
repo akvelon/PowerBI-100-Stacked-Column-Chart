@@ -126,7 +126,7 @@ export class DataViewConverter<T> {
         const columns: DataViewMetadataColumn[] = dataView.metadata.columns;
         let valueFieldsCount: number = 0;
 
-        for (let columnName in columns) {
+        for (const columnName in columns) {
             const column: DataViewMetadataColumn = columns[columnName];
 
             if (column.roles && column.roles[Field.Value]) {
@@ -142,18 +142,18 @@ export class DataViewConverter<T> {
 
     // Legend bucket is filled
     private static GetDataPointsForSameAxisAndLegend(dataView: DataView, hostService: IVisualHost, legendColors: Array<string>): VisualDataPoint[] {
-        let columns: VisualColumns = this.GetGroupedValueColumns(dataView);
+        const columns: VisualColumns = this.GetGroupedValueColumns(dataView);
 
-        let data: VisualDataPoint[] = [];
+        const data: VisualDataPoint[] = [];
 
-        let seriesColumn: DataViewValueColumns = columns[Field.GroupedValues];
-        let groupedValues: DataViewValueColumnGroup[] = seriesColumn.grouped ? seriesColumn.grouped() : null;
+        const seriesColumn: DataViewValueColumns = columns[Field.GroupedValues];
+        const groupedValues: DataViewValueColumnGroup[] = seriesColumn.grouped ? seriesColumn.grouped() : null;
 
         (<any>columns[Field.Legend]).forEach((legend, k) => {
-            let value: number = columns[Field.Value][k].values[0];
-            let color = legendColors[k];
+            const value: number = columns[Field.Value][k].values[0];
+            const color = legendColors[k];
 
-            let tooltipItems: VisualTooltipDataItem[] = [];
+            const tooltipItems: VisualTooltipDataItem[] = [];
 
             const groupMetadata: DataViewMetadataColumn = columns[Field.GroupedValues].source,
                 valueMetadata: DataViewMetadataColumn = columns[Field.Value][k].source;
@@ -170,7 +170,7 @@ export class DataViewConverter<T> {
                 });
             }
 
-            let identity: ISelectionId = hostService.createSelectionIdBuilder()
+            const identity: ISelectionId = hostService.createSelectionIdBuilder()
                 .withSeries(columns[Field.GroupedValues], groupedValues[k])
                 .withMeasure(seriesColumn[k].source.queryName)
                 .createSelectionId();
@@ -189,10 +189,10 @@ export class DataViewConverter<T> {
                     tooltips: tooltipItems
                 });
 
-                let highlightValue: number = columns[Field.Value][k].highlights ? columns[Field.Value][k].highlights[0] : null;
+                const highlightValue: number = columns[Field.Value][k].highlights ? columns[Field.Value][k].highlights[0] : null;
 
                 if (highlightValue != null) {
-                    let highlightTooltipItems: VisualTooltipDataItem[] = tooltipItems.slice();
+                    const highlightTooltipItems: VisualTooltipDataItem[] = tooltipItems.slice();
 
                     highlightTooltipItems.push(this.createPercentTooltipData(valueMetadata, highlightValue, 1, this.Highlighted));
 
@@ -218,11 +218,11 @@ export class DataViewConverter<T> {
 
     // Legend bucket is filled
     private static GetDataPointsForLegend(dataView: DataView, hostService: IVisualHost, legendColors: Array<string>): VisualDataPoint[] {
-        let columns = this.GetGroupedValueColumns(dataView);
+        const columns = this.GetGroupedValueColumns(dataView);
 
-        let data: VisualDataPoint[] = [];
+        const data: VisualDataPoint[] = [];
 
-        let categoryColumn = columns[Field.Axis][0],
+        const categoryColumn = columns[Field.Axis][0],
             seriesColumn: DataViewValueColumns = columns[Field.GroupedValues],
             groupedValues: DataViewValueColumnGroup[] = seriesColumn.grouped ? seriesColumn.grouped() : null;
 
@@ -230,24 +230,24 @@ export class DataViewConverter<T> {
             let sum: number = 0;
             let negativeSum: number = 0;
 
-            let columnBy: PrimitiveValue = columns[Field.ColumnBy] && columns[Field.ColumnBy][0].values[i],
+            const columnBy: PrimitiveValue = columns[Field.ColumnBy] && columns[Field.ColumnBy][0].values[i],
                 rowBy: PrimitiveValue = columns[Field.RowBy] && columns[Field.RowBy][0].values[i];
 
-            let categorySum: number = d3sum((<any>columns[Field.Value]).map(x => x.values[i] >= 0 ? x.values[i] : -x.values[i]));
+            const categorySum: number = d3sum((<any>columns[Field.Value]).map(x => x.values[i] >= 0 ? x.values[i] : -x.values[i]));
 
             (<any>columns[Field.Legend]).forEach((legend, k) => {
-                let value: number = columns[Field.Value][k].values[i];
-                let percentageValue: number = value / categorySum;
-                let color = legendColors[k];
+                const value: number = columns[Field.Value][k].values[i];
+                const percentageValue: number = value / categorySum;
+                const color = legendColors[k];
 
-                let identity: ISelectionId = hostService.createSelectionIdBuilder()
+                const identity: ISelectionId = hostService.createSelectionIdBuilder()
                     .withCategory(categoryColumn, i)
                     .withSeries(seriesColumn, groupedValues[k])
                     .withMeasure(seriesColumn[k].source.queryName)
                     .createSelectionId();
 
                 if (value != null) {
-                    let tooltipItems: VisualTooltipDataItem[] = [];
+                    const tooltipItems: VisualTooltipDataItem[] = [];
 
                     const categoryMetadata: DataViewMetadataColumn = categoryColumn.source,
                         groupMetadata: DataViewMetadataColumn = columns[Field.GroupedValues].source,
@@ -281,11 +281,11 @@ export class DataViewConverter<T> {
                         rowBy: rowBy
                     });
 
-                    let highlightValue: number = columns[Field.Value][k].highlights ? columns[Field.Value][k].highlights[i] : null;
+                    const highlightValue: number = columns[Field.Value][k].highlights ? columns[Field.Value][k].highlights[i] : null;
 
                     if (highlightValue != null) {
-                        let highlightPercentage: number = highlightValue / categorySum;
-                        let highlightTooltipItems: VisualTooltipDataItem[] = tooltipItems.slice();
+                        const highlightPercentage: number = highlightValue / categorySum;
+                        const highlightTooltipItems: VisualTooltipDataItem[] = tooltipItems.slice();
 
                         highlightTooltipItems.push(this.createPercentTooltipData(valueMetadata, value, percentageValue, this.Highlighted));
 
@@ -317,33 +317,33 @@ export class DataViewConverter<T> {
 
     // Legend bucket is empty. Used multiple fields in "Value" bucket
     private static GetDataPointsForMultipleValues(dataView: DataView, hostService: IVisualHost, legendColors: Array<string>): VisualDataPoint[] {
-        let columns: VisualColumns = this.GetColumnsForMultipleValues(dataView);
+        const columns: VisualColumns = this.GetColumnsForMultipleValues(dataView);
 
-        let data: VisualDataPoint[] = [];
+        const data: VisualDataPoint[] = [];
 
-        let categoryColumn: DataViewCategoryColumn = columns[Field.Axis][0];
+        const categoryColumn: DataViewCategoryColumn = columns[Field.Axis][0];
 
         categoryColumn.values.forEach((category, i) => {
             let sum: number = 0;
             let negativeSum: number = 0;
 
-            let categorySum: number = d3sum((<any>columns[Field.Value]).map(x => x.values[i] >= 0 ? x.values[i] : -x.values[i]));
+            const categorySum: number = d3sum((<any>columns[Field.Value]).map(x => x.values[i] >= 0 ? x.values[i] : -x.values[i]));
 
             (<any>columns[Field.Value]).forEach((valueColumn, k) => {
-                let value: number = valueColumn.values[i];
-                let color = legendColors[k];
-                let percentageValue: number = value / categorySum;
+                const value: number = valueColumn.values[i];
+                const color = legendColors[k];
+                const percentageValue: number = value / categorySum;
 
-                let columnBy: PrimitiveValue = columns[Field.ColumnBy] && columns[Field.ColumnBy][0].values[i],
+                const columnBy: PrimitiveValue = columns[Field.ColumnBy] && columns[Field.ColumnBy][0].values[i],
                     rowBy: PrimitiveValue = columns[Field.RowBy] && columns[Field.RowBy][0].values[i];
 
-                let identity: ISelectionId = hostService.createSelectionIdBuilder()
+                const identity: ISelectionId = hostService.createSelectionIdBuilder()
                     .withCategory(categoryColumn, i)
                     .withMeasure(columns.Value[k].source.queryName)
                     .createSelectionId();
 
                 if (value != null) {
-                    let tooltipItems: VisualTooltipDataItem[] = [];
+                    const tooltipItems: VisualTooltipDataItem[] = [];
 
                     const categoryMetadata: DataViewMetadataColumn = categoryColumn.source,
                         valueMetadata: DataViewMetadataColumn = valueColumn.source;
@@ -374,11 +374,11 @@ export class DataViewConverter<T> {
                         rowBy: rowBy
                     });
 
-                    let highlightValue: number = valueColumn.highlights ? valueColumn.highlights[i] : null;
+                    const highlightValue: number = valueColumn.highlights ? valueColumn.highlights[i] : null;
 
                     if (highlightValue != null) {
-                        let highlightPercentage: number = highlightValue / categorySum;
-                        let highlightTooltipItems: VisualTooltipDataItem[] = tooltipItems.slice();
+                        const highlightPercentage: number = highlightValue / categorySum;
+                        const highlightTooltipItems: VisualTooltipDataItem[] = tooltipItems.slice();
 
                         highlightTooltipItems.push(this.createPercentTooltipData(valueMetadata, highlightValue, highlightPercentage, this.Highlighted));
 
@@ -409,13 +409,13 @@ export class DataViewConverter<T> {
 
     // Legend bucket is empty. Single field in "Value" bucket
     private static GetDataPointsWithoutLegend(dataView: DataView, hostService: IVisualHost, settings: VisualSettings): VisualDataPoint[] {
-        let columns: VisualColumns = this.GetColumnsWithNoLegend(dataView);
+        const columns: VisualColumns = this.GetColumnsWithNoLegend(dataView);
 
-        let data: VisualDataPoint[] = [];
+        const data: VisualDataPoint[] = [];
 
-        let categoryColumn: DataViewCategoryColumn = columns[Field.Axis][0];
+        const categoryColumn: DataViewCategoryColumn = columns[Field.Axis][0];
 
-        let colorHelper = new ColorHelper(
+        const colorHelper = new ColorHelper(
             hostService.colorPalette,
             {
                 objectName: "dataPoint",
@@ -429,19 +429,19 @@ export class DataViewConverter<T> {
                 colorSaturationCol = columns[Field.Gradient],
                 colorSaturation: number = colorSaturationCol && colorSaturationCol.values[i] ? columns[Field.Gradient].values[i] : null;
 
-            let columnBy: PrimitiveValue = columns[Field.ColumnBy] && columns[Field.ColumnBy][0].values[i],
+            const columnBy: PrimitiveValue = columns[Field.ColumnBy] && columns[Field.ColumnBy][0].values[i],
                 rowBy: PrimitiveValue = columns[Field.RowBy] && columns[Field.RowBy][0].values[i];
 
-            let identity: ISelectionId = hostService.createSelectionIdBuilder()
+            const identity: ISelectionId = hostService.createSelectionIdBuilder()
                 .withCategory(categoryColumn, i)
                 .createSelectionId();
 
             if (value != null) {
-                let color = colorHelper.getColorForMeasure(
+                const color = colorHelper.getColorForMeasure(
                     categoryColumn.objects && categoryColumn.objects[i],
                     "");
 
-                let tooltipItems: VisualTooltipDataItem[] = [];
+                const tooltipItems: VisualTooltipDataItem[] = [];
 
                 const categoryMetadata: DataViewMetadataColumn = categoryColumn.source,
                     valueMetadata: DataViewMetadataColumn = (<any>columns[Field.Value]).source;
@@ -473,14 +473,14 @@ export class DataViewConverter<T> {
                     rowBy: rowBy
                 });
 
-                let highlightValue: number = (<any>columns[Field.Value]).highlights ? (<any>columns[Field.Value]).highlights[i] : null;
+                const highlightValue: number = (<any>columns[Field.Value]).highlights ? (<any>columns[Field.Value]).highlights[i] : null;
 
                 if (highlightValue != null) {
-                    let highlightTooltipItems: VisualTooltipDataItem[] = tooltipItems.slice();
+                    const highlightTooltipItems: VisualTooltipDataItem[] = tooltipItems.slice();
 
                     highlightTooltipItems.push(this.createPercentTooltipData(valueMetadata, highlightValue, 1, this.Highlighted));
 
-                    let percentValue: number = highlightValue / value;
+                    const percentValue: number = highlightValue / value;
 
                     data.push({
                         category: category !== 0 && !category ? "(Blank)" : category,
@@ -504,20 +504,20 @@ export class DataViewConverter<T> {
     }
 
     private static GetGroupedValueColumns(dataView: DataView): VisualColumns {
-        let categorical: DataViewCategorical | undefined = dataView && dataView.categorical;
-        let categories: DataViewCategoricalColumn[] | undefined = categorical && categorical.categories || [];
-        let values: DataViewValueColumns | undefined = categorical && categorical.values;
-        let series: PrimitiveValue[] | undefined = categorical && values.source && this.getSeriesValues(dataView);
-        let grouped: DataViewValueColumnGroup[] | undefined = values && values.grouped();
+        const categorical: DataViewCategorical | undefined = dataView && dataView.categorical;
+        const categories: DataViewCategoricalColumn[] | undefined = categorical && categorical.categories || [];
+        const values: DataViewValueColumns | undefined = categorical && categorical.values;
+        const series: PrimitiveValue[] | undefined = categorical && values.source && this.getSeriesValues(dataView);
+        const grouped: DataViewValueColumnGroup[] | undefined = values && values.grouped();
 
-        let data: VisualColumns = new VisualColumns();
+        const data: VisualColumns = new VisualColumns();
 
         if (grouped) {
             data[Field.GroupedValues] = values;
 
             grouped.forEach(x => {
-                for (let prop in data) {
-                    let columnArray = x.values.filter(y => y.source.roles[prop]);
+                for (const prop in data) {
+                    const columnArray = x.values.filter(y => y.source.roles[prop]);
 
                     if (columnArray.length) {
                         if (!data[prop]) {
@@ -531,8 +531,8 @@ export class DataViewConverter<T> {
         }
 
         if (categorical) {
-            for (let prop in data) {
-                let columnArray = categories.filter(y => y.source.roles[prop]);
+            for (const prop in data) {
+                const columnArray = categories.filter(y => y.source.roles[prop]);
 
                 if (columnArray.length) {
                     data[prop] = columnArray;
@@ -548,14 +548,14 @@ export class DataViewConverter<T> {
     }
 
     private static GetColumnsForMultipleValues(dataView: DataView): VisualColumns {
-        let categorical = dataView && dataView.categorical;
-        let categories: DataViewCategoricalColumn[] = categorical && categorical.categories || [];
-        let values: DataViewValueColumns = categorical && categorical.values;
+        const categorical = dataView && dataView.categorical;
+        const categories: DataViewCategoricalColumn[] = categorical && categorical.categories || [];
+        const values: DataViewValueColumns = categorical && categorical.values;
 
-        let data: VisualColumns = new VisualColumns();
+        const data: VisualColumns = new VisualColumns();
 
         if (categorical && values) {
-            let valueColumns = values.filter(y => y.source.roles[Field.Value]);
+            const valueColumns = values.filter(y => y.source.roles[Field.Value]);
 
             if (valueColumns.length) {
                 if (!data[Field.Value]) {
@@ -563,7 +563,7 @@ export class DataViewConverter<T> {
                 }
             }
 
-            let toolipColumns = values.filter(y => y.source.roles[Field.Tooltips]);
+            const toolipColumns = values.filter(y => y.source.roles[Field.Tooltips]);
 
             if (toolipColumns.length) {
                 if (!data[Field.Tooltips]) {
@@ -571,8 +571,8 @@ export class DataViewConverter<T> {
                 }
             }
 
-            for (let prop in data) {
-                let columnArray = categories.filter(y => y.source.roles[prop]);
+            for (const prop in data) {
+                const columnArray = categories.filter(y => y.source.roles[prop]);
 
                 if (columnArray.length) {
                     data[prop] = columnArray;
@@ -584,14 +584,14 @@ export class DataViewConverter<T> {
     }
 
     private static GetColumnsWithNoLegend(dataView: DataView): VisualColumns {
-        let categorical: DataViewCategorical = dataView && dataView.categorical;
-        let categories: DataViewCategoricalColumn[] = categorical && categorical.categories || [];
-        let values: DataViewValueColumns = categorical && categorical.values;
+        const categorical: DataViewCategorical = dataView && dataView.categorical;
+        const categories: DataViewCategoricalColumn[] = categorical && categorical.categories || [];
+        const values: DataViewValueColumns = categorical && categorical.values;
 
-        let data: VisualColumns = new VisualColumns();
+        const data: VisualColumns = new VisualColumns();
 
         if (categorical && values) {
-            let valueColumns = values.filter(y => y.source.roles[Field.Value]);
+            const valueColumns = values.filter(y => y.source.roles[Field.Value]);
 
             if (valueColumns.length) {
                 if (!data[Field.Value]) {
@@ -599,7 +599,7 @@ export class DataViewConverter<T> {
                 }
             }
 
-            let toolipColumns = values.filter(y => y.source.roles[Field.Tooltips]);
+            const toolipColumns = values.filter(y => y.source.roles[Field.Tooltips]);
 
             if (toolipColumns.length) {
                 if (!data[Field.Tooltips]) {
@@ -607,8 +607,8 @@ export class DataViewConverter<T> {
                 }
             }
 
-            for (let prop in data) {
-                let columnArray = categories.filter(y => y.source.roles[prop]);
+            for (const prop in data) {
+                const columnArray = categories.filter(y => y.source.roles[prop]);
 
                 if (columnArray.length) {
                     data[prop] = columnArray;
@@ -639,14 +639,14 @@ export class DataViewConverter<T> {
     }
 
     private static getFormattedValue(column: DataViewMetadataColumn, value: any) {
-        let formatString: string = this.getFormatStringFromColumn(column);
+        const formatString: string = this.getFormatStringFromColumn(column);
 
         return valueFormatter.format(value, formatString);
     }
 
     private static getFormatStringFromColumn(column: DataViewMetadataColumn): string {
         if (column) {
-            let formatString: string = valueFormatter.getFormatStringByColumn(<any>column, false);
+            const formatString: string = valueFormatter.getFormatStringByColumn(<any>column, false);
 
             return formatString || column.format;
         }

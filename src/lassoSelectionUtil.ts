@@ -73,7 +73,7 @@ export class LassoSelection {
 
     update<Datum>(bars: d3Selection<any>): void {
         this.visibleBars = [];
-        let barsArray = this.visibleBars;
+        const barsArray = this.visibleBars;
         bars.each(function () {
             barsArray.push(this);
         });
@@ -129,10 +129,10 @@ export class LassoSelection {
         });
         this.setRectPos(this.selection.x, this.selection.y);
         this.setRectSize(this.selection.width, this.selection.height);
-        let scrollIndex: number = this.indexOfFirstVisibleDataPoint;
+        const scrollIndex: number = this.indexOfFirstVisibleDataPoint;
         for (let i: number = 0; i < this.visibleBars.length; i++) {
-            let collided: boolean = this.detectCollision(this.visibleBars[i]);
-            let state: SelectionState = this.selectionStates[scrollIndex + i];
+            const collided: boolean = this.detectCollision(this.visibleBars[i]);
+            const state: SelectionState = this.selectionStates[scrollIndex + i];
             if (collided) {
                 // Firstly catch the case when we enable the "remove" mode
                 if (
@@ -177,10 +177,10 @@ export class LassoSelection {
         }
 
         if (!this.selection.mousemoved) { // Selection by click
-            let target: HTMLElement = this.selection.clickEvent.target as HTMLElement;
-            let scrollIndex: number = this.indexOfFirstVisibleDataPoint;
+            const target: HTMLElement = this.selection.clickEvent.target as HTMLElement;
+            const scrollIndex: number = this.indexOfFirstVisibleDataPoint;
             if (d3select(target).classed(this.visual.barClassName)) {
-                let targetIndex = this.visibleBars.indexOf(target);
+                const targetIndex = this.visibleBars.indexOf(target);
                 if (this.selection.clickEvent.ctrlKey) {
                     if (this.selectionStates[scrollIndex + targetIndex] != null) {
                         this.selectionStates[scrollIndex + targetIndex] = 'justRemoved';
@@ -201,7 +201,7 @@ export class LassoSelection {
     }
 
     private isEntireCategorySelection(): boolean {
-        let dataView: DataView = this.visual.getDataView();
+        const dataView: DataView = this.visual.getDataView();
         return (
             DataViewConverter.IsMultipleValues(dataView)
             && !DataViewConverter.IsLegendFilled(dataView)
@@ -213,16 +213,16 @@ export class LassoSelection {
     }
 
     private selectEntireCategories(): void {
-        let dataPointsByCategories: CategoryDataPoints[] = this.visual.getDataPointsByCategories();
+        const dataPointsByCategories: CategoryDataPoints[] = this.visual.getDataPointsByCategories();
         let allDataPointsIndex: number = 0;
 
         for (let categoryIndex: number = 0; categoryIndex < dataPointsByCategories.length; categoryIndex++) {
-            let dataPoints: VisualDataPoint[] = dataPointsByCategories[categoryIndex].dataPoints;
-            let firstItemIndex: number = allDataPointsIndex;
-            let categorySelectionStates: SelectionState[] = [];
+            const dataPoints: VisualDataPoint[] = dataPointsByCategories[categoryIndex].dataPoints;
+            const firstItemIndex: number = allDataPointsIndex;
+            const categorySelectionStates: SelectionState[] = [];
 
             for (let categoryDataPointsIndex: number = 0; categoryDataPointsIndex < dataPoints.length; categoryDataPointsIndex++) {
-                let selectionState: SelectionState = this.selectionStates[allDataPointsIndex];
+                const selectionState: SelectionState = this.selectionStates[allDataPointsIndex];
                 categorySelectionStates.push(selectionState);
                 allDataPointsIndex++;
             }
@@ -244,10 +244,10 @@ export class LassoSelection {
         if (this.selectionStates.indexOf('justSelected') > -1 && this.selectionStates.indexOf('justRemoved') !== -1) {
             throw new Error('"justSelected" and "justRemoved" items can\'t appear at the same time!');
         }
-        let allDataPoints: VisualDataPoint[] = this.visual.getAllDataPoints();
-        let handledDataPoints: VisualDataPoint[] = [];
+        const allDataPoints: VisualDataPoint[] = this.visual.getAllDataPoints();
+        const handledDataPoints: VisualDataPoint[] = [];
 
-        let isMultiselect: boolean = e.ctrlKey;
+        const isMultiselect: boolean = e.ctrlKey;
 
         for (let i: number = 0; i < allDataPoints.length; i++) {
             switch (this.selectionStates[i]) {
@@ -288,15 +288,15 @@ export class LassoSelection {
 
     // DOM
     private updateFillOpacity(): void {
-        let scrollIndex: number = this.indexOfFirstVisibleDataPoint;
+        const scrollIndex: number = this.indexOfFirstVisibleDataPoint;
         if (this.selectionStates.indexOf('selected') === -1 && this.selectionStates.indexOf('justSelected') === -1) {
             for (let i: number = 0; i < this.visibleBars.length; i++) {
                 d3select(this.visibleBars[i]).style('fill-opacity', DefaultOpacity);
             }
         } else {
             for (let i: number = 0; i < this.visibleBars.length; i++) {
-                let bar: HTMLElement = this.visibleBars[i];
-                let d3_bar: d3Selection<SVGRectElement> = d3select(bar);
+                const bar: HTMLElement = this.visibleBars[i];
+                const d3_bar: d3Selection<SVGRectElement> = d3select(bar);
                 if (
                     this.selectionStates[i + scrollIndex] === 'selected'
                     || this.selectionStates[i + scrollIndex] === 'justSelected'
@@ -336,7 +336,7 @@ export class LassoSelection {
     }
 
     private calculateRectDimensions(cursor: CursorPosition): void {
-        let selection: Selection = this.selection;
+        const selection: Selection = this.selection;
 
         if (selection.startX <= cursor.x) {
             selection.x = selection.startX;
@@ -364,14 +364,14 @@ export class LassoSelection {
         this.selection.active = false;
         this.selection.action = 'add';
         this.hideRect();
-        let backgroundStyle: string = this.selection.rect_node.style.backgroundColor;
+        const backgroundStyle: string = this.selection.rect_node.style.backgroundColor;
         this.selection.rect_node.setAttribute('style', '');
         this.selection.rect_node.style.backgroundColor = backgroundStyle;
     }
 
     // Utils
     private detectCollision(bar: HTMLElement): boolean {
-        let bounds: ClientRect = bar.getBoundingClientRect();
+        const bounds: ClientRect = bar.getBoundingClientRect();
 
         if (bounds.height === 0) {
             return false;

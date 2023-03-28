@@ -175,8 +175,8 @@ export class LassoSelectionForSmallMultiple {
     private performSelection(): void {
         const bars: d3Selection<any> = this.domItems.get();
 
-        let handledDataPoints: VisualDataPoint[] = [];
-        let selectedDataPoints: VisualDataPoint[] = [];
+        const handledDataPoints: VisualDataPoint[] = [];
+        const selectedDataPoints: VisualDataPoint[] = [];
 
         bars.each((d: VisualDataPoint) => {
             if (d.preSelected) {
@@ -406,7 +406,7 @@ class Lasso {
     }
 
     detectCollision(element: HTMLElement): boolean {
-        let bounds: ClientRect = element.getBoundingClientRect();
+        const bounds: ClientRect = element.getBoundingClientRect();
 
         if (bounds.width === 0) {
             return false;

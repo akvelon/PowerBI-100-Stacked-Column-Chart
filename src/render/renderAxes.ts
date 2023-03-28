@@ -54,7 +54,7 @@ export class RenderAxes {
 
         let yAxisProperties: IAxisProperties = null;
 
-        let valueAxisScale: string = settings.valueAxis.axisScale;
+        const valueAxisScale: string = settings.valueAxis.axisScale;
 
         const percentageFormat: string = "#,0.##%";
 
@@ -86,14 +86,14 @@ export class RenderAxes {
 
         // create Y axis
         let xAxisProperties: IAxisProperties = null;
-        let xAxisFormatString: string = getFormatStringByColumn(<any>metadata.cols.category) || getFormatStringByColumn(<any>metadata.groupingColumn);
+        const xAxisFormatString: string = getFormatStringByColumn(<any>metadata.cols.category) || getFormatStringByColumn(<any>metadata.groupingColumn);
 
         const categoryType = axis.getCategoryValueType(metadata.cols.category);
-        let isOrdinal: boolean = axis.isOrdinal(categoryType);
+        const isOrdinal: boolean = axis.isOrdinal(categoryType);
 
-        let xIsScalar: boolean = !isOrdinal;
-        let categoryAxisScale: string = settings.categoryAxis.axisType === "categorical" ? "linear" : settings.categoryAxis.axisScale;
-        let axisType: string = !xIsScalar ? "categorical" : settings.categoryAxis.axisType;
+        const xIsScalar: boolean = !isOrdinal;
+        const categoryAxisScale: string = settings.categoryAxis.axisType === "categorical" ? "linear" : settings.categoryAxis.axisScale;
+        const axisType: string = !xIsScalar ? "categorical" : settings.categoryAxis.axisType;
 
         let dateColumnFormatter = null;
 
@@ -109,11 +109,11 @@ export class RenderAxes {
             });
         }
 
-        let innerPadding: number = settings.categoryAxis.innerPadding / 100;
+        const innerPadding: number = settings.categoryAxis.innerPadding / 100;
         const outerPadding: number = xIsScalar && axisType === "continuous" ? dataPointThickness / 2 : 0;
 
-        let fontSize: string = PixelConverter.toString(settings.categoryAxis.fontSize);
-        let fontFamily: string = settings.categoryAxis.fontFamily;
+        const fontSize: string = PixelConverter.toString(settings.categoryAxis.fontSize);
+        const fontFamily: string = settings.categoryAxis.fontFamily;
 
         const skipCategoryRange: boolean = isSmallMultiple && settings.categoryAxis.rangeType !== AxisRangeType.Custom,
             startCategory: number = skipCategoryRange ? null : settings.categoryAxis.start,
@@ -148,10 +148,10 @@ export class RenderAxes {
                         };
                     }
 
-                    let formattedString: string = dateColumnFormatter.format(new Date(index).toLocaleString("en-US", options));
+                    const formattedString: string = dateColumnFormatter.format(new Date(index).toLocaleString("en-US", options));
 
                     if (maxXLabelsWidth) {
-                        let textProperties: TextProperties = {
+                        const textProperties: TextProperties = {
                             text: formattedString,
                             fontFamily: fontFamily,
                             fontSize: fontSize
@@ -164,7 +164,7 @@ export class RenderAxes {
                 }
 
                 if (maxXLabelsWidth && maxXLabelsWidth !== Number.MAX_VALUE) {
-                    let textProperties: TextProperties = {
+                    const textProperties: TextProperties = {
                         text: index.toString(),
                         fontFamily: fontFamily,
                         fontSize: fontSize
@@ -193,7 +193,7 @@ export class RenderAxes {
     }
 
     public static rotateXAxisTickLabels(toRotate: boolean, xAxisSvgGroup: d3Selection<SVGElement>): void {
-        let axisText = xAxisSvgGroup.selectAll("g").selectAll("text");
+        const axisText = xAxisSvgGroup.selectAll("g").selectAll("text");
         if (toRotate) {
             axisText.attr("transform", "rotate(-90)")
                 .attr("dx", "-5.5px")
@@ -215,20 +215,20 @@ export class RenderAxes {
         // Now we call the axis funciton, that will render an axis on our visual.
         if (settings.valueAxis.show) {
             yAxisSvgGroup.call(axes.y.axis);
-            let axisText = yAxisSvgGroup.selectAll("g").selectAll("text");
-            let axisLines = yAxisSvgGroup.selectAll("g").selectAll("line");
+            const axisText = yAxisSvgGroup.selectAll("g").selectAll("text");
+            const axisLines = yAxisSvgGroup.selectAll("g").selectAll("line");
 
-            let valueAxisSettings = settings.valueAxis;
+            const valueAxisSettings = settings.valueAxis;
 
-            let color: string = valueAxisSettings.axisColor.toString();
-            let fontSize: string = PixelConverter.toString(valueAxisSettings.fontSize);
-            let fontFamily: string = valueAxisSettings.fontFamily;
-            let gridlinesColor: string = valueAxisSettings.gridlinesColor.toString();
-            let strokeWidth: string = PixelConverter.toString(valueAxisSettings.strokeWidth);
-            let showGridlines: DataViewPropertyValue = valueAxisSettings.showGridlines;
-            let lineStyle: DataViewPropertyValue = valueAxisSettings.lineStyle;
+            const color: string = valueAxisSettings.axisColor.toString();
+            const fontSize: string = PixelConverter.toString(valueAxisSettings.fontSize);
+            const fontFamily: string = valueAxisSettings.fontFamily;
+            const gridlinesColor: string = valueAxisSettings.gridlinesColor.toString();
+            const strokeWidth: string = PixelConverter.toString(valueAxisSettings.strokeWidth);
+            const showGridlines: DataViewPropertyValue = valueAxisSettings.showGridlines;
+            const lineStyle: DataViewPropertyValue = valueAxisSettings.lineStyle;
 
-            let strokeDasharray = visualUtils.getLineStyleParam(lineStyle);
+            const strokeDasharray = visualUtils.getLineStyleParam(lineStyle);
 
             axisText.style("fill", color)
                 .style("font-size", fontSize)
@@ -250,12 +250,12 @@ export class RenderAxes {
 
         if (settings.categoryAxis.show) {
             xAxisSvgGroup.call(axes.x.axis);
-            let axisText = xAxisSvgGroup.selectAll("g").selectAll("text");
+            const axisText = xAxisSvgGroup.selectAll("g").selectAll("text");
 
-            let categoryAxisSettings = settings.categoryAxis;
-            let color: string = categoryAxisSettings.axisColor.toString();
-            let fontSize: string = PixelConverter.toString(categoryAxisSettings.fontSize);
-            let fontFamily: string = categoryAxisSettings.fontFamily;
+            const categoryAxisSettings = settings.categoryAxis;
+            const color: string = categoryAxisSettings.axisColor.toString();
+            const fontSize: string = PixelConverter.toString(categoryAxisSettings.fontSize);
+            const fontFamily: string = categoryAxisSettings.fontFamily;
 
             axisText.style("fill", color)
                 .style("stroke", "none")
@@ -281,8 +281,8 @@ export class RenderAxes {
             yAxisOrientation: string = "right",
             showY1OnRight: boolean = yAxisOrientation === settings.valueAxis.position;
 
-        let showXAxisTitle: boolean = settings.categoryAxis.show && settings.categoryAxis.showTitle;
-        let showYAxisTitle: boolean = settings.valueAxis.show && settings.valueAxis.showTitle;
+        const showXAxisTitle: boolean = settings.categoryAxis.show && settings.categoryAxis.showTitle;
+        const showYAxisTitle: boolean = settings.valueAxis.show && settings.valueAxis.showTitle;
 
         if (!showXAxisTitle) {
             axisLabelsData[0] = null;
@@ -292,19 +292,19 @@ export class RenderAxes {
             axisLabelsData[1] = null;
         }
 
-        let xColor: string = settings.categoryAxis.axisTitleColor;
-        let xFontSize: number = PixelConverter.fromPointToPixel(settings.categoryAxis.titleFontSize);
-        let xFontSizeString: string = PixelConverter.toString(settings.categoryAxis.titleFontSize);
-        let xTitle: DataViewPropertyValue = settings.categoryAxis.axisTitle;
-        let xAxisStyle: DataViewPropertyValue = settings.categoryAxis.titleStyle;
-        let xAxisFontFamily: string = settings.categoryAxis.titleFontFamily;
+        const xColor: string = settings.categoryAxis.axisTitleColor;
+        const xFontSize: number = PixelConverter.fromPointToPixel(settings.categoryAxis.titleFontSize);
+        const xFontSizeString: string = PixelConverter.toString(settings.categoryAxis.titleFontSize);
+        const xTitle: DataViewPropertyValue = settings.categoryAxis.axisTitle;
+        const xAxisStyle: DataViewPropertyValue = settings.categoryAxis.titleStyle;
+        const xAxisFontFamily: string = settings.categoryAxis.titleFontFamily;
 
-        let yColor: string = settings.valueAxis.axisTitleColor;
-        let yFontSize: number = parseInt(settings.valueAxis.titleFontSize.toString());
-        let yFontSizeString: string = PixelConverter.toString(yFontSize);
-        let yTitle: DataViewPropertyValue = settings.valueAxis.axisTitle;
-        let yAxisStyle: DataViewPropertyValue = settings.valueAxis.titleStyle;
-        let yAxisFontFamily: string = settings.valueAxis.titleFontFamily;
+        const yColor: string = settings.valueAxis.axisTitleColor;
+        const yFontSize: number = parseInt(settings.valueAxis.titleFontSize.toString());
+        const yFontSizeString: string = PixelConverter.toString(yFontSize);
+        const yTitle: DataViewPropertyValue = settings.valueAxis.axisTitle;
+        const yAxisStyle: DataViewPropertyValue = settings.valueAxis.titleStyle;
+        const yAxisFontFamily: string = settings.valueAxis.titleFontFamily;
 
         axisGraphicsContext.selectAll("*")
             .data(axisLabelsData)
@@ -326,7 +326,7 @@ export class RenderAxes {
                 }
 
                 if (showXAxisTitle && xAxisStyle) {
-                    let newTitle: string = visualUtils.getTitleWithUnitType(textSelectionX.text(), xAxisStyle, axes.x);
+                    const newTitle: string = visualUtils.getTitleWithUnitType(textSelectionX.text(), xAxisStyle, axes.x);
 
                     textSelectionX.text(newTitle);
                 }
@@ -351,7 +351,7 @@ export class RenderAxes {
                 }
 
                 if (showYAxisTitle) {
-                    let newTitle: string = visualUtils.getTitleWithUnitType(textSelectionY.text(), yAxisStyle, axes.y);
+                    const newTitle: string = visualUtils.getTitleWithUnitType(textSelectionY.text(), yAxisStyle, axes.y);
 
                     textSelectionY.text(newTitle);
                 }
@@ -389,7 +389,7 @@ export class RenderAxes {
         let dataDomainMinY: number = minValue;
         let dataDomainMaxY: number = maxValue;
 
-        let constantLineValue: number = settings.constantLine.value;
+        const constantLineValue: number = settings.constantLine.value;
 
         if (constantLineValue || constantLineValue === 0) {
             dataDomainMinY = dataDomainMinY > constantLineValue ? constantLineValue : dataDomainMinY;
@@ -398,8 +398,8 @@ export class RenderAxes {
 
         const skipStartEnd: boolean = isSmallMultiple && settings.valueAxis.rangeType !== AxisRangeType.Custom;
 
-        let start = skipStartEnd ? null : settings.valueAxis.start;
-        let end = skipStartEnd ? null : settings.valueAxis.end;
+        const start = skipStartEnd ? null : settings.valueAxis.start;
+        const end = skipStartEnd ? null : settings.valueAxis.end;
 
         return [end != null ? end : dataDomainMaxY, start != null ? start : dataDomainMinY];
     }
@@ -412,24 +412,24 @@ export class RenderAxes {
                                           isSmallMultiple: boolean = false): any[] {
 
         const categoryType = axis.getCategoryValueType(metadata.cols.category);
-        let isOrdinal: boolean = axis.isOrdinal(categoryType);
+        const isOrdinal: boolean = axis.isOrdinal(categoryType);
 
         let dataDomainX = visibleDatapoints.map(d => <any>d.category);
 
-        let xIsScalar: boolean = !isOrdinal;
-        let axisType: string = !xIsScalar ? "categorical" : settings.categoryAxis.axisType;
+        const xIsScalar: boolean = !isOrdinal;
+        const axisType: string = !xIsScalar ? "categorical" : settings.categoryAxis.axisType;
 
         if (xIsScalar && axisType === "continuous") {
             dataDomainX = dataDomainX.filter(d => d !== this.Blank);
             const noBlankCategoryDatapoints: VisualDataPoint[] = visibleDatapoints.filter(d => d.category !== this.Blank);
 
-            let dataDomainMinX: number = d3min(noBlankCategoryDatapoints, d => <number>d.category);
-            let dataDomainMaxX: number = d3max(noBlankCategoryDatapoints, d => <number>d.category);
+            const dataDomainMinX: number = d3min(noBlankCategoryDatapoints, d => <number>d.category);
+            const dataDomainMaxX: number = d3max(noBlankCategoryDatapoints, d => <number>d.category);
 
             const skipStartEnd: boolean = isSmallMultiple && settings.categoryAxis.rangeType !== AxisRangeType.Custom;
 
-            let start = skipStartEnd ? null : settings.categoryAxis.start;
-            let end = skipStartEnd ? null : settings.categoryAxis.end;
+            const start = skipStartEnd ? null : settings.categoryAxis.start;
+            const end = skipStartEnd ? null : settings.categoryAxis.end;
 
             dataDomainX = [start != null ? settings.categoryAxis.start : dataDomainMinX, end != null ? end : dataDomainMaxX];
         }

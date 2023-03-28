@@ -260,7 +260,7 @@ export class Visual implements IColumnVisual {
 
         this.scrollBar.updateData(this.getScrollbarState(), options.type);
 
-        let visibleDataPoints: VisualDataPoint[] = this.scrollBar.getVisibleDataPoints();
+        const visibleDataPoints: VisualDataPoint[] = this.scrollBar.getVisibleDataPoints();
 
         let axes: IAxes = this.createAxes(visibleDataPoints);
 
@@ -303,12 +303,12 @@ export class Visual implements IColumnVisual {
 
         this.scrollBar.update();
 
-        let bars = this.barGroup.selectAll(Selectors.BarSelect.selectorName).data(visibleDataPoints);
+        const bars = this.barGroup.selectAll(Selectors.BarSelect.selectorName).data(visibleDataPoints);
         this.LassoSelectionForSmallMultiple.disable();
         this.lassoSelection.update(bars);
 
         if (this.settings.constantLine.show && this.settings.constantLine.value) {
-            let xWidth: number = (<Element>this.yAxisSvgGroup.selectAll("line").node()).getBoundingClientRect().width;
+            const xWidth: number = (<Element>this.yAxisSvgGroup.selectAll("line").node()).getBoundingClientRect().width;
             RenderVisual.renderConstantLine(this.settings.constantLine, this.barGroup, axes, xWidth);
         }
     }
@@ -414,12 +414,12 @@ export class Visual implements IColumnVisual {
             return 0;
         }
 
-        let textProperties: TextProperties = {
+        const textProperties: TextProperties = {
             fontFamily: settings.fontFamily,
             fontSize: PixelConverter.toString(settings.fontSize)
         };
 
-        let height: number = textMeasurementService.measureSvgTextHeight(textProperties),
+        const height: number = textMeasurementService.measureSvgTextHeight(textProperties),
             additionalSpace: number = settings.layoutMode === LayoutMode.Flow ? 15 : 0;
 
         return height + additionalSpace;
@@ -432,15 +432,15 @@ export class Visual implements IColumnVisual {
 
     public calculateXAxisSize(settings: VisualSettings): number {
 
-        let fontSize: string = PixelConverter.toString(settings.categoryAxis.fontSize);
-        let fontFamily: string = settings.categoryAxis.fontFamily;
+        const fontSize: string = PixelConverter.toString(settings.categoryAxis.fontSize);
+        const fontFamily: string = settings.categoryAxis.fontFamily;
 
-        let textProperties: TextProperties = {
+        const textProperties: TextProperties = {
             fontFamily: fontFamily,
             fontSize: fontSize
         };
 
-        let height: number = textMeasurementService.measureSvgTextHeight(textProperties);
+        const height: number = textMeasurementService.measureSvgTextHeight(textProperties);
 
         return height + 8;
     }
@@ -461,24 +461,24 @@ export class Visual implements IColumnVisual {
                 });
             }
         } else {
-            let yAxisFormatString: string = valueFormatter.getFormatStringByColumn(<any>metadata.cols.category) || valueFormatter.getFormatStringByColumn(<any>metadata.groupingColumn);
+            const yAxisFormatString: string = valueFormatter.getFormatStringByColumn(<any>metadata.cols.category) || valueFormatter.getFormatStringByColumn(<any>metadata.groupingColumn);
 
             formatter = valueFormatter.create({format: yAxisFormatString});
         }
 
-        let fontSize: string = PixelConverter.toString(settings.categoryAxis.fontSize);
-        let fontFamily: string = settings.categoryAxis.fontFamily;
+        const fontSize: string = PixelConverter.toString(settings.categoryAxis.fontSize);
+        const fontFamily: string = settings.categoryAxis.fontFamily;
 
         let maxWidth: number = 0;
 
         values.forEach(value => {
-            let textProperties: TextProperties = {
+            const textProperties: TextProperties = {
                 text: formatter.format(value),
                 fontFamily: fontFamily,
                 fontSize: fontSize
             };
 
-            let width: number = textMeasurementService.measureSvgTextWidth(textProperties);
+            const width: number = textMeasurementService.measureSvgTextWidth(textProperties);
             maxWidth = width > maxWidth ? width : maxWidth;
         });
 
@@ -512,27 +512,27 @@ export class Visual implements IColumnVisual {
         const scrollHeight: number = 22,
             scrollWidth: number = 20,
             gapBetweenCharts: number = 10;
-        let minHeight: number = settings.minUnitHeight,
+        const minHeight: number = settings.minUnitHeight,
             minWidth: number = settings.minUnitWidth;
 
         let chartHeight: number = 0;
         let chartWidth: number = 0;
 
         if (settings.layoutMode === LayoutMode.Matrix) {
-            let clientHeight: number = viewport.height - topSpace - scrollHeight - legendSize.height;
-            let clientWidth: number = viewport.width - leftSpace - scrollWidth - legendSize.width;
+            const clientHeight: number = viewport.height - topSpace - scrollHeight - legendSize.height;
+            const clientWidth: number = viewport.width - leftSpace - scrollWidth - legendSize.width;
 
             chartHeight = (clientHeight - gapBetweenCharts * rows) / rows;
             chartWidth = (clientWidth - gapBetweenCharts * columns) / columns;
         } else {
-            let clientHeight: number = viewport.height - scrollHeight - legendSize.height;
-            let clientWidth: number = viewport.width - leftSpace - scrollWidth - legendSize.width;
+            const clientHeight: number = viewport.height - scrollHeight - legendSize.height;
+            const clientWidth: number = viewport.width - leftSpace - scrollWidth - legendSize.width;
 
             chartHeight = (clientHeight - gapBetweenCharts * rows - topSpace * rows) / rows;
             chartWidth = (clientWidth - gapBetweenCharts * (columns)) / columns;
         }
 
-        let isVerticalScrollBarNeeded: boolean = chartHeight < minHeight - scrollWidth / rows,
+        const isVerticalScrollBarNeeded: boolean = chartHeight < minHeight - scrollWidth / rows,
             isHorizontalScrollBarNeeded: boolean = chartWidth < minWidth - scrollHeight / columns;
 
         if (!isVerticalScrollBarNeeded) {
@@ -552,14 +552,14 @@ export class Visual implements IColumnVisual {
     }
 
     private createSmallMultipleAxesByDomains(categoryDomain: any[], valueDomain: any[], visualSize: ISize, maxYAxisLabelWidth: number, categoriesCount: number = null): IAxes {
-        let axesDomains: AxesDomains = {
+        const axesDomains: AxesDomains = {
             yAxisDomain: valueDomain,
             xAxisDomain: categoryDomain
         };
 
-        let barHeight: number = categoriesCount ? visualSize.width / (categoriesCount > 2 ? categoriesCount + 1 : categoriesCount) : 0;
+        const barHeight: number = categoriesCount ? visualSize.width / (categoriesCount > 2 ? categoriesCount + 1 : categoriesCount) : 0;
 
-        let axes: IAxes = RenderAxes.createD3Axes(
+        const axes: IAxes = RenderAxes.createD3Axes(
             axesDomains,
             visualSize,
             this.metadata,
@@ -585,17 +585,17 @@ export class Visual implements IColumnVisual {
     }
 
     public smallMultipleProcess(viewport: IViewport) {
-        let uniqueColumns = this.allDataPoints.map(x => x.columnBy).filter((v, i, a) => a.indexOf(v) === i);
-        let uniqueRows = this.allDataPoints.map(x => x.rowBy).filter((v, i, a) => a.indexOf(v) === i);
-        let uniqueCategories = this.allDataPoints.map(x => x.category).filter((v, i, a) => a.indexOf(v) === i);
+        const uniqueColumns = this.allDataPoints.map(x => x.columnBy).filter((v, i, a) => a.indexOf(v) === i);
+        const uniqueRows = this.allDataPoints.map(x => x.rowBy).filter((v, i, a) => a.indexOf(v) === i);
+        const uniqueCategories = this.allDataPoints.map(x => x.category).filter((v, i, a) => a.indexOf(v) === i);
 
-        let leftSpace: number = uniqueRows && uniqueRows.length === 1 && uniqueRows[0] === null ? 0 : this.calculateLabelsSize(this.settings.smallMultiple);
-        let topSpace: number = this.calculateTopSpace(this.settings.smallMultiple);
+        const leftSpace: number = uniqueRows && uniqueRows.length === 1 && uniqueRows[0] === null ? 0 : this.calculateLabelsSize(this.settings.smallMultiple);
+        const topSpace: number = this.calculateTopSpace(this.settings.smallMultiple);
 
-        let hasHighlight = this.allDataPoints.filter(x => x.highlight).length > 0;
+        const hasHighlight = this.allDataPoints.filter(x => x.highlight).length > 0;
 
-        let marginLeft: number = 10;
-        let gapBetweenCharts: number = 10;
+        const marginLeft: number = 10;
+        const gapBetweenCharts: number = 10;
 
         this.prepareMainDiv(this.mainElement);
         this.mainElement.select('.scrollbar-track').remove();
@@ -620,25 +620,25 @@ export class Visual implements IColumnVisual {
             };
         }
 
-        let layoutMode: LayoutMode = this.settings.smallMultiple.layoutMode;
-        let maxRowWidth: number = this.settings.smallMultiple.maxRowWidth;
+        const layoutMode: LayoutMode = this.settings.smallMultiple.layoutMode;
+        const maxRowWidth: number = this.settings.smallMultiple.maxRowWidth;
 
-        let rowsInFlow: number = uniqueColumns.length <= maxRowWidth ? 1 : (Math.floor(uniqueColumns.length / maxRowWidth) + (uniqueColumns.length % maxRowWidth > 0 ? 1 : 0));
+        const rowsInFlow: number = uniqueColumns.length <= maxRowWidth ? 1 : (Math.floor(uniqueColumns.length / maxRowWidth) + (uniqueColumns.length % maxRowWidth > 0 ? 1 : 0));
 
-        let columns: number = layoutMode === LayoutMode.Matrix ? uniqueColumns.length : Math.min(uniqueColumns.length, maxRowWidth);
-        let rows: number = layoutMode === LayoutMode.Matrix ? uniqueRows.length : rowsInFlow * uniqueRows.length;
+        const columns: number = layoutMode === LayoutMode.Matrix ? uniqueColumns.length : Math.min(uniqueColumns.length, maxRowWidth);
+        const rows: number = layoutMode === LayoutMode.Matrix ? uniqueRows.length : rowsInFlow * uniqueRows.length;
 
-        let chartSize = this.calculateChartSize(viewport, this.settings.smallMultiple, leftSpace, topSpace, rows, columns, legendSize);
+        const chartSize = this.calculateChartSize(viewport, this.settings.smallMultiple, leftSpace, topSpace, rows, columns, legendSize);
 
-        let yAxisSize: number = this.calculateYAxisSize();
+        const yAxisSize: number = this.calculateYAxisSize();
 
-        let barsSectionSize: ISize = {
+        const barsSectionSize: ISize = {
             height: chartSize.height - gapBetweenCharts,
             width: chartSize.width - yAxisSize - gapBetweenCharts * 2
         };
 
-        let xIsScalar: boolean = visualUtils.isScalar(this.metadata.cols.category);
-        let barHeight: number = !xIsScalar || this.settings.categoryAxis.axisType === "categorical" ? visualUtils.calculateDataPointThickness(
+        const xIsScalar: boolean = visualUtils.isScalar(this.metadata.cols.category);
+        const barHeight: number = !xIsScalar || this.settings.categoryAxis.axisType === "categorical" ? visualUtils.calculateDataPointThickness(
             null,
             barsSectionSize,
             uniqueCategories.length,
@@ -646,7 +646,7 @@ export class Visual implements IColumnVisual {
             this.settings,
             !xIsScalar) : 0;
 
-        let xAxisSizeReverted: number = this.settings.categoryAxis.axisType === "categorical" || !xIsScalar ? this.calculateXAxisSizeForCategorical(uniqueCategories, this.settings, this.metadata, barHeight) : -1;
+        const xAxisSizeReverted: number = this.settings.categoryAxis.axisType === "categorical" || !xIsScalar ? this.calculateXAxisSizeForCategorical(uniqueCategories, this.settings, this.metadata, barHeight) : -1;
         let xAxisSize: number = xAxisSizeReverted > 0 ? xAxisSizeReverted : this.calculateXAxisSize(this.settings);
 
         barsSectionSize.height -= xAxisSize;
@@ -719,7 +719,7 @@ export class Visual implements IColumnVisual {
                 svgWidth = leftSpace + columns * chartSize.width + gapBetweenCharts * (columns);
         }
 
-        let svgChart = this.mainDivElement
+        const svgChart = this.mainDivElement
             .append("svg")
             .classed("chart", true)
             .style('width', svgWidth + "px")
@@ -735,23 +735,23 @@ export class Visual implements IColumnVisual {
                     leftMove = gapBetweenCharts / 2 + j * chartSize.width + gapBetweenCharts * j;
                     topMove = topSpace + i * chartSize.height + gapBetweenCharts * i;
                 } else {
-                    let xPosition: number = Math.floor(j % maxRowWidth);
-                    let yPosition: number = Math.floor(j / maxRowWidth) + i * rowsInFlow;
+                    const xPosition: number = Math.floor(j % maxRowWidth);
+                    const yPosition: number = Math.floor(j / maxRowWidth) + i * rowsInFlow;
 
                     leftMove = xPosition * chartSize.width + gapBetweenCharts * xPosition;
                     topMove = yPosition * chartSize.height + gapBetweenCharts * yPosition + topSpace * yPosition + gapBetweenCharts / 2;
                 }
 
-                let dataPoints: VisualDataPoint[] = this.allDataPoints.filter(x => x.rowBy === uniqueRows[i]).filter(x => x.columnBy === uniqueColumns[j]);
+                const dataPoints: VisualDataPoint[] = this.allDataPoints.filter(x => x.rowBy === uniqueRows[i]).filter(x => x.columnBy === uniqueColumns[j]);
 
-                let chart = svgChart
+                const chart = svgChart
                     .append("g")
                     .attr('transform', svgTranslate(leftSpace + leftMove, topMove + topSpace));
 
-                let xAxisSvgGroup: d3Selection<SVGElement> = chart.append("g");
-                let yAxisSvgGroup: d3Selection<SVGElement> = chart.append("g");
+                const xAxisSvgGroup: d3Selection<SVGElement> = chart.append("g");
+                const yAxisSvgGroup: d3Selection<SVGElement> = chart.append("g");
 
-                let yHasRightPosition: boolean = this.settings.valueAxis.show && this.settings.valueAxis.position === "right";
+                const yHasRightPosition: boolean = this.settings.valueAxis.show && this.settings.valueAxis.position === "right";
 
                 xAxisSvgGroup.attr(
                     "transform",
@@ -783,7 +783,7 @@ export class Visual implements IColumnVisual {
                     if (!yIsSeparate && !xIsSeparate) {
                         axes = defaultAxes;
                     } else {
-                        let uniqueCategoriesCount: number = dataPoints.map(x => x.category).filter((v, i, a) => a.indexOf(v) === i).length;
+                        const uniqueCategoriesCount: number = dataPoints.map(x => x.category).filter((v, i, a) => a.indexOf(v) === i).length;
                         axes = !yIsSeparate && !xIsSeparate ? defaultAxes : this.createSmallMultipleAxesByDomains(xDomain, yDomain, barsSectionSize, maxLabelHeight, uniqueCategoriesCount);
                     }
                 }
@@ -792,7 +792,7 @@ export class Visual implements IColumnVisual {
                     this.data.axes = defaultAxes;
                 }
 
-                let barHeight: number = !xIsScalar || this.settings.categoryAxis.axisType === "categorical" ? axes.x.scale.bandwidth() : visualUtils.calculateDataPointThickness(
+                const barHeight: number = !xIsScalar || this.settings.categoryAxis.axisType === "categorical" ? axes.x.scale.bandwidth() : visualUtils.calculateDataPointThickness(
                     dataPoints,
                     barsSectionSize,
                     uniqueCategories.length,
@@ -805,13 +805,13 @@ export class Visual implements IColumnVisual {
 
                 if (xIsCustom) {
                     let divider: number = 1;
-                    let xText = xAxisSvgGroup.selectAll("text")[0];
+                    const xText = xAxisSvgGroup.selectAll("text")[0];
 
-                    let axisWidth = (xText.parentNode as SVGGraphicsElement).getBBox().width;
-                    let maxTextWidth = visualUtils.getLabelsMaxWidth(xText);
+                    const axisWidth = (xText.parentNode as SVGGraphicsElement).getBBox().width;
+                    const maxTextWidth = visualUtils.getLabelsMaxWidth(xText);
 
                     for (let i = 0; i < xText.length; ++i) {
-                        let actualAllAxisTextWidth: number = maxTextWidth * xText.length / divider;
+                        const actualAllAxisTextWidth: number = maxTextWidth * xText.length / divider;
 
                         if (actualAllAxisTextWidth > axisWidth) {
                             divider += 1;
@@ -829,13 +829,13 @@ export class Visual implements IColumnVisual {
 
                 if (yIsCustom) {
                     let divider: number = 1;
-                    let yText = yAxisSvgGroup.selectAll("text")[0];
+                    const yText = yAxisSvgGroup.selectAll("text")[0];
 
-                    let axisWidth = (yText.parentNode as SVGGraphicsElement).getBBox().height;
-                    let maxTextWidth = visualUtils.getLabelsMaxHeight(yText);
+                    const axisWidth = (yText.parentNode as SVGGraphicsElement).getBBox().height;
+                    const maxTextWidth = visualUtils.getLabelsMaxHeight(yText);
 
                     for (let i = 0; i < yText.length; ++i) {
-                        let actualAllAxisTextWidth: number = maxTextWidth * yText.length / divider;
+                        const actualAllAxisTextWidth: number = maxTextWidth * yText.length / divider;
 
                         if (actualAllAxisTextWidth > axisWidth) {
                             divider += 1;
@@ -861,12 +861,12 @@ export class Visual implements IColumnVisual {
                     RenderAxes.rotateXAxisTickLabels(true, xAxisSvgGroup);
                 }
 
-                let barGroup = chart
+                const barGroup = chart
                     .append("g")
                     .classed("bar-group", true)
                     .attr('transform', svgTranslate(marginLeft + (yHasRightPosition ? 0 : yAxisSize), 0));
 
-                let interactivityService = this.interactivityService,
+                const interactivityService = this.interactivityService,
                     hasSelection: boolean = interactivityService.hasSelection();
                 interactivityService.applySelectionStateToData(dataPoints);
 
@@ -925,7 +925,7 @@ export class Visual implements IColumnVisual {
                     dataPoints
                 );
 
-                let labelGraphicsContext = barGroup
+                const labelGraphicsContext = barGroup
                     .append("g")
                     .classed(Selectors.LabelGraphicsContext.className, true);
 
@@ -937,7 +937,7 @@ export class Visual implements IColumnVisual {
                     dataPoints
                 );
 
-                let labelBackgroundContext = barGroup
+                const labelBackgroundContext = barGroup
                     .append("g")
                     .classed(Selectors.LabelBackgroundContext.className, true);
 
@@ -963,7 +963,7 @@ export class Visual implements IColumnVisual {
                 }
 
                 if (this.settings.valueAxis.show) {
-                    let xWidth: number = (<Element>yAxisSvgGroup.selectAll("line").node()).getBoundingClientRect().width;
+                    const xWidth: number = (<Element>yAxisSvgGroup.selectAll("line").node()).getBoundingClientRect().width;
 
                     const minYDomain = axes.y.dataDomain[1];
                     const maxYDomain = axes.y.dataDomain[0];
@@ -1008,7 +1008,7 @@ export class Visual implements IColumnVisual {
         if (this.interactivityService) {
             this.interactivityService.applySelectionStateToData(this.allDataPoints);
 
-            let behaviorOptions: WebBehaviorOptions = {
+            const behaviorOptions: WebBehaviorOptions = {
                 bars: this.mainElement.selectAll(Selectors.BarSelect.selectorName),
                 clearCatcher: d3select(document.createElement('div')),
                 interactivityService: this.interactivityService,
@@ -1051,7 +1051,7 @@ export class Visual implements IColumnVisual {
     }
 
     private buildDataPointsByCategoriesArray(): CategoryDataPoints[] {
-        let dataPointsByCategories: CategoryDataPoints[] = [];
+        const dataPointsByCategories: CategoryDataPoints[] = [];
         let categoryIndex: number = 0;
         let categoryName: string = '';
         let previousCategoryName: string = '';
@@ -1069,7 +1069,7 @@ export class Visual implements IColumnVisual {
             }
 
             if (!dataPointsByCategories[categoryIndex]) {
-                let category: CategoryDataPoints = {
+                const category: CategoryDataPoints = {
                     categoryName,
                     dataPoints: []
                 };
@@ -1085,7 +1085,7 @@ export class Visual implements IColumnVisual {
         const visibleDataPoints: VisualDataPoint[] = this.scrollBar.getVisibleDataPoints();
 
         let axes: IAxes = this.createAxes(visibleDataPoints);
-        let legendData = legendUtils.getSuitableLegendData(this.dataView, this.host, this.settings.legend);
+        const legendData = legendUtils.getSuitableLegendData(this.dataView, this.host, this.settings.legend);
         this.data = {
             dataPoints: visibleDataPoints,
             size: this.visualSize,
@@ -1134,9 +1134,9 @@ export class Visual implements IColumnVisual {
     }
 
     private createAxes(dataPoints, isSmallMultiple = false): IAxes {
-        let axesDomains = RenderAxes.calculateAxesDomains(this.allDataPoints, dataPoints, this.settings, this.metadata, isSmallMultiple);
+        const axesDomains = RenderAxes.calculateAxesDomains(this.allDataPoints, dataPoints, this.settings, this.metadata, isSmallMultiple);
 
-        let axes: IAxes = RenderAxes.createD3Axes(
+        const axes: IAxes = RenderAxes.createD3Axes(
             axesDomains,
             this.visualSize,
             this.metadata,
@@ -1199,7 +1199,7 @@ export class Visual implements IColumnVisual {
             this.settings
         );
 
-        let chartHeight: number = (<Element>this.barGroup.node()).getBoundingClientRect().height;
+        const chartHeight: number = (<Element>this.barGroup.node()).getBoundingClientRect().height;
 
         visualUtils.calculateLabelCoordinates(
             this.data,
@@ -1208,7 +1208,7 @@ export class Visual implements IColumnVisual {
             this.isLegendNeeded
         );
 
-        let filteredDataLabels: VisualDataPoint[] = RenderVisual.filterData(this.data.dataPoints);
+        const filteredDataLabels: VisualDataPoint[] = RenderVisual.filterData(this.data.dataPoints);
 
         RenderVisual.renderDataLabelsBackground(
             filteredDataLabels,
@@ -1222,7 +1222,7 @@ export class Visual implements IColumnVisual {
             this.labelGraphicsContext
         );
 
-        let xWidth: number = (<Element>this.yAxisSvgGroup.selectAll("line").node()).getBoundingClientRect().width;
+        const xWidth: number = (<Element>this.yAxisSvgGroup.selectAll("line").node()).getBoundingClientRect().width;
         RenderVisual.renderConstantLine(this.settings.constantLine, this.barGroup, this.data.axes, xWidth);
     }
 
@@ -1295,7 +1295,7 @@ export class Visual implements IColumnVisual {
         }
 
         if (categoryAxis.showTitle && categoryAxis.axisTitle.length === 0) {
-            let categories = dataView.categorical.categories;
+            const categories = dataView.categorical.categories;
             categoryAxis.axisTitle = categories ? categories[0].source.displayName : dataView.categorical.values.source.displayName;
         }
         if (!categoryAxis.showTitle) {
@@ -1308,18 +1308,18 @@ export class Visual implements IColumnVisual {
     }
 
     private calculateOffsets() {
-        let xtickText = this.xAxisSvgGroup.selectAll("text");
-        let ytickText = this.yAxisSvgGroup.selectAll("text");
+        const xtickText = this.xAxisSvgGroup.selectAll("text");
+        const ytickText = this.yAxisSvgGroup.selectAll("text");
 
-        let showXAxisTitle: boolean = this.settings.categoryAxis.show && this.settings.categoryAxis.showTitle;
-        let showYAxisTitle: boolean = this.settings.valueAxis.show && this.settings.valueAxis.showTitle;
+        const showXAxisTitle: boolean = this.settings.categoryAxis.show && this.settings.categoryAxis.showTitle;
+        const showYAxisTitle: boolean = this.settings.valueAxis.show && this.settings.valueAxis.showTitle;
 
         this.yTickOffset = visualUtils.getLabelsMaxWidth(ytickText) + (showYAxisTitle
             ? parseInt(this.settings.valueAxis.titleFontSize.toString())
             : 0);
 
-        let xAxisMaxLableWidth: number = visualUtils.getLabelsMaxWidth(xtickText);
-        let innerPadding: number = this.data && this.data.axes ? this.data.axes.x.axis.tickPadding() : 0;
+        const xAxisMaxLableWidth: number = visualUtils.getLabelsMaxWidth(xtickText);
+        const innerPadding: number = this.data && this.data.axes ? this.data.axes.x.axis.tickPadding() : 0;
 
         let isReverted: boolean = false;
 
@@ -1327,7 +1327,7 @@ export class Visual implements IColumnVisual {
             isReverted = !!this.maxXLabelsWidth || xAxisMaxLableWidth > (this.data.axes.x.scale.bandwidth ? this.data.axes.x.scale.bandwidth() : 0 + innerPadding);
         }
 
-        let titleSize: number = (showXAxisTitle
+        const titleSize: number = (showXAxisTitle
             ? PixelConverter.fromPointToPixel(this.settings.categoryAxis.titleFontSize) + 5
             : 0);
 
@@ -1364,10 +1364,10 @@ export class Visual implements IColumnVisual {
     }
 
     private calculateVisualMargin(): void {
-        let yHasRightPosition: boolean = this.settings.valueAxis.show && this.settings.valueAxis.position === "right";
+        const yHasRightPosition: boolean = this.settings.valueAxis.show && this.settings.valueAxis.position === "right";
 
-        let extendedLeftMargin: boolean = yHasRightPosition || !this.settings.categoryAxis.show;
-        let extendedRightMargin: boolean = !yHasRightPosition || !this.settings.categoryAxis.show;
+        const extendedLeftMargin: boolean = yHasRightPosition || !this.settings.categoryAxis.show;
+        const extendedRightMargin: boolean = !yHasRightPosition || !this.settings.categoryAxis.show;
 
         this.visualMargin = {top: 5, bottom: 5, left: extendedLeftMargin ? 15 : 5, right: extendedRightMargin ? 15 : 5};
     }
@@ -1460,10 +1460,10 @@ export class Visual implements IColumnVisual {
      *
      */
     public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstance[] | VisualObjectInstanceEnumerationObject {
-        let instanceEnumeration: VisualObjectInstanceEnumeration = VisualSettings.enumerateObjectInstances(this.settings || VisualSettings.getDefault(), options);
+        const instanceEnumeration: VisualObjectInstanceEnumeration = VisualSettings.enumerateObjectInstances(this.settings || VisualSettings.getDefault(), options);
 
-        let instances: VisualObjectInstance[] = (instanceEnumeration as VisualObjectInstanceEnumerationObject).instances;
-        let instance: VisualObjectInstance = instances[0];
+        const instances: VisualObjectInstance[] = (instanceEnumeration as VisualObjectInstanceEnumerationObject).instances;
+        const instance: VisualObjectInstance = instances[0];
 
         if (instance.objectName === "legend" && !this.isLegendNeeded) {
             return null;

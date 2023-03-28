@@ -122,7 +122,7 @@ export function getSuitableLegendData(dataView: DataView, host: IVisualHost, leg
 }
 
 export function getLegendColors(legendDataPoints: LegendDataPoint[]): Array<string> {
-    let legendColors = [];
+    const legendColors = [];
 
     legendDataPoints.forEach(legendDataPoint => legendColors.push(legendDataPoint.color));
 
@@ -182,8 +182,8 @@ export function renderLegend(
         dataPoints: []
     };
 
-    let legendObject: DataViewObject = legendProperties.legendObject;
-    let legendData: LegendData = legendProperties.data;
+    const legendObject: DataViewObject = legendProperties.legendObject;
+    const legendData: LegendData = legendProperties.data;
 
     legendDataForRender.labelColor = legendObject.legendNameColor as string;
     legendDataForRender.title = legendObject.titleText as string;
@@ -247,8 +247,8 @@ export function getLegendProperties(
 
 
 export function setLegendProperties(dataView: DataView, host: IVisualHost, settings: LegendSettings): LegendProperties {
-    let legendObject: DataViewObject = getLegendProperties(settings);
-    let legendData = getSuitableLegendData(dataView, host, settings);
+    const legendObject: DataViewObject = getLegendProperties(settings);
+    const legendData = getSuitableLegendData(dataView, host, settings);
     const legendIsRendered = legendData === undefined ? false : legendData.dataPoints.length > 0;
     const legendColors = legendIsRendered ? getLegendColors(legendData.dataPoints) : [];
 
