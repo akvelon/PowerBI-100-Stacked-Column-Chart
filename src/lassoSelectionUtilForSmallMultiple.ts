@@ -213,15 +213,12 @@ class Preselection {
     }
 
     updatePreselectionData(selectionService: Lasso, bars: d3Selection<any>, ctrlKey: boolean): void {
-        const self: Preselection = this;
-
         if (!ctrlKey) {
             this.action = SelectionAction.Add;
         }
 
-        bars.each(function (d: VisualDataPoint) {
-            const bar: HTMLElement = this;
-            const collision: boolean = selectionService.detectCollision(bar);
+        bars.each(((self: Preselection) => function (d: VisualDataPoint) {
+            const collision: boolean = selectionService.detectCollision(this);
 
             if (self.action === null && collision) {
                 self.action = d.selected ? SelectionAction.Remove : SelectionAction.Add;
@@ -237,7 +234,7 @@ class Preselection {
                     break;
                 }
             }
-        });
+        })(this));
     }
 
     preSelectEntireCategories(svgChart: d3Selection<any>): void {
