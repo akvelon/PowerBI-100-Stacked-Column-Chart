@@ -155,37 +155,32 @@ export class Visual implements IColumnVisual {
     public readonly axesSize: IAxesSize = {xAxisHeight: 10, yAxisWidth: 15};
 
     constructor(options: VisualConstructorOptions) {
-        try {
-            this.mainElement = d3select(options.element);
+        this.mainElement = d3select(options.element);
 
-            this.mainHtmlElement = options.element;
+        this.mainHtmlElement = options.element;
 
-            this.host = options.host;
+        this.host = options.host;
 
-            this.tooltipServiceWrapper = createTooltipServiceWrapper(
-                options.host.tooltipService,
-                options.element);
+        this.tooltipServiceWrapper = createTooltipServiceWrapper(
+            options.host.tooltipService,
+            options.element);
 
-            this.interactivityService = createInteractivitySelectionService(this.host);
+        this.interactivityService = createInteractivitySelectionService(this.host);
 
-            const customLegendBehavior = new CustomLegendBehavior(this.saveSelection.bind(this));
-            this.legend = createLegend(
-                this.mainHtmlElement,
-                false,
-                this.interactivityService,
-                true,
-                null,
-                customLegendBehavior
-            );
+        const customLegendBehavior = new CustomLegendBehavior(this.saveSelection.bind(this));
+        this.legend = createLegend(
+            this.mainHtmlElement,
+            false,
+            this.interactivityService,
+            true,
+            null,
+            customLegendBehavior
+        );
 
-            this.behavior = new WebBehavior(this);
+        this.behavior = new WebBehavior(this);
 
-            this.legendElementRoot = this.mainElement.selectAll("svg.legend");
-            this.legendElement = this.mainElement.selectAll("svg.legend").selectAll("g");
-        } catch (e) {
-            console.error(e);
-            throw e;
-        }
+        this.legendElementRoot = this.mainElement.selectAll("svg.legend");
+        this.legendElement = this.mainElement.selectAll("svg.legend").selectAll("g");
     }
 
     saveSelection(): void {
@@ -366,42 +361,36 @@ export class Visual implements IColumnVisual {
     }
 
     public update(options: VisualUpdateOptions) {
-        try {
+        if (!this.optionsAreValid(options)) {
+            return;
+        }
 
-            if (!this.optionsAreValid(options)) {
-                return;
-            }
+        const dataView = options && options.dataViews && options.dataViews[0];
 
-            const dataView = options && options.dataViews && options.dataViews[0];
+        this.dataView = dataView;
+        this.viewport = options.viewport;
 
-            this.dataView = dataView;
-            this.viewport = options.viewport;
+        this.isLegendNeeded = DataViewConverter.IsLegendNeeded(dataView);
 
-            this.isLegendNeeded = DataViewConverter.IsLegendNeeded(dataView);
+        this.updateMetaData();
 
-            this.updateMetaData();
+        this.settings = Visual.parseSettings(dataView);
+        this.updateSettings(this.settings, dataView);
 
-            this.settings = Visual.parseSettings(dataView);
-            this.updateSettings(this.settings, dataView);
+        this.legendProperties = legendUtils.setLegendProperties(dataView, this.host, this.settings.legend);
 
-            this.legendProperties = legendUtils.setLegendProperties(dataView, this.host, this.settings.legend);
+        this.allDataPoints = DataViewConverter.Convert(dataView, this.host, this.settings, this.legendProperties.colors);
 
-            this.allDataPoints = DataViewConverter.Convert(dataView, this.host, this.settings, this.legendProperties.colors);
+        if (this.isSmallMultiple()) {
+            this.smallMultipleProcess(options.viewport);
+        } else {
+            this.normalChartProcess(options);
+        }
 
-            if (this.isSmallMultiple()) {
-                this.smallMultipleProcess(options.viewport);
-            } else {
-                this.normalChartProcess(options);
-            }
+        if (!this.isSelectionRestored) {
+            this.restoreSelection();
 
-            if (!this.isSelectionRestored) {
-                this.restoreSelection();
-
-                this.isSelectionRestored = true;
-            }
-        } catch (e) {
-            console.error(e);
-            throw e;
+            this.isSelectionRestored = true;
         }
     }
 
