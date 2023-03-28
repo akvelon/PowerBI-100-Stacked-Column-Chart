@@ -79,7 +79,7 @@ export class DataViewConverter {
             return true;
         }
 
-        const columns: DataViewCategoricalColumn[] = dataView.categorical.categories;
+        const columns: DataViewCategoricalColumn[] = dataView.categorical?.categories;
 
         if (columns && columns.filter(x => x.source && x.source.roles[categoryField]).length) {
             return true;

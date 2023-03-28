@@ -155,32 +155,37 @@ export class Visual implements IColumnVisual {
     public readonly axesSize: IAxesSize = {xAxisHeight: 10, yAxisWidth: 15};
 
     constructor(options: VisualConstructorOptions) {
-        this.mainElement = d3select(options.element);
+        try {
+            this.mainElement = d3select(options.element);
 
-        this.mainHtmlElement = options.element;
+            this.mainHtmlElement = options.element;
 
-        this.host = options.host;
+            this.host = options.host;
 
-        this.tooltipServiceWrapper = createTooltipServiceWrapper(
-            options.host.tooltipService,
-            options.element);
+            this.tooltipServiceWrapper = createTooltipServiceWrapper(
+                options.host.tooltipService,
+                options.element);
 
-        this.interactivityService = createInteractivitySelectionService(this.host);
+            this.interactivityService = createInteractivitySelectionService(this.host);
 
-        const customLegendBehavior = new CustomLegendBehavior(this.saveSelection.bind(this));
-        this.legend = createLegend(
-            this.mainHtmlElement,
-            false,
-            this.interactivityService,
-            true,
-            null,
-            customLegendBehavior
-        );
+            const customLegendBehavior = new CustomLegendBehavior(this.saveSelection.bind(this));
+            this.legend = createLegend(
+                this.mainHtmlElement,
+                false,
+                this.interactivityService,
+                true,
+                null,
+                customLegendBehavior
+            );
 
-        this.behavior = new WebBehavior(this);
+            this.behavior = new WebBehavior(this);
 
-        this.legendElementRoot = this.mainElement.selectAll("svg.legend");
-        this.legendElement = this.mainElement.selectAll("svg.legend").selectAll("g");
+            this.legendElementRoot = this.mainElement.selectAll("svg.legend");
+            this.legendElement = this.mainElement.selectAll("svg.legend").selectAll("g");
+        } catch (e) {
+            console.error(e);
+            throw e;
+        }
     }
 
     saveSelection(): void {
@@ -188,7 +193,7 @@ export class Visual implements IColumnVisual {
             .filter(d => d.selected)
             .each(d => {
                 // saving prototype value if no own value (needed for legend)
-                d.identity = Object.getPrototypeOf(d).identity;
+                d.identity = d.identity;
             });
 
         const data: any[] = selected.data();
@@ -243,7 +248,7 @@ export class Visual implements IColumnVisual {
         this.lassoSelection.init(this.mainElement);
 
         if (this.isLegendNeeded) {
-            legendUtils.renderLegend(this.legend, this.mainSvgElement, options.viewport, this.legendProperties);
+            legendUtils.renderLegend(this.legend, this.mainSvgElement, options.viewport, this.legendProperties, this.legendElement);
         } else {
             this.legendElement && this.legendElement.selectAll("*").remove();
             this.mainSvgElement && this.mainSvgElement.style(
@@ -360,36 +365,42 @@ export class Visual implements IColumnVisual {
     }
 
     public update(options: VisualUpdateOptions) {
-        if (!this.optionsAreValid(options)) {
-            return;
-        }
+        try {
 
-        const dataView = options && options.dataViews && options.dataViews[0];
+            if (!this.optionsAreValid(options)) {
+                return;
+            }
 
-        this.dataView = dataView;
-        this.viewport = options.viewport;
+            const dataView = options && options.dataViews && options.dataViews[0];
 
-        this.isLegendNeeded = DataViewConverter.IsLegendNeeded(dataView);
+            this.dataView = dataView;
+            this.viewport = options.viewport;
 
-        this.updateMetaData();
+            this.isLegendNeeded = DataViewConverter.IsLegendNeeded(dataView);
 
-        this.settings = Visual.parseSettings(dataView);
-        this.updateSettings(this.settings, dataView);
+            this.updateMetaData();
 
-        this.legendProperties = legendUtils.setLegendProperties(dataView, this.host, this.settings.legend);
+            this.settings = Visual.parseSettings(dataView);
+            this.updateSettings(this.settings, dataView);
 
-        this.allDataPoints = DataViewConverter.Convert(dataView, this.host, this.settings, this.legendProperties.colors);
+            this.legendProperties = legendUtils.setLegendProperties(dataView, this.host, this.settings.legend);
 
-        if (this.isSmallMultiple()) {
-            this.smallMultipleProcess(options.viewport);
-        } else {
-            this.normalChartProcess(options);
-        }
+            this.allDataPoints = DataViewConverter.Convert(dataView, this.host, this.settings, this.legendProperties.colors);
 
-        if (!this.isSelectionRestored) {
-            this.restoreSelection();
+            if (this.isSmallMultiple()) {
+                this.smallMultipleProcess(options.viewport);
+            } else {
+                this.normalChartProcess(options);
+            }
 
-            this.isSelectionRestored = true;
+            if (!this.isSelectionRestored) {
+                this.restoreSelection();
+
+                this.isSelectionRestored = true;
+            }
+        } catch (e) {
+            console.error(e);
+            throw e;
         }
     }
 
@@ -607,7 +618,7 @@ export class Visual implements IColumnVisual {
         };
 
         if (this.isLegendNeeded) {
-            legendUtils.renderLegend(this.legend, this.mainDivElement, this.viewport, this.legendProperties);
+            legendUtils.renderLegend(this.legend, this.mainDivElement, this.viewport, this.legendProperties, this.legendElement);
             legendSize = this.calculateLegendSize(this.settings.legend, this.legendElementRoot);
         } else {
             this.legendElement && this.legendElement.selectAll("*").remove();
