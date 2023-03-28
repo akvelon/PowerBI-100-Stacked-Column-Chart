@@ -24,6 +24,7 @@ import {
 import {AxisRangeType, HorizontalPosition, VerticalPosition, VisualSettings} from "../settings";
 import * as visualUtils from '../utils';
 import {createAxis} from "../utils/axis/createAxis";
+
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
 import DataViewPropertyValue = powerbi.DataViewPropertyValue;
 import IViewport = powerbi.IViewport;
@@ -210,8 +211,7 @@ export class RenderAxes {
     public static render(settings: VisualSettings,
                          xAxisSvgGroup: d3Selection<SVGElement>,
                          yAxisSvgGroup: d3Selection<SVGElement>,
-                         axes: IAxes,
-                         maxYLabelsWidth = null) {
+                         axes: IAxes) {
         // Now we call the axis funciton, that will render an axis on our visual.
         if (settings.valueAxis.show) {
             yAxisSvgGroup.call(axes.y.axis);

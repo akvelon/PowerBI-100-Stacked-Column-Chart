@@ -1,5 +1,20 @@
+"use strict";
+
+import powerbi from "powerbi-visuals-api";
 import {CssConstants} from "powerbi-visuals-utils-svgutils";
 import {ClassAndSelector} from "powerbi-visuals-utils-svgutils/lib/cssConstants";
+import {
+    IInteractiveBehavior,
+    IInteractivityService
+} from "powerbi-visuals-utils-interactivityutils/lib/interactivityBaseService";
+import {ITooltipServiceWrapper} from "powerbi-visuals-utils-tooltiputils";
+import {TextProperties} from "powerbi-visuals-utils-formattingutils/lib/src/interfaces";
+import {textMeasurementService, valueFormatter} from "powerbi-visuals-utils-formattingutils";
+import {translate as svgTranslate} from "powerbi-visuals-utils-svgutils/lib/manipulation";
+import {pixelConverter as PixelConverter} from "powerbi-visuals-utils-typeutils";
+import {dataLabelUtils} from "powerbi-visuals-utils-chartutils";
+import {select as d3select} from "d3-selection";
+
 import {
     Coordinates,
     d3Selection,
@@ -9,13 +24,6 @@ import {
     VisualDataPoint,
     VisualMeasureMetadata
 } from "../visualInterfaces";
-import {
-    IInteractiveBehavior,
-    IInteractivityService
-} from "powerbi-visuals-utils-interactivityutils/lib/interactivityBaseService";
-import {ITooltipServiceWrapper, TooltipEventArgs} from "powerbi-visuals-utils-tooltiputils";
-import powerbi from "powerbi-visuals-api";
-import IVisualHost = powerbi.extensibility.visual.IVisualHost;
 import {
     ConstantLineSettings,
     HorizontalPosition,
@@ -28,16 +36,11 @@ import * as visualUtils from '../utils';
 import {Visual} from "../visual";
 import {WebBehaviorOptions} from "../behavior";
 import {DataLabelHelper} from "../utils/dataLabelHelper";
-import {TextProperties} from "powerbi-visuals-utils-formattingutils/lib/src/interfaces";
-import {textMeasurementService, valueFormatter} from "powerbi-visuals-utils-formattingutils";
 import {Text} from "../settings";
-import {translate as svgTranslate} from "powerbi-visuals-utils-svgutils/lib/manipulation";
-import {pixelConverter as PixelConverter} from "powerbi-visuals-utils-typeutils";
-import {dataLabelUtils} from "powerbi-visuals-utils-chartutils";
 import * as formattingUtils from '../utils/formattingUtils';
-import PrimitiveValue = powerbi.PrimitiveValue;
-import {select as d3select} from "d3-selection";
 
+import IVisualHost = powerbi.extensibility.visual.IVisualHost;
+import PrimitiveValue = powerbi.PrimitiveValue;
 
 class Selectors {
     static BarSelect = CssConstants.createClassAndSelector("bar");
@@ -560,49 +563,36 @@ export class RenderVisual {
         if (settings.layoutMode === LayoutMode.Matrix) {
             let topTitles: d3Selection<SVGElement> = chartElement.append("svg");
 
-            topTitles.selectAll("*").data(uniqueColumns);
+            let textProperties: TextProperties = {
+                fontFamily,
+                fontSize: fontSizeInPx
+            };
 
-            // topTitlestext.enter()
-            //     .append("text")
-            //     .attr("class", Selectors.AxisLabelSelector.className);
-            //
-            // // For removed categories, remove the SVG group.
-            // topTitlestext.exit()
-            //     .remove();
-            //
-            // let textProperties: TextProperties = {
-            //     fontFamily,
-            //     fontSize: fontSizeInPx
-            // };
-            //
-            // topTitlestext
-            //     .style({
-            //         "text-anchor": "middle",
-            //         "font-size": fontSizeInPx,
-            //         "font-family": fontFamily,
-            //         "fill": settings.fontColor
-            //     })
-            //     .attr({
-            //         dy: "1em"
-            //     })
-            //     .text(d => {
-            //         if (d || d === 0) {
-            //             textProperties.text = d.toString();
-            //             return TextMeasurementService.getTailoredTextOrDefault(textProperties, chartSize.width - 10);
-            //         }
-            //
-            //         return null;
-            //     })
-            //     .call((text: d3.Selection<any>) => {
-            //         for (let j = 0; j < uniqueColumns.length; ++j) {
-            //             const textSelectionX: d3.Selection<any> = d3.select(text[0][j]);
-            //             let x = leftSpace + j * chartSize.width + chartSize.width / 2 + this.gapBetweenCharts * j;
-            //
-            //             textSelectionX.attr({
-            //                 "transform": svg.translate(x, topSpace / 2)
-            //             });
-            //         }
-            //     });
+            topTitles.selectAll("*")
+                .data(uniqueColumns)
+                .join("text")
+                .attr("class", Selectors.AxisLabelSelector.className)
+                .style("text-anchor", "middle")
+                .style("font-size", fontSizeInPx)
+                .style("font-family", fontFamily)
+                .style("fill", settings.fontColor)
+                .attr('dy', "1em")
+                .text(d => {
+                    if (d || d === 0) {
+                        textProperties.text = d.toString();
+                        return textMeasurementService.getTailoredTextOrDefault(textProperties, chartSize.width - 10);
+                    }
+
+                    return null;
+                })
+                .call((text: d3Selection<any>) => {
+                    for (let j = 0; j < uniqueColumns.length; ++j) {
+                        const textSelectionX: d3Selection<any> = d3select(text.nodes()[j]);
+                        let x = leftSpace + j * chartSize.width + chartSize.width / 2 + this.gapBetweenCharts * j;
+
+                        textSelectionX.attr("transform", svgTranslate(x, topSpace / 2));
+                    }
+                });
         }
 
         const leftTitleSpace: number = 120;
@@ -613,48 +603,38 @@ export class RenderVisual {
         };
 
         let leftTitles: d3Selection<SVGElement> = chartElement.append("svg");
-        let leftTitlesText: d3Selection<PrimitiveValue> = leftTitles.selectAll("*").data(uniqueRows);
 
-        // leftTitlesText.enter()
-        //     .append("text")
-        //     .attr("class", Selectors.AxisLabelSelector.className);
-        //
-        // // For removed categories, remove the SVG group.
-        // leftTitlesText.exit()
-        //     .remove();
-        //
-        // leftTitlesText
-        //     .style({
-        //         "text-anchor": "middle",
-        //         "font-size": fontSizeInPx,
-        //         "font-family": fontFamily,
-        //         "fill": settings.fontColor
-        //     })
-        //     .text(d => {
-        //         if (d || d === 0) {
-        //             textProperties.text = d.toString();
-        //             return TextMeasurementService.getTailoredTextOrDefault(textProperties, leftTitleSpace);
-        //         }
-        //
-        //         return null;
-        //     })
-        //     .call((text: d3.Selection<any>) => {
-        //         for (let i = 0; i < uniqueRows.length; ++i) {
-        //             const textSelectionX: d3.Selection<any> = d3.select(text[0][i]);
-        //             let y = 0;
-        //
-        //             if (settings.layoutMode === LayoutMode.Flow) {
-        //
-        //                 let previousChartGroupHeight: number = i * rowsInFlow * chartSize.height + this.gapBetweenCharts * i * rowsInFlow + topSpace * rowsInFlow * i;
-        //                 y = previousChartGroupHeight + rowsInFlow * chartSize.height / 2 + topSpace;
-        //             } else {
-        //                 y = i * chartSize.height + chartSize.height / 2 + topSpace * 2 + this.gapBetweenCharts * i;
-        //             }
-        //
-        //             textSelectionX.attr({
-        //                 "transform": svg.translate(leftSpace / 2, y)
-        //             });
-        //         }
-        //     });
+        leftTitles.selectAll("*")
+            .data(uniqueRows)
+            .join("text")
+            .attr("class", Selectors.AxisLabelSelector.className)
+            .style("text-anchor", "middle")
+            .style("font-size", fontSizeInPx)
+            .style("font-family", fontFamily)
+            .style("fill", settings.fontColor)
+            .text(d => {
+                if (d || d === 0) {
+                    textProperties.text = d.toString();
+                    return textMeasurementService.getTailoredTextOrDefault(textProperties, leftTitleSpace);
+                }
+
+                return null;
+            })
+            .call((text: d3Selection<any>) => {
+                for (let i = 0; i < uniqueRows.length; ++i) {
+                    const textSelectionX: d3Selection<any> = d3select(text.nodes()[i]);
+                    let y = 0;
+
+                    if (settings.layoutMode === LayoutMode.Flow) {
+
+                        let previousChartGroupHeight: number = i * rowsInFlow * chartSize.height + this.gapBetweenCharts * i * rowsInFlow + topSpace * rowsInFlow * i;
+                        y = previousChartGroupHeight + rowsInFlow * chartSize.height / 2 + topSpace;
+                    } else {
+                        y = i * chartSize.height + chartSize.height / 2 + topSpace * 2 + this.gapBetweenCharts * i;
+                    }
+
+                    textSelectionX.attr("transform", svgTranslate(leftSpace / 2, y));
+                }
+            });
     }
 }
