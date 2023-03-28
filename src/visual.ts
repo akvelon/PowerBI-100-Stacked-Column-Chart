@@ -91,7 +91,6 @@ export class Visual implements IColumnVisual {
     public webBehaviorSelectionHandler: ISelectionHandler;
 
     private mainSvgElement: d3Selection<SVGElement>;
-//         private mainGElement: d3.Selection<SVGElement>;
     private xAxisSvgGroup: d3Selection<SVGElement>;
     private yAxisSvgGroup: d3Selection<SVGElement>;
     private axisGraphicsContext: d3Selection<SVGElement>;
@@ -143,7 +142,6 @@ export class Visual implements IColumnVisual {
     private LassoSelectionForSmallMultiple = new LassoSelectionForSmallMultiple(Selectors.BarSelect, this);
 
     private visualTranslation: VisualTranslation;
-//         public skipScrollbarUpdate: boolean = false;
 
     private dataPointsByCategories: CategoryDataPoints[];
 
