@@ -74,3 +74,8 @@ path.domain {
     opacity: .5;
   }
 }
+
+.legend {
+  // A hack to show the legend above the chart, preventing it from being covered by lasso selection click listener.
+  z-index: 1000;
+}

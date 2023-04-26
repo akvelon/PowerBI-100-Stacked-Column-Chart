@@ -20,6 +20,7 @@ import {axis} from "powerbi-visuals-utils-chartutils";
 import {TextProperties} from "powerbi-visuals-utils-formattingutils/lib/src/interfaces";
 import {textMeasurementService, valueFormatter} from "powerbi-visuals-utils-formattingutils";
 import {IValueFormatter} from "powerbi-visuals-utils-formattingutils/lib/src/valueFormatter";
+import {MainSvgClass} from "./cssSelectors";
 
 import {
     AxesDomains,
@@ -70,7 +71,6 @@ import PrimitiveValue = powerbi.PrimitiveValue;
 import "../style/visual.less";
 
 class Selectors {
-    static MainSvg = CssConstants.createClassAndSelector("bar-chart-svg");
     static VisualSvg = CssConstants.createClassAndSelector("bar-chart-visual");
     static BarSelect = CssConstants.createClassAndSelector("bar");
     static BarGroupSelect = CssConstants.createClassAndSelector("bar-group");
@@ -352,7 +352,7 @@ export class Visual implements IColumnVisual {
             this.mainSvgElement.selectAll("*").remove();
         } else {
             this.mainSvgElement = this.mainElement.append('svg')
-                .classed(Selectors.MainSvg.className, true)
+                .classed(MainSvgClass.className, true)
                 .attr('width', "100%")
                 .attr('height', "100%");
         }

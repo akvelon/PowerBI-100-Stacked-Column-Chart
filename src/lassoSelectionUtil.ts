@@ -2,6 +2,7 @@
 
 import {select as d3select} from "d3-selection";
 import powerbi from "powerbi-visuals-api";
+import {MainSvgClass} from "./cssSelectors";
 
 import {CategoryDataPoints, d3Selection, IColumnVisual, SelectionState, VisualDataPoint} from "./visualInterfaces";
 import {DataViewConverter} from "./dataViewConverter";
@@ -59,9 +60,10 @@ export class LassoSelection {
             this.selection.rect_node = this.selection.rect.node() as HTMLElement;
         }
 
-        d3select('.bar-chart-svg').on('mousedown.selection', (e) => {
-            this.onMousedown(e);
-        });
+        d3select(MainSvgClass.selectorName)
+            .on('mousedown.selection', (e) => {
+                this.onMousedown(e);
+            });
         d3select('html')
             .on('mousemove.selection', (e) => {
                 this.onMousemove(e);

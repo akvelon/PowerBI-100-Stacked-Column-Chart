@@ -1,7 +1,7 @@
 "use strict";
 
 import powerbi from "powerbi-visuals-api";
-import {ClassAndSelector} from "powerbi-visuals-utils-svgutils/lib/cssConstants";
+import {ClassAndSelector, createClassAndSelector} from "powerbi-visuals-utils-svgutils/lib/cssConstants";
 import {select as d3select} from "d3-selection";
 
 import {d3Selection, IColumnVisual, VisualDataPoint} from "./visualInterfaces";
@@ -20,8 +20,8 @@ enum SelectionAction {
 }
 
 class Constants {
-    static RectClass: string = 'selection-rect';
-    static RectAdditionalClass: string = 'selection-rect-small-multiple';
+    static RectClass = createClassAndSelector('selection-rect');
+    static RectAdditionalClass = createClassAndSelector('selection-rect-small-multiple');
     static EventNameSpace: string = '.selectionForSmallMultiple';
 }
 
@@ -47,8 +47,13 @@ export class LassoSelectionForSmallMultiple {
     }
 
     init(mainElement: d3Selection<HTMLElement>): void {
-
-        const rectangleElement: d3Selection<any> = mainElement.append('div').classed(Constants.RectClass, true).classed(Constants.RectAdditionalClass, true);
+        const existingRectangleElement = mainElement.select(Constants.RectAdditionalClass.selectorName);
+        const rectangleElement: d3Selection<any> =
+            !existingRectangleElement.empty()
+                ? existingRectangleElement
+                : mainElement.append('div')
+                    .classed(Constants.RectClass.className, true)
+                    .classed(Constants.RectAdditionalClass.className, true);
         this.lassoElement = new LassoElement(rectangleElement);
     }
 
