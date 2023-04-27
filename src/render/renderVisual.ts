@@ -1,741 +1,640 @@
-module powerbi.extensibility.visual {
-    import svg = powerbi.extensibility.utils.svg;
-    import CssConstants = svg.CssConstants;
-    import IInteractiveBehavior = powerbi.extensibility.utils.interactivity.IInteractiveBehavior;
-    import IInteractivityService = powerbi.extensibility.utils.interactivity.IInteractivityService;
-    import TooltipEventArgs = powerbi.extensibility.utils.tooltip.TooltipEventArgs;
-    import ITooltipServiceWrapper = powerbi.extensibility.utils.tooltip.ITooltipServiceWrapper;
-    import UpdateSelection = d3.selection.Update;
-    import dataLabelUtils = powerbi.extensibility.utils.chart.dataLabel.utils;
-    import PixelConverter = powerbi.extensibility.utils.type.PixelConverter;
-    import ValueFormatter = powerbi.extensibility.utils.formatting.valueFormatter;
-    import IValueFormatter = powerbi.extensibility.utils.formatting.IValueFormatter;
-    import translate = powerbi.extensibility.utils.svg.translate;
-    import ClassAndSelector = powerbi.extensibility.utils.svg.CssConstants.ClassAndSelector;
-    import createClassAndSelector = powerbi.extensibility.utils.svg.CssConstants.createClassAndSelector;
-    import TextProperties = powerbi.extensibility.utils.formatting.TextProperties;    
-    import TextMeasurementService = powerbi.extensibility.utils.formatting.textMeasurementService;
+"use strict";
 
-    module Selectors {
-        export const BarSelect = CssConstants.createClassAndSelector("bar");
-        export const BarGroupSelect = CssConstants.createClassAndSelector("bar-group");
-        export const AxisLabelSelector = CssConstants.createClassAndSelector("axisLabel");
-    }
+import powerbi from "powerbi-visuals-api";
+import {CssConstants} from "powerbi-visuals-utils-svgutils";
+import {ClassAndSelector} from "powerbi-visuals-utils-svgutils/lib/cssConstants";
+import {
+    IInteractiveBehavior,
+    IInteractivityService
+} from "powerbi-visuals-utils-interactivityutils/lib/interactivityBaseService";
+import {ITooltipServiceWrapper} from "powerbi-visuals-utils-tooltiputils";
+import {TextProperties} from "powerbi-visuals-utils-formattingutils/lib/src/interfaces";
+import {textMeasurementService, valueFormatter} from "powerbi-visuals-utils-formattingutils";
+import {translate as svgTranslate} from "powerbi-visuals-utils-svgutils/lib/manipulation";
+import {pixelConverter as PixelConverter} from "powerbi-visuals-utils-typeutils";
+import {dataLabelUtils} from "powerbi-visuals-utils-chartutils";
+import {select as d3select} from "d3-selection";
 
-    export class RenderVisual {
-        private static Label: ClassAndSelector = createClassAndSelector("label");
+import {
+    Coordinates,
+    d3Selection,
+    IAxes, ISize,
+    SmallMultipleOptions,
+    VisualData,
+    VisualDataPoint,
+    VisualMeasureMetadata
+} from "../visualInterfaces";
+import {
+    ConstantLineSettings,
+    HorizontalPosition,
+    LabelOrientation, LayoutMode,
+    LineStyle,
+    Position, SmallMultipleSettings, VerticalPosition,
+    VisualSettings
+} from "../settings";
+import * as visualUtils from '../utils';
+import {Visual} from "../visual";
+import {WebBehaviorOptions} from "../behavior";
+import {DataLabelHelper} from "../utils/dataLabelHelper";
+import {Text} from "../settings";
+import * as formattingUtils from '../utils/formattingUtils';
 
-        public static render(
-            data: VisualData,
-            visualSvgGroup: d3.Selection<SVGElement>,
-            clearCatcher: d3.Selection<any>,
-            visualInteractivityService: IInteractivityService,
-            visualBehavior: IInteractiveBehavior,
-            tooltipServiceWrapper: ITooltipServiceWrapper,
-            host: IVisualHost,
-            hasHighlight: boolean,
-            settings: VisualSettings) {
-            // Select all bar groups in our chart and bind them to our categories.
-            // Each group will contain a set of bars, one for each of the values in category.
-            const barGroupSelect = visualSvgGroup.selectAll(Selectors.BarGroupSelect.selectorName)
-                .data([data.dataPoints]);
+import IVisualHost = powerbi.extensibility.visual.IVisualHost;
+import PrimitiveValue = powerbi.PrimitiveValue;
 
-            // When a new category added, create a new SVG group for it.
-            barGroupSelect.enter()
-                .append("g")
-                .attr("class", Selectors.BarGroupSelect.className);
+class Selectors {
+    static BarSelect = CssConstants.createClassAndSelector("bar");
+    static BarGroupSelect = CssConstants.createClassAndSelector("bar-group");
+    static AxisLabelSelector = CssConstants.createClassAndSelector("axisLabel");
+}
 
-            // For removed categories, remove the SVG group.
-            barGroupSelect.exit()
-                .remove();
+export class RenderVisual {
 
-            // Update the position of existing SVG groups.
-            // barGroupSelect.attr("transform", d => `translate(0, ${data.axes.y(d.category)})`);
+    private static Label: ClassAndSelector = CssConstants.createClassAndSelector("label");
 
-            // Now we bind each SVG group to the values in corresponding category.
-            // To keep the length of the values array, we transform each value into object,
-            // that contains both value and total count of all values in this category.
-            const barSelect = barGroupSelect
-                .selectAll(Selectors.BarSelect.selectorName)
-                .data(data.dataPoints);
+    public static render(
+        data: VisualData,
+        visualSvgGroup: d3Selection<SVGElement>,
+        clearCatcher: d3Selection<any>,
+        visualInteractivityService: IInteractivityService<any>,
+        visualBehavior: IInteractiveBehavior,
+        tooltipServiceWrapper: ITooltipServiceWrapper,
+        host: IVisualHost,
+        hasHighlight: boolean,
+        settings: VisualSettings) {
+        const barGroupSelect = visualSvgGroup.selectAll(Selectors.BarGroupSelect.selectorName)
+            .data([data.dataPoints])
+            .join("g")
+            .attr("class", Selectors.BarGroupSelect.className);
 
-            // For each new value, we create a new rectange.
-            barSelect.enter().append("rect")
-                .attr("class", Selectors.BarSelect.className);
+        const interactivityService = visualInteractivityService,
+            hasSelection: boolean = interactivityService.hasSelection();
 
-            // Remove rectangles, that no longer have matching values.
-            barSelect.exit()
-                .remove();
-
-            barSelect
-                .attr({
-                    height: d => {
-                        return d.barCoordinates.height;
-                    },
-                    width: d => {
-                        return d.barCoordinates.width;
-                    },
-                    x: d => {
-                        return d.barCoordinates.x;
-                    },
-                    y: d => {
-                        return d.barCoordinates.y;
-                    },
-                    fill: d => d.color
-                });
-
-            let interactivityService = visualInteractivityService,
-                hasSelection: boolean = interactivityService.hasSelection();
-
-            barSelect.style({
-                "fill-opacity": (p: VisualDataPoint) => visualUtils.getFillOpacity(
+        barGroupSelect
+            .selectAll(Selectors.BarSelect.selectorName)
+            .data(data.dataPoints)
+            .join("rect")
+            .attr("class", Selectors.BarSelect.className)
+            .attr('height', d => {
+                return d.barCoordinates.height;
+            })
+            .attr('width', d => {
+                return d.barCoordinates.width;
+            })
+            .attr('x', d => {
+                return d.barCoordinates.x;
+            })
+            .attr('y', d => {
+                return d.barCoordinates.y;
+            })
+            .attr('fill', d => d.color)
+            .style(
+                "fill-opacity", (p: VisualDataPoint) => visualUtils.getFillOpacity(
                     p.selected,
                     p.highlight,
                     !p.highlight && hasSelection,
-                    !p.selected && data.hasHighlight),
-                "stroke": (p: VisualDataPoint)  => {
-                    if ((hasHighlight || hasSelection) && visualUtils.isSelected(p.selected,
-                        p.highlight,
-                        !p.highlight && hasSelection,
-                        !p.selected && hasHighlight)) {
-                            return Visual.DefaultStrokeSelectionColor;
-                        }                        
-
-                    return p.color;
-                },
-                "stroke-width": p => {
-                    if ((hasHighlight || hasSelection) && visualUtils.isSelected(p.selected,
-                        p.highlight,
-                        !p.highlight && hasSelection,
-                        !p.selected && hasHighlight)) {
-                        return Visual.DefaultStrokeSelectionWidth;
-                    }
-
-                    return Visual.DefaultStrokeWidth;
-                }
-            });
-
-            if (interactivityService) {
-                interactivityService.applySelectionStateToData(data.dataPoints);
-
-                let behaviorOptions: WebBehaviorOptions = {
-                    bars: barSelect,
-                    clearCatcher: clearCatcher,
-                    interactivityService: visualInteractivityService,
-                    host: host,
-                    selectionSaveSettings: settings.selectionSaveSettings
-                };
-
-                interactivityService.bind(data.dataPoints, visualBehavior, behaviorOptions);
-            }
-
-            this.renderTooltip(barSelect, tooltipServiceWrapper);
-        }
-
-        public static renderDataLabelsBackground(
-            dataPoints: VisualDataPoint[],
-            settings: VisualSettings,
-            dataLabelsBackgroundContext: d3.Selection<any>): void {
-
-            let labelSettings: categoryLabelsSettings = settings.categoryLabels;
-            let isHorizontal: boolean = labelSettings.orientation === LabelOrientation.Horizontal;
-
-            dataLabelsBackgroundContext.selectAll("*").remove();
-
-            if (!labelSettings.showBackground) {
-                return;
-            }
-
-            let backgroundSelection: UpdateSelection<VisualDataPoint> = dataLabelsBackgroundContext
-                        .selectAll(RenderVisual.Label.selectorName)
-                        .data(dataPoints);
-
-            backgroundSelection
-                .enter()
-                .append("svg:rect");
-
-            backgroundSelection
-                .attr({
-                    height: d => {
-                        return d.labelCoordinates.height + DataLabelHelper.labelBackgroundHeightPadding * (isHorizontal ? 1 : 2);
-                    },
-                    width: d => {
-                        return d.labelCoordinates.width + DataLabelHelper.labelBackgroundWidthPadding;
-                    },
-                    x: d => {
-                        return d.labelCoordinates.x - (isHorizontal ? DataLabelHelper.labelBackgroundXShift : d.labelCoordinates.width);
-                    },
-                    y: d => {
-                        return d.labelCoordinates.y - d.labelCoordinates.height + (isHorizontal ? -DataLabelHelper.labelBackgroundYShift : DataLabelHelper.labelBackgroundYShift);
-                    },
-                    rx: 4,
-                    ry: 4,
-                    fill: settings.categoryLabels.backgroundColor
-                });
-
-            backgroundSelection.style({
-                "fill-opacity": (100 - settings.categoryLabels.transparency) / 100,
-                "pointer-events": "none"
-            });
-
-            backgroundSelection
-                .exit()
-                .remove();
-        }
-
-        public static renderDataLabelsBackgroundForSmallMultiple(
-            data: VisualData,
-            settings: VisualSettings,
-            dataLabelsBackgroundContext: d3.Selection<any>,
-            dataPoints: VisualDataPoint[] = null): void {
-
-            let labelSettings: categoryLabelsSettings = settings.categoryLabels;
-
-            dataLabelsBackgroundContext.selectAll("*").remove();
-
-            if (!labelSettings.showBackground) {
-                return;
-            }
-
-            let dataPointsArray: VisualDataPoint[] = this.filterData(dataPoints || data.dataPoints),
-                backgroundSelection: UpdateSelection<VisualDataPoint> = dataLabelsBackgroundContext
-                        .selectAll(RenderVisual.Label.selectorName)
-                        .data(dataPointsArray);
-
-            backgroundSelection
-                .enter()
-                .append("svg:rect");
-
-            backgroundSelection
-                .attr({
-                    height: d => {
-                        return d.labelCoordinates.height + DataLabelHelper.labelBackgroundHeightPadding;
-                    },
-                    width: d => {
-                        return d.labelCoordinates.width + DataLabelHelper.labelBackgroundWidthPadding;
-                    },
-                    x: d => {
-                        return d.labelCoordinates.x - DataLabelHelper.labelBackgroundXShift;
-                    },
-                    y: d => {
-                        return d.labelCoordinates.y - d.labelCoordinates.height - DataLabelHelper.labelBackgroundYShift;
-                    },
-                    rx: 4,
-                    ry: 4,
-                    fill: settings.categoryLabels.backgroundColor                    
-                });
-
-            backgroundSelection.style({
-                "fill-opacity": (100 - settings.categoryLabels.transparency) / 100,
-                "pointer-events": "none"
-            });
-
-            backgroundSelection
-                .exit()
-                .remove();
-        }
-
-        public static renderDataLabels(
-            dataPoints: VisualDataPoint[],
-            settings: VisualSettings,
-            dataLabelsContext: d3.Selection<any>): void {
-
-            let labelSettings: categoryLabelsSettings = settings.categoryLabels;
-
-            dataLabelsContext.selectAll("*").remove();
-
-            if (!labelSettings.show) {
-                return;
-            }
-
-            let labelSelection: UpdateSelection<VisualDataPoint> = dataLabelsContext
-                        .selectAll(RenderVisual.Label.selectorName)
-                        .data(dataPoints);
-
-            let precision: number = labelSettings.precision;
-
-            let precisionZeros: string = "";
-
-            for (let i = 0; i < precision; ++i) {
-                precisionZeros += "0";
-            }
-
-            let dataLabelFormatter: IValueFormatter = ValueFormatter.create({
-                                                            precision: precision,
-                                                            format: `0.${precisionZeros}%;-0.${precisionZeros}%;0.${precisionZeros}%`
-                                                        });
-
-            labelSelection
-                .enter()
-                .append("svg:text");
-
-            let fontSizeInPx: string = PixelConverter.fromPoint(labelSettings.fontSize);
-            let fontFamily: string = labelSettings.fontFamily ? labelSettings.fontFamily : dataLabelUtils.LabelTextProperties.fontFamily;
-
-            labelSelection
-                .attr("transform", (p: VisualDataPoint) => {
-                    return translate(p.labelCoordinates.x, p.labelCoordinates.y) + (labelSettings.orientation === LabelOrientation.Horizontal ? "" : "rotate(-90)");
-                });
-
-            labelSelection
-                .style({
-                    "fill": labelSettings.color,
-                    "font-size": fontSizeInPx,
-                    "font-family": fontFamily,
-                    "pointer-events": "none"
-                })
-                .text((p: VisualDataPoint) => dataLabelFormatter.format(p.percentValue));
-
-            labelSelection
-                .exit()
-                .remove();
-        }
-
-        public static renderDataLabelsForSmallMultiple(
-            data: VisualData,
-            settings: VisualSettings,
-            dataLabelsContext: d3.Selection<any>,
-            metadata: VisualMeasureMetadata,
-            dataPoints: VisualDataPoint[] = null): void {
-
-            let labelSettings: categoryLabelsSettings = settings.categoryLabels;
-
-            dataLabelsContext.selectAll("*").remove();
-
-            if (!labelSettings.show) {
-                return;
-            }
-
-            let dataPointsArray: VisualDataPoint[] = this.filterData(dataPoints || data.dataPoints),
-                labelSelection: UpdateSelection<VisualDataPoint> = dataLabelsContext
-                        .selectAll(RenderVisual.Label.selectorName)
-                        .data(dataPointsArray);
-
-            let dataLabelFormatter: IValueFormatter =
-                    formattingUtils.createFormatter(labelSettings.displayUnits,
-                                                    labelSettings.precision,
-                                                    metadata.cols.value,
-                                                    formattingUtils.getValueForFormatter(data));
-
-            labelSelection
-                .enter()
-                .append("svg:text");
-
-            let fontSizeInPx: string = PixelConverter.fromPoint(labelSettings.fontSize);
-            let fontFamily: string = labelSettings.fontFamily ? labelSettings.fontFamily : dataLabelUtils.LabelTextProperties.fontFamily;
-
-            labelSelection
-                .attr("transform", (p: VisualDataPoint) => {
-                    return translate(p.labelCoordinates.x, p.labelCoordinates.y);
-                });
-
-            labelSelection
-                .style({
-                    "fill": labelSettings.color,
-                    "font-size": fontSizeInPx,
-                    "font-family": fontFamily,
-                    "pointer-events": "none"
-                })
-                .text((p: VisualDataPoint) => dataLabelFormatter.format(p.value));
-
-            labelSelection
-                .exit()
-                .remove();
-        }
-
-        public static renderSmallMultipleTopTitle(options: SmallMultipleOptions, settings: smallMultipleSettings) {
-            let uniqueColumns: PrimitiveValue[] = options.columns,
-                index: number = options.index,
-                chartSize: ISize = options.chartSize,
-                chartElement: d3.Selection<any> = options.chartElement,
-                leftSpace: number = options.leftSpace,
-                topSpace: number = options.topSpace,
-                textHeight: number = options.textHeight,
-                fontSizeInPx: string = PixelConverter.fromPoint(settings.fontSize),
-                fontFamily: string = settings.fontFamily;
-
-            let topTitles: d3.Selection<SVGElement> = chartElement.append("svg");
-            let topTitlestext: d3.selection.Update<PrimitiveValue> = topTitles.selectAll("*").data([uniqueColumns[index]]);
-
-            topTitlestext.enter()
-                .append("text")
-                .attr("class", Selectors.AxisLabelSelector.className);
-
-            // For removed categories, remove the SVG group.
-            topTitlestext.exit()
-                .remove();
-
-            let textProperties: TextProperties = {
-                fontFamily,
-                fontSize: fontSizeInPx
-            }
-
-            topTitlestext
-                .style({ 
-                    "text-anchor": "middle",
-                    "font-size": fontSizeInPx,
-                    "font-family": fontFamily,
-                    "fill": settings.fontColor
-                })
-                .attr({
-                    dy: "0.3em"
-                })
-                .text(d => {
-                    if (d || d === 0) {
-                        textProperties.text = d.toString();
-                        return TextMeasurementService.getTailoredTextOrDefault(textProperties, chartSize.width - 10);
-                    }         
-                    
-                    return null;
-                })
-                .call((text: d3.Selection<any>) => {
-                    const textSelectionX: d3.Selection<any> = d3.select(text[0][0]);
-                    let x = leftSpace + chartSize.width / 2;
-
-                    textSelectionX.attr({
-                        "transform": svg.translate(x, topSpace + textHeight / 2)
-                    });                    
-                });
-        }
-
-        public static filterData(dataPoints: VisualDataPoint[]): VisualDataPoint[] {
-            let filteredDatapoints: VisualDataPoint[] = [];
-            let validCoordinatesDataPoints: VisualDataPoint[] = dataPoints.filter(x => x.labelCoordinates && !isNaN(x.percentValue));
-
-            for (let index in validCoordinatesDataPoints) {
-                let dataPoint = validCoordinatesDataPoints[index];
-                let coords: Coordinates = dataPoint.labelCoordinates;
-                let isIntersected: boolean = false;
-
-                for (let i in filteredDatapoints) {
-                    let filteredDatapoint: VisualDataPoint = filteredDatapoints[i];
-                    let filteredCoods: Coordinates = filteredDatapoint.labelCoordinates;
-
-                    if (coords.x < filteredCoods.x + filteredCoods.width + 8
-                        && coords.x + coords.width > filteredCoods.x + 8
-                        && coords.y < filteredCoods.y + filteredCoods.height + 2
-                        && coords.y + coords.height > filteredCoods.y + 2 ) {
-                        isIntersected = true;
-                        break;
-                    }
+                    !p.selected && data.hasHighlight))
+            .style("stroke", (p: VisualDataPoint) => {
+                if ((hasHighlight || hasSelection) && visualUtils.isSelected(p.selected,
+                    p.highlight,
+                    !p.highlight && hasSelection,
+                    !p.selected && hasHighlight)) {
+                    return Visual.DefaultStrokeSelectionColor;
                 }
 
-                if (!isIntersected) {
-                    filteredDatapoints.push(dataPoint);
+                return p.color;
+            })
+            .style("stroke-width", p => {
+                if ((hasHighlight || hasSelection) && visualUtils.isSelected(p.selected,
+                    p.highlight,
+                    !p.highlight && hasSelection,
+                    !p.selected && hasHighlight)) {
+                    return Visual.DefaultStrokeSelectionWidth;
                 }
-            }
 
-            return filteredDatapoints;
-        }
+                return Visual.DefaultStrokeWidth;
+            });
 
-        public static renderTooltip(selection: d3.selection.Update<any>, tooltipServiceWrapper: ITooltipServiceWrapper): void {
-            tooltipServiceWrapper.addTooltip(
-                selection,
-                (tooltipEvent: TooltipEventArgs<VisualDataPoint>) => {
-                    return (<VisualDataPoint>tooltipEvent.data).tooltips;
-                },
-                null,
-                true);
-        }
+        if (interactivityService) {
+            interactivityService.applySelectionStateToData(data.dataPoints);
 
-        public static renderConstantLine(settings: constantLineSettings, element: d3.Selection<SVGElement>, axes: IAxes, width: number) {
-            let line: d3.Selection<any> = element.select(".const-line");
-            
-            let yValue: number = settings.value;
-
-            if (yValue < axes.y.dataDomain[0]) {
-                yValue = axes.y.dataDomain[0];
-            } else if (yValue > axes.y.dataDomain[1]) {
-                yValue = axes.y.dataDomain[1];
-            }
-
-            let y = axes.y.scale(yValue);
-            let x = axes.x.scale(axes.x.dataDomain[0]);
-
-            if (line[0][0]) {
-                element.selectAll("line").remove();
-            } 
-
-            if (settings.position === Position.InFront) {
-                line = element.append("line");
-            } else {
-                line = element.insert("line", ".bar-group");
-            }
-
-            line
-                .classed("const-line", true)                    
-                .style({
-                    display: settings.show ? "unset" : "none",
-                    stroke: settings.lineColor,
-                    "stroke-opacity": 1 - settings.transparency / 100,
-                    "stroke-width": "3px"
-                })
-                .attr({
-                    "y2": y,
-                    "x2": width,
-                    "y1": y
-                });
-
-            if (settings.lineStyle === LineStyle.Dotted) {
-                line.style({
-                    "stroke-dasharray": "1, 5",
-                    "stroke-linecap": "round"
-                });
-            } else if (settings.lineStyle === LineStyle.Dashed) {
-                line.style({
-                    "stroke-dasharray": "5, 5"
-                });
-            }
-
-            let textProperties: TextProperties = {
-                fontFamily: "wf_standard-font, helvetica, arial, sans-serif",
-                fontSize: "10px"
+            const behaviorOptions: WebBehaviorOptions = {
+                bars: barGroupSelect.selectAll(Selectors.BarSelect.selectorName),
+                clearCatcher: clearCatcher,
+                interactivityService: visualInteractivityService,
+                host: host,
+                selectionSaveSettings: settings.selectionSaveSettings,
+                behavior: visualBehavior,
+                dataPoints: data.dataPoints
             };
 
-            let text: string = this.getLineText(settings);
-            let textWidth: number = TextMeasurementService.measureSvgTextWidth(textProperties, text);
-            let textHeight: number = TextMeasurementService.estimateSvgTextHeight(textProperties);
-
-            let label: d3.Selection<any> = element.select(".const-label");
-
-            if (label[0][0]) {
-                element.selectAll("text").remove();
-            }
-
-            if (settings.show && settings.dataLabelShow) {
-                label = element
-                            .append("text")
-                            .classed("const-label", true);
-
-                label
-                    .attr({
-                        transform: this.getTranslateForStaticLineLabel(x, y, textWidth, textHeight, settings, axes, width)
-                    });
-
-                label
-                    .text(text)
-                    .style({
-                        "font-family": "wf_standard-font, helvetica, arial, sans-serif",
-                        "font-size": "10px",
-                        fill: settings.fontColor
-                    });
-            }
+            interactivityService.bind(behaviorOptions);
         }
 
-        private static getLineText(settings: constantLineSettings): string {
-            let displayUnits: number = settings.displayUnits;
-            let precision: number = settings.precision;
+        this.renderTooltip(
+            barGroupSelect.selectAll(Selectors.BarSelect.selectorName),
+            tooltipServiceWrapper);
+    }
 
-            let formatter = ValueFormatter.create({
-                value: displayUnits,
-                value2: 0,
-                precision: precision,
-                format: "0"
-            });
+    public static renderDataLabelsBackground(
+        dataPoints: VisualDataPoint[],
+        settings: VisualSettings,
+        dataLabelsBackgroundContext: d3Selection<any>): void {
+        const labelSettings = settings.categoryLabels;
+        const isHorizontal: boolean = labelSettings.orientation === LabelOrientation.Horizontal;
 
-            switch(settings.text) {
-                case Text.Name: {
-                    return settings.name;
-                }
-                case Text.Value: {
-                    return formatter.format(settings.value);
-                }
-                case Text.NameAndValue: {
-                    return settings.name + " " + formatter.format(settings.value);
-                }
-            }
+        dataLabelsBackgroundContext.selectAll("*").remove();
+
+        if (!labelSettings.showBackground) {
+            return;
         }
 
-        private static getTranslateForStaticLineLabel(x: number, y: number, textWidth: number, textHeight: number, settings: constantLineSettings, axes: IAxes, width: number) {
-            let positionAlong: number;
-            const marginAlong: number = 8;
-            if (settings.horizontalPosition === HorizontalPosition.Left) {
-                positionAlong = marginAlong;
-            } else {
-                positionAlong = width - textWidth - marginAlong;
-            }
+        dataLabelsBackgroundContext
+            .selectAll(RenderVisual.Label.selectorName)
+            .data(dataPoints)
+            .join("svg:rect")
+            .attr('height', d => {
+                return d.labelCoordinates.height + DataLabelHelper.labelBackgroundHeightPadding * (isHorizontal ? 1 : 2);
+            })
+            .attr('width', d => {
+                return d.labelCoordinates.width + DataLabelHelper.labelBackgroundWidthPadding;
+            })
+            .attr('x', d => {
+                return d.labelCoordinates.x - (isHorizontal ? DataLabelHelper.labelBackgroundXShift : d.labelCoordinates.width);
+            })
+            .attr('y', d => {
+                return d.labelCoordinates.y - d.labelCoordinates.height + (isHorizontal ? -DataLabelHelper.labelBackgroundYShift : DataLabelHelper.labelBackgroundYShift);
+            })
+            .attr('rx', 4)
+            .attr('ry', 4)
+            .attr('fill', settings.categoryLabels.backgroundColor)
+            .style("fill-opacity", (100 - settings.categoryLabels.transparency) / 100)
+            .style("pointer-events", "none");
+    }
 
-            const marginAcross: number = 5;
-            let positionAcross: number;
-            if (settings.verticalPosition === VerticalPosition.Top) {
-                positionAcross = y - (marginAcross + textHeight);
-            } else {
-                positionAcross = y + (marginAcross + textHeight);
-            }
+    public static renderDataLabelsBackgroundForSmallMultiple(
+        data: VisualData,
+        settings: VisualSettings,
+        dataLabelsBackgroundContext: d3Selection<any>,
+        dataPoints: VisualDataPoint[] = null): void {
 
-            let minPosition: number = axes.y.scale(axes.y.dataDomain[1]);
-            let maxPosition: number = axes.y.scale(axes.y.dataDomain[0]);
+        const labelSettings = settings.categoryLabels;
 
-            if (positionAcross <= minPosition) {
-                positionAcross = minPosition + marginAcross;
-            } else if(positionAcross >= maxPosition) {
-                positionAcross = maxPosition - (textHeight + marginAcross);
-            }
+        dataLabelsBackgroundContext.selectAll("*").remove();
 
-            return translate(positionAlong, positionAcross);
+        if (!labelSettings.showBackground) {
+            return;
         }
 
-        private static gapBetweenCharts: number = 10;
+        const dataPointsArray: VisualDataPoint[] = this.filterData(dataPoints || data.dataPoints);
 
-        public static renderSmallMultipleLines(options: SmallMultipleOptions, settings: smallMultipleSettings) {
-
-            let uniqueRows: PrimitiveValue[] = options.rows,
-                uniqueColumns: PrimitiveValue[] = options.columns,
-                chartSize: ISize = options.chartSize,
-                chartElement: d3.Selection<any> = options.chartElement,
-                leftSpace: number = options.leftSpace,
-                topSpace: number = options.topSpace,
-                rowsInFlow: number = options.rowsInFlow;
-
-            for (let i = 1; i < uniqueRows.length; ++i) {
-                let y: number = 0;
-                if (settings.layoutMode === LayoutMode.Matrix) {
-                    y = topSpace * 2 + i * chartSize.height + this.gapBetweenCharts * (i - 1);
-                } else {
-                    y = topSpace * i * rowsInFlow + i * chartSize.height * rowsInFlow + this.gapBetweenCharts * (i * rowsInFlow - 1) + this.gapBetweenCharts / 2;
-                }
-
-                let line = chartElement.append("line").style({
-                    "stroke": "#aaa",
-                    "stroke-width": 1
-                });
-
-                line.attr({
-                    x1: 0,//leftSpace + gapBetweenCharts / 2,
-                    x2: leftSpace + uniqueColumns.length * chartSize.width + this.gapBetweenCharts * uniqueColumns.length,
-                    y1: y,
-                    y2: y
+        dataLabelsBackgroundContext
+            .selectAll(RenderVisual.Label.selectorName)
+            .data(dataPointsArray)
+            .join("svg:rect")
+            .attr(
+                'height', d => {
+                    return d.labelCoordinates.height + DataLabelHelper.labelBackgroundHeightPadding;
                 })
-            }
+            .attr('width', d => {
+                return d.labelCoordinates.width + DataLabelHelper.labelBackgroundWidthPadding;
+            })
+            .attr('x', d => {
+                return d.labelCoordinates.x - DataLabelHelper.labelBackgroundXShift;
+            })
+            .attr('y', d => {
+                return d.labelCoordinates.y - d.labelCoordinates.height - DataLabelHelper.labelBackgroundYShift;
+            })
+            .attr('rx', 4)
+            .attr('ry', 4)
+            .attr('fill', settings.categoryLabels.backgroundColor)
+            .style("fill-opacity", (100 - settings.categoryLabels.transparency) / 100)
+            .style("pointer-events", "none");
+    }
 
-            if (settings.layoutMode === LayoutMode.Matrix) {
-                for (let j = 1; j < uniqueColumns.length; ++j) { 
-                    let x = leftSpace + j * chartSize.width + this.gapBetweenCharts * j;
-    
-                    let line = chartElement.append("line").style({
-                        "stroke": "#aaa",
-                        "stroke-width": 1
-                    });
-    
-                    line.attr({
-                        x1: x,
-                        x2: x,
-                        y1: 0,
-                        y2: topSpace + uniqueRows.length * chartSize.height + this.gapBetweenCharts * uniqueRows.length
-                    });
-                }
-            }            
+    public static renderDataLabels(
+        dataPoints: VisualDataPoint[],
+        settings: VisualSettings,
+        dataLabelsContext: d3Selection<any>): void {
+
+        const labelSettings = settings.categoryLabels;
+
+        dataLabelsContext.selectAll("*").remove();
+
+        if (!labelSettings.show) {
+            return;
         }
 
-        public static renderSmallMultipleTitles(options: SmallMultipleOptions, settings: smallMultipleSettings) { 
-            let uniqueColumns: PrimitiveValue[] = options.columns,
-                uniqueRows: PrimitiveValue[] = options.rows,
-                chartSize: ISize = options.chartSize,
-                chartElement: d3.Selection<any> = options.chartElement,
-                leftSpace: number = options.leftSpace,                
-                topSpace: number = options.topSpace,
-                fontSizeInPx: string = PixelConverter.fromPoint(settings.fontSize),
-                fontFamily: string = settings.fontFamily,
-                rowsInFlow: number = options.rowsInFlow;
+        const precision: number = labelSettings.precision;
+        let precisionZeros: string = "";
 
-            if (settings.layoutMode === LayoutMode.Matrix) {
-                let topTitles: d3.Selection<SVGElement> = chartElement.append("svg");
-                let topTitlestext: d3.selection.Update<PrimitiveValue> = topTitles.selectAll("*").data(uniqueColumns);
+        for (let i = 0; i < precision; ++i) {
+            precisionZeros += "0";
+        }
 
-                topTitlestext.enter()
-                    .append("text")
-                    .attr("class", Selectors.AxisLabelSelector.className);
+        const dataLabelFormatter = valueFormatter.create({
+            precision: precision,
+            format: `0.${precisionZeros}%;-0.${precisionZeros}%;0.${precisionZeros}%`
+        });
 
-                // For removed categories, remove the SVG group.
-                topTitlestext.exit()
-                    .remove();
+        const fontSizeInPx: string = PixelConverter.fromPoint(labelSettings.fontSize);
+        const fontFamily: string = labelSettings.fontFamily ? labelSettings.fontFamily : dataLabelUtils.LabelTextProperties.fontFamily;
 
-                let textProperties: TextProperties = {
-                    fontFamily,
-                    fontSize: fontSizeInPx
-                }        
+        dataLabelsContext
+            .selectAll(RenderVisual.Label.selectorName)
+            .data(dataPoints)
+            .join("svg:text")
+            .attr("transform", (p: VisualDataPoint) => {
+                return svgTranslate(p.labelCoordinates.x, p.labelCoordinates.y) + (labelSettings.orientation === LabelOrientation.Horizontal ? "" : "rotate(-90)");
+            })
+            .style("fill", labelSettings.color)
+            .style("font-size", fontSizeInPx)
+            .style("font-family", fontFamily)
+            .style("pointer-events", "none")
+            .text((p: VisualDataPoint) => dataLabelFormatter.format(p.percentValue));
+    }
 
-                topTitlestext
-                    .style({ 
-                        "text-anchor": "middle",
-                        "font-size": fontSizeInPx,
-                        "font-family": fontFamily,
-                        "fill": settings.fontColor
-                    })
-                    .attr({
-                        dy: "1em"
-                    })
-                    .text(d => {
-                        if (d || d === 0) {
-                            textProperties.text = d.toString();
-                            return TextMeasurementService.getTailoredTextOrDefault(textProperties, chartSize.width - 10);
-                        }         
-                        
-                        return null;
-                    })
-                    .call((text: d3.Selection<any>) => {
-                        for (let j = 0; j < uniqueColumns.length; ++j) { 
-                            const textSelectionX: d3.Selection<any> = d3.select(text[0][j]);
-                            let x = leftSpace + j * chartSize.width + chartSize.width / 2 + this.gapBetweenCharts * j;
+    public static renderDataLabelsForSmallMultiple(
+        data: VisualData,
+        settings: VisualSettings,
+        dataLabelsContext: d3Selection<any>,
+        metadata: VisualMeasureMetadata,
+        dataPoints: VisualDataPoint[] = null): void {
 
-                            textSelectionX.attr({
-                                "transform": svg.translate(x, topSpace / 2)
-                            });
-                        }
-                    });
+        const labelSettings = settings.categoryLabels;
+
+        dataLabelsContext.selectAll("*").remove();
+
+        if (!labelSettings.show) {
+            return;
+        }
+
+        const dataPointsArray: VisualDataPoint[] = this.filterData(dataPoints || data.dataPoints);
+
+        const dataLabelFormatter =
+            formattingUtils.createFormatter(labelSettings.displayUnits,
+                labelSettings.precision,
+                metadata.cols.value,
+                formattingUtils.getValueForFormatter(data));
+
+        const fontSizeInPx: string = PixelConverter.fromPoint(labelSettings.fontSize);
+        const fontFamily: string = labelSettings.fontFamily ? labelSettings.fontFamily : dataLabelUtils.LabelTextProperties.fontFamily;
+
+        dataLabelsContext
+            .selectAll(RenderVisual.Label.selectorName)
+            .data(dataPointsArray)
+            .join("svg:text")
+            .attr("transform", (p: VisualDataPoint) => {
+                return svgTranslate(p.labelCoordinates.x, p.labelCoordinates.y);
+            })
+            .style("fill", labelSettings.color)
+            .style("font-size", fontSizeInPx)
+            .style("font-family", fontFamily)
+            .style("pointer-events", "none")
+            .text((p: VisualDataPoint) => dataLabelFormatter.format(p.value));
+    }
+
+    public static renderSmallMultipleTopTitle(options: SmallMultipleOptions, settings: SmallMultipleSettings) {
+        const uniqueColumns = options.columns,
+            index: number = options.index,
+            chartSize: ISize = options.chartSize,
+            chartElement: d3Selection<any> = options.chartElement,
+            leftSpace: number = options.leftSpace,
+            topSpace: number = options.topSpace,
+            textHeight: number = options.textHeight,
+            fontSizeInPx: string = PixelConverter.fromPoint(settings.fontSize),
+            fontFamily: string = settings.fontFamily;
+
+        const topTitles: d3Selection<SVGElement> = chartElement.append("svg");
+
+        const textProperties: TextProperties = {
+            fontFamily,
+            fontSize: fontSizeInPx
+        };
+
+        topTitles.selectAll("*")
+            .data([uniqueColumns[index]])
+            .join("text")
+            .attr("class", Selectors.AxisLabelSelector.className)
+            .style("text-anchor", "middle")
+            .style("font-size", fontSizeInPx)
+            .style("font-family", fontFamily)
+            .style("fill", settings.fontColor)
+            .attr('dy', "0.3em")
+            .text(d => {
+                if (d || d === 0) {
+                    textProperties.text = d.toString();
+                    return textMeasurementService.getTailoredTextOrDefault(textProperties, chartSize.width - 10);
+                }
+
+                return null;
+            })
+            .call((text: d3Selection<any>) => {
+                const textSelectionX: d3Selection<any> = d3select(text.nodes()[0]);
+                const x = leftSpace + chartSize.width / 2;
+
+                textSelectionX.attr("transform", svgTranslate(x, topSpace + textHeight / 2));
+            });
+    }
+
+    public static filterData(dataPoints: VisualDataPoint[]): VisualDataPoint[] {
+        const filteredDatapoints: VisualDataPoint[] = [];
+        const validCoordinatesDataPoints: VisualDataPoint[] = dataPoints.filter(x => x.labelCoordinates && !isNaN(x.percentValue));
+
+        for (const index in validCoordinatesDataPoints) {
+            const dataPoint = validCoordinatesDataPoints[index];
+            const coords: Coordinates = dataPoint.labelCoordinates;
+            let isIntersected: boolean = false;
+
+            for (const i in filteredDatapoints) {
+                const filteredDatapoint: VisualDataPoint = filteredDatapoints[i];
+                const filteredCoods: Coordinates = filteredDatapoint.labelCoordinates;
+
+                if (coords.x < filteredCoods.x + filteredCoods.width + 8
+                    && coords.x + coords.width > filteredCoods.x + 8
+                    && coords.y < filteredCoods.y + filteredCoods.height + 2
+                    && coords.y + coords.height > filteredCoods.y + 2) {
+                    isIntersected = true;
+                    break;
+                }
             }
 
-            const leftTitleSpace: number = 120;
+            if (!isIntersected) {
+                filteredDatapoints.push(dataPoint);
+            }
+        }
 
-            let textProperties: TextProperties = {
+        return filteredDatapoints;
+    }
+
+    public static renderTooltip(selection: d3Selection<any>, tooltipServiceWrapper: ITooltipServiceWrapper): void {
+        tooltipServiceWrapper.addTooltip(
+            selection,
+            (tooltipEvent: VisualDataPoint) => tooltipEvent.tooltips,
+            null,
+            true);
+    }
+
+    public static renderConstantLine(settings: ConstantLineSettings, element: d3Selection<SVGElement>, axes: IAxes, width: number) {
+        let line: d3Selection<any> = element.select(".const-line");
+
+        let yValue: number = settings.value;
+
+        const yMinDomain = axes.y.dataDomain[1];
+        const yMaxDomain = axes.y.dataDomain[0];
+
+        if (yValue < yMinDomain) {
+            yValue = yMinDomain;
+        } else if (yValue > yMaxDomain) {
+            yValue = yMaxDomain;
+        }
+
+        const y = axes.y.scale(yValue);
+        const x = axes.x.scale(axes.x.dataDomain[0]);
+
+        if (line.nodes()[0]) {
+            element.selectAll("line").remove();
+        }
+
+        if (settings.position === Position.InFront) {
+            line = element.append("line");
+        } else {
+            line = element.insert("line", ".bar-group");
+        }
+
+        line
+            .classed("const-line", true)
+            .style('display', settings.show ? "unset" : "none")
+            .style('stroke', settings.lineColor)
+            .style("stroke-opacity", 1 - settings.transparency / 100)
+            .style("stroke-width", "3px")
+            .attr("y2", y)
+            .attr("x2", width)
+            .attr("y1", y);
+
+        if (settings.lineStyle === LineStyle.Dotted) {
+            line.style("stroke-dasharray", "1, 5")
+                .style("stroke-linecap", "round");
+        } else if (settings.lineStyle === LineStyle.Dashed) {
+            line.style("stroke-dasharray", "5, 5");
+        }
+
+        const textProperties: TextProperties = {
+            fontFamily: "wf_standard-font, helvetica, arial, sans-serif",
+            fontSize: "10px"
+        };
+
+        const text: string = this.getLineText(settings);
+        const textWidth: number = textMeasurementService.measureSvgTextWidth(textProperties, text);
+        const textHeight: number = textMeasurementService.estimateSvgTextHeight(textProperties);
+
+        let label: d3Selection<any> = element.select(".const-label");
+
+        if (label.nodes()[0]) {
+            element.selectAll("text").remove();
+        }
+
+        if (settings.show && settings.dataLabelShow) {
+            label = element
+                .append("text")
+                .classed("const-label", true);
+
+            label
+                .attr('transform', this.getTranslateForStaticLineLabel(x, y, textWidth, textHeight, settings, axes, width));
+
+            label
+                .text(text)
+                .style("font-family", "wf_standard-font, helvetica, arial, sans-serif")
+                .style("font-size", "10px")
+                .style('fill', settings.fontColor);
+        }
+    }
+
+    private static getLineText(settings: ConstantLineSettings): string {
+        const displayUnits: number = settings.displayUnits;
+        const precision: number = settings.precision;
+
+        const formatter = valueFormatter.create({
+            value: displayUnits,
+            value2: 0,
+            precision: precision,
+            format: "0"
+        });
+
+        switch (settings.text) {
+            case Text.Name: {
+                return settings.name;
+            }
+            case Text.Value: {
+                return formatter.format(settings.value);
+            }
+            case Text.NameAndValue: {
+                return settings.name + " " + formatter.format(settings.value);
+            }
+        }
+    }
+
+    private static getTranslateForStaticLineLabel(x: number, y: number, textWidth: number, textHeight: number, settings: ConstantLineSettings, axes: IAxes, width: number) {
+        let positionAlong: number;
+        const marginAlong: number = 8;
+        if (settings.horizontalPosition === HorizontalPosition.Left) {
+            positionAlong = marginAlong;
+        } else {
+            positionAlong = width - textWidth - marginAlong;
+        }
+
+        const marginAcross: number = 5;
+        let positionAcross: number;
+        if (settings.verticalPosition === VerticalPosition.Top) {
+            positionAcross = y - (marginAcross + textHeight);
+        } else {
+            positionAcross = y + (marginAcross + textHeight);
+        }
+
+        const minPosition: number = axes.y.scale(axes.y.dataDomain[0]);
+        const maxPosition: number = axes.y.scale(axes.y.dataDomain[1]);
+
+        if (positionAcross <= minPosition) {
+            positionAcross = minPosition + marginAcross;
+        } else if (positionAcross >= maxPosition) {
+            positionAcross = maxPosition - (textHeight + marginAcross);
+        }
+
+        return svgTranslate(positionAlong, positionAcross);
+    }
+
+    private static gapBetweenCharts: number = 10;
+
+    public static renderSmallMultipleLines(options: SmallMultipleOptions, settings: SmallMultipleSettings) {
+
+        const uniqueRows: PrimitiveValue[] = options.rows,
+            uniqueColumns: PrimitiveValue[] = options.columns,
+            chartSize: ISize = options.chartSize,
+            chartElement: d3Selection<any> = options.chartElement,
+            leftSpace: number = options.leftSpace,
+            topSpace: number = options.topSpace,
+            rowsInFlow: number = options.rowsInFlow;
+
+        for (let i = 1; i < uniqueRows.length; ++i) {
+            let y: number = 0;
+            if (settings.layoutMode === LayoutMode.Matrix) {
+                y = topSpace * 2 + i * chartSize.height + this.gapBetweenCharts * (i - 1);
+            } else {
+                y = topSpace * i * rowsInFlow + i * chartSize.height * rowsInFlow + this.gapBetweenCharts * (i * rowsInFlow - 1) + this.gapBetweenCharts / 2;
+            }
+
+            const line = chartElement.append("line")
+                .style("stroke", "#aaa")
+                .style("stroke-width", 1);
+
+            line.attr('x1', 0)//leftSpace + gapBetweenCharts / 2,
+                .attr('x2', leftSpace + uniqueColumns.length * chartSize.width + this.gapBetweenCharts * uniqueColumns.length)
+                .attr('y1', y)
+                .attr('y2', y);
+        }
+
+        if (settings.layoutMode === LayoutMode.Matrix) {
+            for (let j = 1; j < uniqueColumns.length; ++j) {
+                const x = leftSpace + j * chartSize.width + this.gapBetweenCharts * j;
+
+                const line = chartElement.append("line")
+                    .style("stroke", "#aaa")
+                    .style("stroke-width", 1);
+
+                line.attr('x1', x)
+                    .attr('x2', x)
+                    .attr('y1', 0)
+                    .attr('y2', topSpace + uniqueRows.length * chartSize.height + this.gapBetweenCharts * uniqueRows.length);
+            }
+        }
+    }
+
+    public static renderSmallMultipleTitles(options: SmallMultipleOptions, settings: SmallMultipleSettings) {
+        const uniqueColumns: PrimitiveValue[] = options.columns,
+            uniqueRows: PrimitiveValue[] = options.rows,
+            chartSize: ISize = options.chartSize,
+            chartElement: d3Selection<any> = options.chartElement,
+            leftSpace: number = options.leftSpace,
+            topSpace: number = options.topSpace,
+            fontSizeInPx: string = PixelConverter.fromPoint(settings.fontSize),
+            fontFamily: string = settings.fontFamily,
+            rowsInFlow: number = options.rowsInFlow;
+
+        if (settings.layoutMode === LayoutMode.Matrix) {
+            const topTitles: d3Selection<SVGElement> = chartElement.append("svg");
+
+            const textProperties: TextProperties = {
                 fontFamily,
                 fontSize: fontSizeInPx
-            }
+            };
 
-            let leftTitles: d3.Selection<SVGElement> = chartElement.append("svg");
-            let leftTitlesText: d3.selection.Update<PrimitiveValue> = leftTitles.selectAll("*").data(uniqueRows);
-
-            leftTitlesText.enter()
-                .append("text")
-                .attr("class", Selectors.AxisLabelSelector.className);
-
-            // For removed categories, remove the SVG group.
-            leftTitlesText.exit()
-                .remove();
-
-            leftTitlesText
-                .style({ 
-                    "text-anchor": "middle",
-                    "font-size": fontSizeInPx,
-                    "font-family": fontFamily,
-                    "fill": settings.fontColor
-                })
+            topTitles.selectAll("*")
+                .data(uniqueColumns)
+                .join("text")
+                .attr("class", Selectors.AxisLabelSelector.className)
+                .style("text-anchor", "middle")
+                .style("font-size", fontSizeInPx)
+                .style("font-family", fontFamily)
+                .style("fill", settings.fontColor)
+                .attr('dy', "1em")
                 .text(d => {
                     if (d || d === 0) {
                         textProperties.text = d.toString();
-                        return TextMeasurementService.getTailoredTextOrDefault(textProperties, leftTitleSpace);
-                    }         
-                    
+                        return textMeasurementService.getTailoredTextOrDefault(textProperties, chartSize.width - 10);
+                    }
+
                     return null;
                 })
-                .call((text: d3.Selection<any>) => {
-                    for (let i = 0; i < uniqueRows.length; ++i) { 
-                        const textSelectionX: d3.Selection<any> = d3.select(text[0][i]);
-                        let y = 0;
+                .call((text: d3Selection<any>) => {
+                    for (let j = 0; j < uniqueColumns.length; ++j) {
+                        const textSelectionX: d3Selection<any> = d3select(text.nodes()[j]);
+                        const x = leftSpace + j * chartSize.width + chartSize.width / 2 + this.gapBetweenCharts * j;
 
-                        if (settings.layoutMode === LayoutMode.Flow) {
-                            
-                            let previousChartGroupHeight: number = i * rowsInFlow * chartSize.height + this.gapBetweenCharts * i * rowsInFlow + topSpace * rowsInFlow * i;
-                            y = previousChartGroupHeight + rowsInFlow * chartSize.height / 2 + topSpace;
-                        } else {
-                            y = i * chartSize.height + chartSize.height / 2 + topSpace * 2 + this.gapBetweenCharts * i;
-                        }                        
-
-                        textSelectionX.attr({
-                            "transform": svg.translate(leftSpace / 2, y)
-                        });
+                        textSelectionX.attr("transform", svgTranslate(x, topSpace / 2));
                     }
                 });
         }
+
+        const leftTitleSpace: number = 120;
+
+        const textProperties: TextProperties = {
+            fontFamily,
+            fontSize: fontSizeInPx
+        };
+
+        const leftTitles: d3Selection<SVGElement> = chartElement.append("svg");
+
+        leftTitles.selectAll("*")
+            .data(uniqueRows)
+            .join("text")
+            .attr("class", Selectors.AxisLabelSelector.className)
+            .style("text-anchor", "middle")
+            .style("font-size", fontSizeInPx)
+            .style("font-family", fontFamily)
+            .style("fill", settings.fontColor)
+            .text(d => {
+                if (d || d === 0) {
+                    textProperties.text = d.toString();
+                    return textMeasurementService.getTailoredTextOrDefault(textProperties, leftTitleSpace);
+                }
+
+                return null;
+            })
+            .call((text: d3Selection<any>) => {
+                for (let i = 0; i < uniqueRows.length; ++i) {
+                    const textSelectionX: d3Selection<any> = d3select(text.nodes()[i]);
+                    let y = 0;
+
+                    if (settings.layoutMode === LayoutMode.Flow) {
+
+                        const previousChartGroupHeight: number = i * rowsInFlow * chartSize.height + this.gapBetweenCharts * i * rowsInFlow + topSpace * rowsInFlow * i;
+                        y = previousChartGroupHeight + rowsInFlow * chartSize.height / 2 + topSpace;
+                    } else {
+                        y = i * chartSize.height + chartSize.height / 2 + topSpace * 2 + this.gapBetweenCharts * i;
+                    }
+
+                    textSelectionX.attr("transform", svgTranslate(leftSpace / 2, y));
+                }
+            });
     }
 }

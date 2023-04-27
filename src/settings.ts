@@ -1,108 +1,81 @@
-/*
- *  Power BI Visualizations
- *
- *  Copyright (c) Microsoft Corporation
- *  All rights reserved.
- *  MIT License
- *
- *  Permission is hereby granted, free of charge, to any person obtaining a copy
- *  of this software and associated documentation files (the ""Software""), to deal
- *  in the Software without restriction, including without limitation the rights
- *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- *  copies of the Software, and to permit persons to whom the Software is
- *  furnished to do so, subject to the following conditions:
- *
- *  The above copyright notice and this permission notice shall be included in
- *  all copies or substantial portions of the Software.
- *
- *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- *  THE SOFTWARE.
- */
+"use strict";
 
-module powerbi.extensibility.visual {
-  "use strict";
-  import DataViewObjectsParser = powerbi.extensibility.utils.dataview.DataViewObjectsParser;
+import {DataViewObjectsParser} from "powerbi-visuals-utils-dataviewutils/lib/dataViewObjectsParser";
 
-  const DefaultFontFamily: string = "\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif";
+const DefaultFontFamily: string = "\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif";
 
-  export class VisualSettings extends DataViewObjectsParser {
+export class VisualSettings extends DataViewObjectsParser {
     public selectionSaveSettings = {
-      selection: []
+        selection: []
     };
-    public dataPoint: dataPointSettings = new dataPointSettings();
-    public smallMultiple: smallMultipleSettings = new smallMultipleSettings();
-    public legend: legendSettings = new legendSettings();
-    public categoryAxis: categoryAxisSettings = new categoryAxisSettings();
-    public valueAxis: valueAxisSettings = new valueAxisSettings();
-    public categoryLabels: categoryLabelsSettings = new categoryLabelsSettings();
-    public constantLine: constantLineSettings = new constantLineSettings();
-  }
+    public dataPoint = new DataPointSettings();
+    public smallMultiple = new SmallMultipleSettings();
+    public legend = new LegendSettings();
+    public categoryAxis = new CategoryAxisSettings();
+    public valueAxis = new ValueAxisSettings();
+    public categoryLabels = new CategoryLabelsSettings();
+    public constantLine: ConstantLineSettings = new ConstantLineSettings();
+}
 
-  export enum AxisRangeType {
-    Common = <any>"common",
-    Separate = <any>"separate",
-    Custom = <any>"custom"
-  }
+export const enum AxisRangeType {
+    Common = "common",
+    Separate = "separate",
+    Custom = "custom",
+}
 
-  export enum LayoutMode {
-    Flow = <any>"flow",
-    Matrix = <any>"matrix"
-  }
+export const enum LayoutMode {
+    Flow = "flow",
+    Matrix = "matrix",
+}
 
-  export enum LabelPosition {
-    Auto = <any>"auto",
-    InsideEnd = <any>"end",
-    InsideBase = <any>"base",
-    InsideCenter = <any>"center"
-  }
+export const enum LabelPosition {
+    Auto = "auto",
+    InsideEnd = "end",
+    InsideBase = "base",
+    InsideCenter = "center",
+}
 
-  export enum LabelOrientation {
-    Vertical = <any>"vertical",
-    Horizontal = <any>"horizontal"
-  }
+export const enum LabelOrientation {
+    Vertical = "vertical",
+    Horizontal = "horizontal"
+}
 
-  // tslint:disable-next-line:class-name
-  export class dataPointSettings {
+
+export class DataPointSettings {
     // Fill
     public fill: string = "#01b8aa";
     // Show all
     public showAllDataPoints: boolean = true;
-  }
+}
 
-  export enum LineStyle {
-    Dashed = <any>"dashed",
-    Solid = <any>"solid",
-    Dotted = <any>"dotted"
-  }
+export const enum LineStyle {
+    Dashed = "dashed",
+    Solid = "solid",
+    Dotted = "dotted",
+}
 
-  export enum Position {
-    Behind = <any>"behind",
-    InFront = <any>"front"
-  }
+export const enum Position {
+    Behind = "behind",
+    InFront = "front",
+}
 
-  export enum Text {
-    Name = <any>"name",
-    Value = <any>"value",
-    NameAndValue = <any>"nameAndValue"
-  }
+export const enum Text {
+    Name = "name",
+    Value = "value",
+    NameAndValue = "nameAndValue",
+}
 
-  export enum HorizontalPosition {
-    Left = <any>"left",
-    Right = <any>"right"
-  }
+export const enum HorizontalPosition {
+    Left = "left",
+    Right = "right",
+}
 
-  export enum VerticalPosition {
-    Top = <any>"top",
-    Bottom = <any>"bottom"
-  }
+export const enum VerticalPosition {
+    Top = "top",
+    Bottom = "bottom",
+}
 
-  // tslint:disable-next-line:class-name
-  export class legendSettings {
+export class LegendSettings {
     // Show legend
     public show: boolean = true;
     // Position
@@ -117,9 +90,9 @@ module powerbi.extensibility.visual {
     public fontFamily: string = DefaultFontFamily;
     // Legend Font Size
     public fontSize: number = 8;
-  }
-  // tslint:disable-next-line:class-name
-  export class categoryAxisSettings {
+}
+
+export class CategoryAxisSettings {
     // Show category axis
     public show: boolean = true;
     // Position
@@ -158,9 +131,9 @@ module powerbi.extensibility.visual {
     public axisTitle: string = "";
     public titleFontSize: number = 11;
     public titleFontFamily: string = DefaultFontFamily;
-  }
-  // tslint:disable-next-line:class-name
-  export class valueAxisSettings {
+}
+
+export class ValueAxisSettings {
     // Show category axis
     public show: boolean = true;
     // Position
@@ -196,9 +169,9 @@ module powerbi.extensibility.visual {
     public gridlinesColor: string = "";
     public strokeWidth: number = 1;
     public lineStyle: string = "solid";
-  }
-  // tslint:disable-next-line:class-name
-  export class categoryLabelsSettings {
+}
+
+export class CategoryLabelsSettings {
     // Show category axis
     public show: boolean = false;
     // Axis color
@@ -222,9 +195,9 @@ module powerbi.extensibility.visual {
     public transparency: number = 90;
     // Show Background transparency
     public backgroundColor: string = "";
-  }
+}
 
-  export class constantLineSettings {
+export class ConstantLineSettings {
     public show: boolean = false;
     public name: string = "";
     public value: number = 0;
@@ -232,16 +205,16 @@ module powerbi.extensibility.visual {
     public transparency: number = 90;
     public lineStyle: LineStyle = LineStyle.Dotted;
     public position: Position = Position.Behind;
-    public dataLabelShow: boolean = false;    
+    public dataLabelShow: boolean = false;
     public fontColor: string = "#01b8aa";
     public text: Text = Text.Name;
     public horizontalPosition: HorizontalPosition = HorizontalPosition.Left;
     public verticalPosition: VerticalPosition = VerticalPosition.Top;
     public displayUnits: number = 0;
     public precision: number = null;
-  }
+}
 
-  export class smallMultipleSettings {
+export class SmallMultipleSettings {
     public layoutMode: LayoutMode = LayoutMode.Flow;
     public minUnitWidth: number = 150;
     public minUnitHeight: number = 120;
@@ -252,5 +225,4 @@ module powerbi.extensibility.visual {
     public fontSize: number = 9;
     public fontColor: string = "#000000";
     public showSeparators: boolean = true;
-  }
 }
