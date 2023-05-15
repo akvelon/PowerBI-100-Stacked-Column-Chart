@@ -385,6 +385,17 @@ export class Visual implements IColumnVisual {
             this.normalChartProcess(options);
         }
 
+        const clearCatcher = d3select(this.mainHtmlElement);
+        clearCatcher
+            .on('contextmenu', (e: MouseEvent) => {
+                this.webBehaviorSelectionHandler.handleContextMenu(null, {
+                    x: e.clientX,
+                    y: e.clientY
+                });
+                e.preventDefault();
+                e.stopPropagation();
+            });
+
         if (!this.isSelectionRestored) {
             this.restoreSelection();
 
